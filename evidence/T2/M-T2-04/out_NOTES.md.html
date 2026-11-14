@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>T2/M-T2-04/out_NOTES.md</title>
+<style>
+*{box-sizing:border-box}
+:root{--bg:#f6f7f6;--text:#16191c;--muted:#5b636b;--line:#d9dddb;--accent:#0f6b4f;
+--code:rgba(15,23,28,.06);--add:rgba(46,160,67,.20);--del:rgba(218,54,51,.17);--hunk:rgba(15,107,79,.10)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#111416;--text:#e8ebe9;
+--muted:#9aa3a0;--line:#2b3134;--accent:#4fbf95;--code:rgba(255,255,255,.07);
+--add:rgba(63,185,80,.22);--del:rgba(248,81,73,.22);--hunk:rgba(79,191,149,.12)}}
+body{margin:0;background:var(--bg);color:var(--text);
+font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:900px;margin:0 auto;padding:16px}
+.top{font-size:14px;color:var(--muted);border-bottom:1px solid var(--line);padding-bottom:10px;
+margin-bottom:20px;display:flex;flex-wrap:wrap;gap:6px 16px;align-items:baseline}
+.top .path{color:var(--text);font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;overflow-wrap:anywhere}
+a{color:var(--accent)}
+h1,h2,h3,h4,h5,h6{line-height:1.25;margin:1.4em 0 .5em;overflow-wrap:anywhere}
+p,ul,ol,blockquote{margin:.6em 0}
+ul,ol{padding-left:1.4em}
+li,p{overflow-wrap:anywhere}
+blockquote{margin:.8em 0;padding:.1em 0 .1em 14px;border-left:3px solid var(--accent);color:var(--muted)}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.92em;
+background:var(--code);padding:.1em .3em;border-radius:4px;overflow-wrap:anywhere}
+pre{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px;line-height:1.45;
+background:var(--code);border:1px solid var(--line);border-radius:6px;padding:12px;margin:.8em 0;
+overflow-x:auto;white-space:pre;tab-size:2}
+pre code{background:none;padding:0;border-radius:0;font-size:inherit;overflow-wrap:normal}
+.tw{overflow-x:auto;margin:.8em 0}
+table{border-collapse:collapse;font-size:14px}
+th,td{border:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}
+td{overflow-wrap:anywhere}
+th{background:var(--code)}
+hr{border:0;border-top:1px solid var(--line);margin:1.5em 0}
+.patch span{display:block;width:max-content;min-width:100%}
+.patch .file{font-weight:700}
+.patch .meta{color:var(--muted)}
+.patch .hunk{color:var(--accent);background:var(--hunk)}
+.patch .add{background:var(--add)}
+.patch .del{background:var(--del)}
+</style>
+</head>
+<body>
+<main>
+<div class="top"><span class="path">T2/M-T2-04/out_NOTES.md</span><a href="out_NOTES.md">Raw file</a><a href="../../../index.html#T2">Back to the case study</a></div>
+<h1>Task T2: respect settlement status — notes</h1>
+<h2>What changed</h2>
+<ul><li><code>ledgerguard/ledger/shadow_ledger.py</code><ul><li>Settlements are indexed by status. Only <code>processed</code> ones go into <code>settlements_by_payment</code>, so <code>settlements_for()</code> returns processed settlements only. Every consumer that goes through it (the matcher, and <code>evaluation/ablation.py</code>) inherits the filter.</li><li>Pending and failed settlements go into a separate index, <code>non_processed_settlements_by_payment</code>, read via the new <code>non_processed_settlements_for()</code>. They are used for evidence only.</li></ul></li><li><code>ledgerguard/reconciliation/matcher.py</code><ul><li><code>find_duplicates</code> computes settlement duplicates and content conflicts over processed settlements only, so a non-processed record can never make a settlement a duplicate or a conflict.</li><li>Missing-settlement branch: when the payment has non-processed settlements, the evidence gains <code>non_processed_settlements</code>, a list of <code>{&quot;settlement_id&quot;, &quot;status&quot;}</code> sorted by <code>settlement_id</code> (ties broken by status). The key is absent in every other case. <code>reason</code>, <code>expected_value</code>, <code>observed_value</code>, the transaction ids and the final state are unchanged.</li></ul></li><li><code>ledgerguard/tests/test_settlement_status.py</code> — 16 new tests covering requirements 1–5 and 7, plus the bank-matching and duplicate-index cases.</li></ul>
+<p>No changes to the investigator, safety gate, or pipeline were needed: <code>MISSING_SETTLEMENT</code> is already in <code>DETERMINISTICALLY_PROVEN</code>, never <code>NEEDS_INVESTIGATION</code>, and already routes to <code>HUMAN_REVIEW_REQUIRED</code> in <code>decide()</code>. An end-to-end test with a spy provider asserts the investigator is never called and that the outcome is never <code>AUTO_RESOLVED</code>.</p>
+<h2>Choices made (ambiguities)</h2>
+<ol><li><strong>Duplicate-payment cases attach processed settlements only.</strong> Previously a payment-level duplicate case could carry a pending or failed settlement&#x27;s id in <code>transaction_ids</code>. It now behaves as if that settlement were absent. This only changes output for batches that contain non-processed settlements.</li><li>**The new key is only added to <code>EXCEPTION_MISSING_SETTLEMENT</code>.** Requirement 3 was read as applying to that case only. Payment duplicates keep their precedence, so they carry no such key.</li><li>**The <code>reason</code> text is left as it was** in the missing-settlement case, even when non-processed settlements exist, so the only added information is the new key.</li></ol>
+<h2>Verification</h2>
+<ul><li>Full suite: <code>.venv/bin/python -m pytest ledgerguard/tests -q</code> → <strong>83 passed</strong> (67 existing, unmodified, plus 16 new).</li><li>Holdout (requirement 6): all 81 settlements in the regenerated frozen holdout are <code>processed</code>, so every new filter is a no-op there. The deterministic outputs <code>reconciliation_report.csv</code>, <code>decision_log.json</code> and <code>evidence_ledger.csv</code> are byte-identical after regeneration, and the rules-only baseline metrics in <code>benchmark.json</code> match.</li></ul>
+<h2>Not finished / caveats</h2>
+<ul><li><strong>The hybrid benchmark numbers could not be reproduced here.</strong> Regenerating <code>benchmark.json</code>, <code>cases.json</code> and <code>unresolved_exceptions.csv</code> gave different hybrid results: no API key is available, so the run fell back to <code>heuristic_stub</code> (<code>model_calls</code> 0 instead of 15; accuracy 1.0 vs 0.9765). The committed artifacts were produced with the live provider chain. The inputs and deterministic outputs are unchanged, so the difference is most likely the provider, but I did not re-run the pre-change code under the same no-key conditions to prove it.</li><li><strong>Artifacts restored.</strong> <code>ledgerguard/evaluation/outputs/</code> and <code>ledgerguard/evaluation/frozen/</code> were regenerated for checking, then restored from a snapshot. SHA-256 checksums of every file match the pre-change state (checked after the final test run).</li><li>The repository is not a git repository, so nothing was committed.</li></ul>
+</main>
+</body>
+</html>

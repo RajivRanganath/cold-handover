@@ -1,0 +1,475 @@
+--- a/docs/architecture.md
++++ b/docs/architecture.md
+@@ -86,9 +86,16 @@
+ 
+ ### `reconciliation/matcher.py`
+ Runs before the model, always. Duplicate pre-pass over the whole batch, then one
+-case per captured payment: no settlement → `MISSING_SETTLEMENT`; more than one →
+-`DUPLICATE_RECORD`; otherwise run all six invariants and map the failures to a
+-specific exception type, most severe first.
++case per captured payment: no processed settlement → `MISSING_SETTLEMENT`; more
++than one → `DUPLICATE_RECORD`; otherwise run all six invariants and map the
++failures to a specific exception type, most severe first.
++
++Only `processed` settlements take part in settlement matching. A `pending` or
++`failed` settlement has not paid anything out, so it is ignored by the duplicate
++pre-pass, the invariants and bank matching alike. If a payment's only settlements
++are non-processed, its `MISSING_SETTLEMENT` evidence lists them under
++`non_processed_settlements` (sorted by `settlement_id`); the key is absent in every
++other case.
+ 
+ The duplicate pre-pass compares **content, not just identifiers**. Two rows
+ sharing a `payment_id` are only a duplicate when every other field agrees; if
+--- a/ledgerguard/ledger/shadow_ledger.py
++++ b/ledgerguard/ledger/shadow_ledger.py
+@@ -25,6 +25,7 @@
+     Refund,
+     RefundStatus,
+     Settlement,
++    SettlementStatus,
+ )
+ from .money import gst_on_fee, platform_fee
+ 
+@@ -74,7 +75,14 @@
+     payments_by_id: dict[str, Payment] = field(default_factory=dict)
+     refunds_by_id: dict[str, Refund] = field(default_factory=dict)
+     refunds_by_payment: dict[str, list[Refund]] = field(default_factory=dict)
++    #: Only ``processed`` settlements. A pending or failed settlement has not
++    #: paid anything out, so it cannot close a payment.
+     settlements_by_payment: dict[str, list[Settlement]] = field(default_factory=dict)
++    #: ``pending`` and ``failed`` settlements, kept aside so they can be
++    #: reported as evidence but never matched against.
++    non_processed_settlements_by_payment: dict[str, list[Settlement]] = field(
++        default_factory=dict
++    )
+     bank_by_reference: dict[str, list[BankEntry]] = field(default_factory=dict)
+     orphan_refunds: list[Refund] = field(default_factory=list)
+ 
+@@ -93,8 +101,13 @@
+             else:
+                 self.orphan_refunds.append(r)
+         for s in self.batch.settlements:
++            index = (
++                self.settlements_by_payment
++                if s.status == SettlementStatus.PROCESSED
++                else self.non_processed_settlements_by_payment
++            )
+             for pid in s.payment_ids:
+-                self.settlements_by_payment.setdefault(pid, []).append(s)
++                index.setdefault(pid, []).append(s)
+         for b in self.batch.bank_entries:
+             self.bank_by_reference.setdefault(b.reference, []).append(b)
+ 
+@@ -160,7 +173,12 @@
+     # ---------------------------------------------------------------- observed
+ 
+     def settlements_for(self, payment_id: str) -> list[Settlement]:
++        """Processed settlements for a payment: the only ones that count."""
+         return self.settlements_by_payment.get(payment_id, [])
++
++    def non_processed_settlements_for(self, payment_id: str) -> list[Settlement]:
++        """Pending or failed settlements for a payment. Reporting only."""
++        return self.non_processed_settlements_by_payment.get(payment_id, [])
+ 
+     def bank_entries_for_settlement(self, settlement: Settlement) -> list[BankEntry]:
+         return self.bank_by_reference.get(settlement.reference, [])
+--- a/ledgerguard/reconciliation/matcher.py
++++ b/ledgerguard/reconciliation/matcher.py
+@@ -20,6 +20,7 @@
+     PaymentStatus,
+     ReconciliationException,
+     Settlement,
++    SettlementStatus,
+ )
+ from ..ledger.shadow_ledger import ExpectedSettlement, ShadowLedger
+ from .exceptions import make_exception
+@@ -126,8 +127,12 @@
+     dup.payment_ids, dup.payment_conflicts = _id_groups(
+         batch.payments, lambda p: p.payment_id, _payment_signature
+     )
++    # Only processed settlements take part in settlement matching. A pending or
++    # failed row with a repeated id must not turn a processed settlement into a
++    # "conflict" or a "duplicate".
++    processed = [s for s in batch.settlements if s.status == SettlementStatus.PROCESSED]
+     dup.settlement_ids, dup.settlement_conflicts = _id_groups(
+-        batch.settlements, lambda s: s.settlement_id, _settlement_signature
++        processed, lambda s: s.settlement_id, _settlement_signature
+     )
+ 
+     for e in batch.bank_entries:
+@@ -257,17 +262,25 @@
+             [],
+         )
+ 
+-    # 2. No settlement at all.
++    # 2. No processed settlement. Pending or failed settlements have not paid
++    # anything out, so they do not count; they are reported as evidence only.
+     if not settlements:
++        missing_evidence = {
++            "reason": "captured payment has no settlement record",
++            "expected_shadow_net": expected.as_dict(),
++            "captured_at": payment.captured_at.isoformat() if payment.captured_at else None,
++        }
++        non_processed = ledger.non_processed_settlements_for(payment.payment_id)
++        if non_processed:
++            missing_evidence["non_processed_settlements"] = [
++                {"settlement_id": s.settlement_id, "status": s.status.value}
++                for s in sorted(non_processed, key=lambda s: s.settlement_id)
++            ]
+         return build(
+             ExceptionType.MISSING_SETTLEMENT,
+             expected.net_amount,
+             0,                       # nothing was settled, so the whole net is exposed
+-            {
+-                "reason": "captured payment has no settlement record",
+-                "expected_shadow_net": expected.as_dict(),
+-                "captured_at": payment.captured_at.isoformat() if payment.captured_at else None,
+-            },
++            missing_evidence,
+             None,
+             [],
+         )
+--- a/ledgerguard/tests/test_settlement_status.py
++++ b/ledgerguard/tests/test_settlement_status.py
+@@ -0,0 +1,341 @@
++"""Settlement status is respected by every settlement-matching step.
++
++A ``pending`` or ``failed`` settlement has not paid anything out. It must never
++close a payment, never count as a duplicate or conflict, and never be used for
++bank matching or the invariants. A captured payment whose only settlements are
++non-processed is a missing settlement, reported with the non-processed rows as
++evidence so the reviewer can see why.
++
++Nothing here touches the network. The controller test uses a spy provider that
++fails the test if it is ever asked to investigate.
++"""
++
++from __future__ import annotations
++
++import pytest
++
++from ledgerguard.ai.schemas import InvestigationResult
++from ledgerguard.evidence.safety import AUTO_RESOLVED, HUMAN_REVIEW_REQUIRED
++from ledgerguard.ledger.models import (
++    Batch,
++    ExceptionType,
++    Settlement,
++    SettlementStatus,
++)
++from ledgerguard.ledger.shadow_ledger import ShadowLedger
++from ledgerguard.pipeline import run
++from ledgerguard.reconciliation.matcher import MATCHED, find_duplicates, reconcile_batch
++from ledgerguard.synthetic.generator import build_clean_lifecycles
++
++
++@pytest.fixture
++def lc():
++    lifecycles, _ = build_clean_lifecycles(seed=20260905, count=4)
++    return lifecycles[0]
++
++
++def _variant(settlement: Settlement, **update) -> Settlement:
++    return settlement.model_copy(update=update, deep=True)
++
++
++def _batch(lc, settlements, bank_entries=None) -> Batch:
++    return Batch(
++        orders=[lc.order],
++        payments=[lc.payment],
++        refunds=list(lc.refunds),
++        settlements=list(settlements),
++        bank_entries=list(lc.bank_entries) if bank_entries is None else list(bank_entries),
++    )
++
++
++def _only_case(batch: Batch):
++    cases, _ = reconcile_batch(batch)
++    assert len(cases) == 1
++    return cases[0]
++
++
++class _SpyProvider:
++    """Records every call. Any call is a failure for the non-AI cases."""
++
++    name = "spy"
++
++    def __init__(self) -> None:
++        self.calls = 0
++
++    def investigate(self, context: dict) -> InvestigationResult:
++        self.calls += 1
++        return InvestigationResult.unavailable("spy: not expected to be asked")
++
++
++# ----------------------------------------------------------------- baseline
++
++def test_processed_settlement_still_matches(lc):
++    assert lc.settlement.status == SettlementStatus.PROCESSED
++    case = _only_case(_batch(lc, [lc.settlement]))
++    assert case.status == MATCHED
++
++
++# ------------------------------------------------- rule 2: missing settlement
++
++@pytest.mark.parametrize("status", [SettlementStatus.PENDING, SettlementStatus.FAILED])
++def test_non_processed_only_is_missing_settlement_with_same_values(lc, status):
++    non_processed = _variant(lc.settlement, settlement_id="setl_np", status=status)
++
++    with_np = _only_case(_batch(lc, [non_processed]))
++    without = _only_case(_batch(lc, []))
++
++    assert with_np.status == ExceptionType.MISSING_SETTLEMENT.value
++    assert without.status == ExceptionType.MISSING_SETTLEMENT.value
++
++    exc, ref = with_np.exception, without.exception
++    assert exc.exception_type is ExceptionType.MISSING_SETTLEMENT
++    assert exc.expected_value == ref.expected_value
++    assert exc.expected_value == with_np.expected.net_amount
++    assert exc.observed_value == 0
++    assert exc.difference == ref.difference
++    assert exc.transaction_ids == ref.transaction_ids
++    assert exc.risk == ref.risk
++    assert with_np.settlement is None
++    assert with_np.invariants == []
++
++    # Apart from the new evidence key, the exception is byte-for-byte the same.
++    evidence = dict(exc.evidence)
++    assert evidence.pop("non_processed_settlements") == [
++        {"settlement_id": "setl_np", "status": status.value}
++    ]
++    assert evidence == ref.evidence
++
++
++@pytest.mark.parametrize("status", [SettlementStatus.PENDING, SettlementStatus.FAILED])
++def test_non_processed_only_reaches_the_same_final_state_as_no_settlement(lc, status):
++    non_processed = _variant(lc.settlement, settlement_id="setl_np", status=status)
++
++    with_np = run(_batch(lc, [non_processed]), use_ai=False).outcomes[0]
++    without = run(_batch(lc, []), use_ai=False).outcomes[0]
++
++    assert with_np.state == without.state == HUMAN_REVIEW_REQUIRED
++    assert with_np.state != AUTO_RESOLVED
++
++
++def test_evidence_lists_non_processed_settlements_sorted_by_id(lc):
++    batch = _batch(
++        lc,
++        [
++            _variant(lc.settlement, settlement_id="setl_zz", status=SettlementStatus.FAILED),
++            _variant(lc.settlement, settlement_id="setl_mm", status=SettlementStatus.PENDING),
++            _variant(lc.settlement, settlement_id="setl_aa", status=SettlementStatus.FAILED),
++        ],
++    )
++    case = _only_case(batch)
++    assert case.status == ExceptionType.MISSING_SETTLEMENT.value
++    assert case.exception.evidence["non_processed_settlements"] == [
++        {"settlement_id": "setl_aa", "status": "failed"},
++        {"settlement_id": "setl_mm", "status": "pending"},
++        {"settlement_id": "setl_zz", "status": "failed"},
++    ]
++
++
++def test_no_key_when_there_are_no_non_processed_settlements(lc):
++    case = _only_case(_batch(lc, []))
++    assert case.status == ExceptionType.MISSING_SETTLEMENT.value
++    assert "non_processed_settlements" not in case.exception.evidence
++
++
++# --------------------------------------- rule 4: a processed one still wins
++
++def test_processed_settlement_is_reconciled_as_if_others_were_absent(lc):
++    pending_wrong = _variant(
++        lc.settlement,
++        settlement_id="setl_pending_wrong",
++        status=SettlementStatus.PENDING,
++        reference="STL/PENDING-WRONG",
++        net_amount=lc.settlement.net_amount - 99_999,
++        fees=lc.settlement.fees + 5_000,
++    )
++    failed_other = _variant(
++        lc.settlement,
++        settlement_id="setl_failed_other",
++        status=SettlementStatus.FAILED,
++        gross_amount=lc.settlement.gross_amount + 1,
++    )
++    # A bank credit that belongs to the pending row must not be consulted.
++    stray_bank = lc.bank_entries[0].model_copy(
++        update={"reference": pending_wrong.reference, "amount": 1}, deep=True
++    )
++    batch = _batch(
++        lc,
++        [lc.settlement, pending_wrong, failed_other],
++        bank_entries=list(lc.bank_entries) + [stray_bank],
++    )
++
++    cases, ledger = reconcile_batch(batch)
++    case = cases[0]
++    assert case.status == MATCHED
++    assert case.settlement.settlement_id == lc.settlement.settlement_id
++    assert case.exception is None
++
++    baseline = _only_case(_batch(lc, [lc.settlement]))
++    assert case.invariants == baseline.invariants
++    assert ledger.settlements_for(lc.payment.payment_id) == [lc.settlement]
++    assert case.settlement.reference == lc.settlement.reference
++
++
++def test_processed_plus_non_processed_is_not_investigated_or_flagged(lc):
++    batch = _batch(
++        lc,
++        [
++            lc.settlement,
++            _variant(lc.settlement, settlement_id="setl_pend", status=SettlementStatus.PENDING),
++        ],
++    )
++    spy = _SpyProvider()
++    report = run(batch, use_ai=True, provider=spy)
++    outcome = report.outcomes[0]
++    assert outcome.case.status == MATCHED
++    assert outcome.state == "MATCHED"
++    assert spy.calls == 0
++
++
++# ----------------------------------------- settlement duplicate detection
++
++def test_pending_row_sharing_a_processed_id_is_not_a_conflict(lc):
++    conflicting_pending = _variant(
++        lc.settlement,
++        status=SettlementStatus.PENDING,
++        net_amount=lc.settlement.net_amount + 1,
++    )
++    identical_pending = _variant(lc.settlement, status=SettlementStatus.FAILED)
++
++    for extra in (conflicting_pending, identical_pending):
++        assert extra.settlement_id == lc.settlement.settlement_id
++        case = _only_case(_batch(lc, [lc.settlement, extra]))
++        assert case.status == MATCHED, extra.status
++        assert case.exception is None
++
++
++def test_batch_duplicates_ignore_non_processed_settlements(lc):
++    batch = _batch(
++        lc,
++        [
++            lc.settlement,
++            _variant(lc.settlement, status=SettlementStatus.PENDING, net_amount=1),
++        ],
++    )
++    dup = find_duplicates(batch)
++    assert dup.settlement_ids == set()
++    assert dup.settlement_conflicts == set()
++
++
++def test_multiple_processed_settlements_are_still_a_duplicate(lc):
++    second = _variant(lc.settlement, settlement_id="setl_second_processed")
++    pending = _variant(
++        lc.settlement, settlement_id="setl_third_pending", status=SettlementStatus.PENDING
++    )
++    case = _only_case(_batch(lc, [lc.settlement, second, pending]))
++
++    assert case.status == ExceptionType.DUPLICATE_RECORD.value
++    evidence = case.exception.evidence
++    assert evidence["settlement_ids"] == [lc.settlement.settlement_id, "setl_second_processed"]
++    # The pending row is not part of the matching decision, so it is not
++    # reported as one of its inputs either.
++    assert "non_processed_settlements" not in evidence
++
++
++# ----------------------------------------------- bank matching ignores them
++
++def test_bank_credit_for_a_pending_settlement_cannot_match_a_processed_one(lc):
++    pending = _variant(
++        lc.settlement,
++        settlement_id="setl_pend_ref",
++        status=SettlementStatus.PENDING,
++        reference="STL/PENDING-ONLY",
++    )
++    credit_for_pending = lc.bank_entries[0].model_copy(
++        update={"reference": "STL/PENDING-ONLY", "amount": lc.settlement.net_amount + 7},
++        deep=True,
++    )
++    batch = _batch(lc, [lc.settlement, pending], bank_entries=list(lc.bank_entries) + [credit_for_pending])
++    case = _only_case(batch)
++    assert case.status == MATCHED
++    assert all(i.holds for i in case.invariants)
++
++
++def test_pending_settlement_with_a_matching_credit_still_leaves_payment_missing(lc):
++    pending = _variant(lc.settlement, settlement_id="setl_pend_credit", status=SettlementStatus.PENDING)
++    case = _only_case(_batch(lc, [pending]))
++    assert case.status == ExceptionType.MISSING_SETTLEMENT.value
++    assert case.invariants == []
++    assert case.settlement is None
++    assert "bank_entries" not in case.exception.evidence
++
++
++# ---------------------------------------- payment-level duplicates unchanged
++
++def test_duplicate_payment_precedence_is_unchanged_with_a_pending_settlement(lc):
++    pending = _variant(lc.settlement, settlement_id="setl_pend_dup", status=SettlementStatus.PENDING)
++    batch = _batch(lc, [pending])
++    batch.payments = [lc.payment, lc.payment.model_copy(deep=True)]
++
++    cases, _ = reconcile_batch(batch)
++    case = cases[0]
++    assert case.status == ExceptionType.DUPLICATE_RECORD.value
++    assert case.exception.evidence["duplicate_of"] == lc.payment.payment_id
++    assert "non_processed_settlements" not in case.exception.evidence
++
++
++def test_conflicting_payment_precedence_is_unchanged_with_a_pending_settlement(lc):
++    pending = _variant(lc.settlement, settlement_id="setl_pend_conf", status=SettlementStatus.PENDING)
++    other = lc.payment.model_copy(update={"amount": lc.payment.amount + 100}, deep=True)
++    batch = _batch(lc, [pending])
++    batch.payments = [lc.payment, other]
++
++    cases, _ = reconcile_batch(batch)
++    case = cases[0]
++    assert case.status == ExceptionType.DUPLICATE_RECORD.value
++    assert case.exception.evidence["content_conflict"] == "payment"
++    assert "non_processed_settlements" not in case.exception.evidence
++
++
++# ---------------------------------------------------- shadow ledger indexing
++
++def test_shadow_ledger_separates_processed_from_non_processed(lc):
++    pending = _variant(lc.settlement, settlement_id="setl_idx_p", status=SettlementStatus.PENDING)
++    failed = _variant(lc.settlement, settlement_id="setl_idx_f", status=SettlementStatus.FAILED)
++    ledger = ShadowLedger(_batch(lc, [pending, failed]))
++
++    assert ledger.settlements_for(lc.payment.payment_id) == []
++    assert [s.settlement_id for s in ledger.non_processed_settlements_for(lc.payment.payment_id)] == [
++        "setl_idx_p",
++        "setl_idx_f",
++    ]
++
++
++# ------------------------------------------------ the controller never closes
++
++@pytest.mark.parametrize("status", [SettlementStatus.PENDING, SettlementStatus.FAILED])
++def test_controller_never_asks_the_ai_or_closes_a_non_processed_payment(lc, status):
++    """A tempting orphan refund of the exact net is present. Still no close."""
++    from ledgerguard.ledger.models import Refund, RefundStatus
++
++    non_processed = _variant(lc.settlement, settlement_id="setl_ctl", status=status)
++    tempting = Refund(
++        refund_id="rfn_orphan_tempting",
++        payment_id=None,
++        amount=lc.payment.amount,
++        status=RefundStatus.PROCESSED,
++        created_at=lc.payment.captured_at,
++        reference="CUST-ANY",
++    )
++    batch = _batch(lc, [non_processed])
++    batch.refunds = batch.refunds + [tempting]
++
++    spy = _SpyProvider()
++    report = run(batch, use_ai=True, provider=spy)
++
++    assert spy.calls == 0
++    assert len(report.outcomes) == 1
++    outcome = report.outcomes[0]
++    assert outcome.case.exception.exception_type is ExceptionType.MISSING_SETTLEMENT
++    assert outcome.state == HUMAN_REVIEW_REQUIRED
++    assert outcome.state != AUTO_RESOLVED
++    assert report.investigations == 0

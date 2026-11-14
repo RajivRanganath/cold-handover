@@ -1,0 +1,5 @@
+#!/bin/sh
+# Harness shim (identical in every attempt): macOS mktemp ignores TMPDIR, and the sandbox blocks the
+# system temp dir. For a bare `mktemp` (only flags, no -p/-t/template) add -p "$TMPDIR"; otherwise pass through.
+for a in "$@"; do case "$a" in -p|-t|-p*|-t*) exec /usr/bin/mktemp "$@";; -*) ;; *) exec /usr/bin/mktemp "$@";; esac; done
+exec /usr/bin/mktemp -p "${TMPDIR:?}" "$@"

@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>T2/task_prompt.md</title>
+<style>
+*{box-sizing:border-box}
+:root{--bg:#f6f7f6;--text:#16191c;--muted:#5b636b;--line:#d9dddb;--accent:#0f6b4f;
+--code:rgba(15,23,28,.06);--add:rgba(46,160,67,.20);--del:rgba(218,54,51,.17);--hunk:rgba(15,107,79,.10)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#111416;--text:#e8ebe9;
+--muted:#9aa3a0;--line:#2b3134;--accent:#4fbf95;--code:rgba(255,255,255,.07);
+--add:rgba(63,185,80,.22);--del:rgba(248,81,73,.22);--hunk:rgba(79,191,149,.12)}}
+body{margin:0;background:var(--bg);color:var(--text);
+font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:900px;margin:0 auto;padding:16px}
+.top{font-size:14px;color:var(--muted);border-bottom:1px solid var(--line);padding-bottom:10px;
+margin-bottom:20px;display:flex;flex-wrap:wrap;gap:6px 16px;align-items:baseline}
+.top .path{color:var(--text);font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;overflow-wrap:anywhere}
+a{color:var(--accent)}
+h1,h2,h3,h4,h5,h6{line-height:1.25;margin:1.4em 0 .5em;overflow-wrap:anywhere}
+p,ul,ol,blockquote{margin:.6em 0}
+ul,ol{padding-left:1.4em}
+li,p{overflow-wrap:anywhere}
+blockquote{margin:.8em 0;padding:.1em 0 .1em 14px;border-left:3px solid var(--accent);color:var(--muted)}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.92em;
+background:var(--code);padding:.1em .3em;border-radius:4px;overflow-wrap:anywhere}
+pre{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px;line-height:1.45;
+background:var(--code);border:1px solid var(--line);border-radius:6px;padding:12px;margin:.8em 0;
+overflow-x:auto;white-space:pre;tab-size:2}
+pre code{background:none;padding:0;border-radius:0;font-size:inherit;overflow-wrap:normal}
+.tw{overflow-x:auto;margin:.8em 0}
+table{border-collapse:collapse;font-size:14px}
+th,td{border:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}
+td{overflow-wrap:anywhere}
+th{background:var(--code)}
+hr{border:0;border-top:1px solid var(--line);margin:1.5em 0}
+.patch span{display:block;width:max-content;min-width:100%}
+.patch .file{font-weight:700}
+.patch .meta{color:var(--muted)}
+.patch .hunk{color:var(--accent);background:var(--hunk)}
+.patch .add{background:var(--add)}
+.patch .del{background:var(--del)}
+</style>
+</head>
+<body>
+<main>
+<div class="top"><span class="path">T2/task_prompt.md</span><a href="task_prompt.md">Raw file</a><a href="../../index.html#T2">Back to the case study</a></div>
+<h1>Task T2: respect settlement status</h1>
+<p><code>Settlement.status</code> can be <code>processed</code>, <code>pending</code> or <code>failed</code>, but reconciliation currently ignores it. A pending or failed settlement has not paid anything out, so it must not be able to close a payment.</p>
+<p>Change LedgerGuard so that:</p>
+<ol><li>Only settlements with status <code>processed</code> count as settling a payment. Settlements with status <code>pending</code> or <code>failed</code> are ignored by every settlement-matching step: multiple-settlement detection, the invariants, and bank matching.</li><li>A captured payment with no <code>processed</code> settlement is reported as <code>EXCEPTION_MISSING_SETTLEMENT</code>, exactly as a payment with no settlement is today (same <code>expected_value</code>, <code>observed_value</code> of 0, same final state).</li><li>If that payment also has one or more non-processed settlements, its exception&#x27;s <code>evidence</code> must include <code>non_processed_settlements</code>: a list of <code>{&quot;settlement_id&quot;: &lt;str&gt;, &quot;status&quot;: &lt;&quot;pending&quot; or &quot;failed&quot;&gt;}</code> objects sorted by <code>settlement_id</code>. Leave the key out in every other case.</li><li>A payment with one <code>processed</code> settlement and any number of non-processed ones is reconciled against the processed one only, exactly as if the others were absent.</li><li>Payment-level duplicate handling (the same <code>payment_id</code> ingested more than once) keeps its current precedence and behaviour.</li><li>Nothing changes for batches in which every settlement is <code>processed</code>. In particular, the benchmark&#x27;s results on the frozen holdout must be unchanged.</li><li>The full end-to-end controller must still never send these cases to the AI investigator and must never auto-resolve them.</li></ol>
+<p>Keep every existing test passing. Add tests for the new behaviour. Do not leave regenerated benchmark artifacts in the repository: files under <code>ledgerguard/evaluation/outputs/</code> and <code>ledgerguard/evaluation/frozen/</code> must be unchanged when you finish.</p>
+<h2>Ground rules (same for every task)</h2>
+<ul><li>The repository is at <code>repo/</code> (current directory). A virtualenv with the project dependencies is already installed at <code>repo/.venv</code>; use <code>.venv/bin/python</code>. There is no network package installation and no API key, and you must not create or set one.</li><li>Before changing anything, read the handover documentation at the repository root.</li><li>Put any file you are asked to produce in <code>../out/</code>. Do not create files elsewhere outside <code>repo/</code> except under <code>../tmp/</code>.</li><li>Do not modify or delete existing test files. You may add new tests.</li><li>Nobody is available to answer questions. If something is ambiguous, make the most reasonable choice, and record it in <code>../out/NOTES.md</code> together with anything you could not finish.</li><li>When you are done, stop. Your work will be checked independently.</li></ul>
+</main>
+</body>
+</html>

@@ -1,0 +1,191 @@
+--- a/ledgerguard/reconciliation/matcher.py
++++ b/ledgerguard/reconciliation/matcher.py
+@@ -353,18 +353,18 @@
+         expected_value = expected.fees + expected.tax
+         observed_value = settlement.fees + settlement.tax
+         # A proven cause is not the same as a fully explained case. Correct the
+-        # fee and tax back to schedule and ask whether the settlement now
+-        # reconciles. Whatever is left over is money the fee variance does not
+-        # account for, and it must not be closed on the strength of the part
+-        # that was proved.
+-        corrected_net = (
+-            settlement.gross_amount
+-            - expected.fees
+-            - expected.tax
+-            - settlement.refund_adjustments
+-            + settlement.other_adjustments
+-        )
+-        evidence["residual_paise"] = expected.net_amount - corrected_net
++        # fee and tax back to schedule and ask whether the money the provider
++        # actually paid now matches what the Shadow Ledger expects. Whatever is
++        # left over is money the fee variance does not account for, and it must
++        # not be closed on the strength of the part that was proved.
++        #
++        # The comparison has to start from the reported net. Rebuilding a net
++        # from gross, schedule fees and adjustments would ignore what was paid,
++        # so a settlement that is short of its own arithmetic would show no
++        # residual at all.
++        fee_variance = (settlement.fees + settlement.tax) - (expected.fees + expected.tax)
++        corrected_reported_net = settlement.net_amount + fee_variance
++        evidence["residual_paise"] = expected.net_amount - corrected_reported_net
+     elif exc_type is ExceptionType.DELAYED_SETTLEMENT:
+         expected_value, observed_value = expected.net_amount, settlement.net_amount
+         evidence["days_late"] = (
+--- a/ledgerguard/tests/test_residual_fee_shortfall.py
++++ b/ledgerguard/tests/test_residual_fee_shortfall.py
+@@ -0,0 +1,155 @@
++"""A proven fee variance must not close a case that is also short of money.
++
++The reported failure: a settlement's reported net was INR 250.00 below what its
++own gross, fees, tax and refunds add up to. Fees and tax were exactly on the
++schedule, so the fee check passed and the case was classified as a fee
++mismatch. The residual guard then compared the Shadow Ledger's net with a net
++rebuilt from gross, schedule fees and adjustments -- never with the net the
++provider actually paid -- so the missing INR 250.00 was invisible to it, and the
++case auto-resolved.
++
++The rule these tests pin: correcting the proven fee variance must reconcile the
++money actually paid with the Shadow Ledger. Anything left over blocks closure.
++"""
++
++from __future__ import annotations
++
++from datetime import datetime, timedelta
++
++from ledgerguard.ai.provider import HeuristicProvider
++from ledgerguard.evidence.safety import AUTO_RESOLVED, HUMAN_REVIEW_REQUIRED
++from ledgerguard.ledger.models import (
++    BankEntry,
++    Batch,
++    CreditDebit,
++    ExceptionType,
++    Order,
++    Payment,
++    Settlement,
++)
++from ledgerguard.ledger.money import gst_on_fee, platform_fee, to_paise
++from ledgerguard.pipeline import run
++
++T0 = datetime(2026, 7, 15, 10, 0, 0)
++
++
++def _batch(*, fee_overcharge: int = 0, paid_short_by: int = 0, paid_over_by: int = 0):
++    """One captured payment and its settlement.
++
++    ``fee_overcharge`` is charged on top of the schedule fee, with GST on it, and
++    keeps the settlement arithmetic internally consistent. ``paid_short_by`` and
++    ``paid_over_by`` move the reported net away from its own arithmetic, which is
++    the reported failure: money the provider did not explain.
++    """
++    amount = to_paise("10000.00")
++    fee = platform_fee(amount)
++    tax = gst_on_fee(fee)
++    captured = T0 + timedelta(minutes=5)
++    charged_fee = fee + fee_overcharge
++    charged_tax = gst_on_fee(charged_fee)
++    reported_net = (
++        amount - charged_fee - charged_tax - 0 + 0 - paid_short_by + paid_over_by
++    )
++    settled_on = captured + timedelta(days=2)
++    return Batch(
++        orders=[
++            Order(
++                order_id="ord_R",
++                merchant_id="mch_R",
++                amount=amount,
++                created_at=T0,
++                customer_reference="CUST-R",
++            )
++        ],
++        payments=[
++            Payment(
++                payment_id="pay_R",
++                order_id="ord_R",
++                amount=amount,
++                captured_at=captured,
++                fee=fee,
++                tax=tax,
++                reference="PAY/ord_R",
++            )
++        ],
++        refunds=[],
++        settlements=[
++            Settlement(
++                settlement_id="setl_R",
++                merchant_id="mch_R",
++                payment_ids=["pay_R"],
++                gross_amount=amount,
++                fees=charged_fee,
++                tax=charged_tax,
++                refund_adjustments=0,
++                other_adjustments=0,
++                net_amount=reported_net,
++                settlement_date=settled_on,
++                reference="STL/setl_R",
++            )
++        ],
++        bank_entries=[
++            BankEntry(
++                bank_entry_id="bnk_R",
++                amount=reported_net,
++                credit_or_debit=CreditDebit.CREDIT,
++                date=settled_on,
++                reference="STL/setl_R",
++            )
++        ],
++    )
++
++
++def _outcome(batch):
++    report = run(batch, use_ai=False)
++    assert len(report.outcomes) == 1
++    return report.outcomes[0]
++
++
++def test_reported_case_is_not_auto_closed_when_fees_are_on_schedule():
++    """The operator's case: fees exact, net INR 250.00 below its own arithmetic."""
++    outcome = _outcome(_batch(paid_short_by=to_paise("250.00")))
++
++    exc = outcome.case.exception
++    assert exc.exception_type is ExceptionType.FEE_MISMATCH
++    assert exc.evidence["residual_paise"] == to_paise("250.00")
++    assert outcome.state == HUMAN_REVIEW_REQUIRED
++    assert "250.00" in outcome.decision.reason
++    assert "unattributed" in outcome.decision.reason
++
++
++def test_the_same_shortfall_is_not_closed_with_the_investigator_either():
++    """A fee mismatch is never sent to the model, so nothing can close it there."""
++    report = run(_batch(paid_short_by=to_paise("250.00")), use_ai=True, provider=HeuristicProvider())
++    outcome = report.outcomes[0]
++    assert outcome.investigation is None
++    assert outcome.state == HUMAN_REVIEW_REQUIRED
++
++
++def test_an_overpayment_of_the_same_size_is_also_unexplained():
++    """Unexplained money is unexplained in either direction."""
++    outcome = _outcome(_batch(paid_over_by=to_paise("250.00")))
++
++    assert outcome.case.exception.exception_type is ExceptionType.FEE_MISMATCH
++    assert outcome.case.exception.evidence["residual_paise"] == -to_paise("250.00")
++    assert outcome.state == HUMAN_REVIEW_REQUIRED
++
++
++def test_a_fee_overcharge_with_a_shortfall_blocks_on_the_shortfall():
++    """The fee variance is real and proven. The 250.00 beneath it is not."""
++    outcome = _outcome(
++        _batch(fee_overcharge=to_paise("40.00"), paid_short_by=to_paise("250.00"))
++    )
++
++    assert outcome.case.exception.exception_type is ExceptionType.FEE_MISMATCH
++    assert outcome.case.exception.evidence["residual_paise"] == to_paise("250.00")
++    assert outcome.state == HUMAN_REVIEW_REQUIRED
++
++
++def test_a_fully_explained_fee_overcharge_still_auto_closes():
++    """Regression guard: the proven fee variance accounts for every rupee."""
++    outcome = _outcome(_batch(fee_overcharge=to_paise("40.00")))
++
++    assert outcome.case.exception.exception_type is ExceptionType.FEE_MISMATCH
++    assert outcome.case.exception.evidence["residual_paise"] == 0
++    assert outcome.state == AUTO_RESOLVED

@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>T1/M-T1-05/out_NOTES.md</title>
+<style>
+*{box-sizing:border-box}
+:root{--bg:#f6f7f6;--text:#16191c;--muted:#5b636b;--line:#d9dddb;--accent:#0f6b4f;
+--code:rgba(15,23,28,.06);--add:rgba(46,160,67,.20);--del:rgba(218,54,51,.17);--hunk:rgba(15,107,79,.10)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#111416;--text:#e8ebe9;
+--muted:#9aa3a0;--line:#2b3134;--accent:#4fbf95;--code:rgba(255,255,255,.07);
+--add:rgba(63,185,80,.22);--del:rgba(248,81,73,.22);--hunk:rgba(79,191,149,.12)}}
+body{margin:0;background:var(--bg);color:var(--text);
+font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:900px;margin:0 auto;padding:16px}
+.top{font-size:14px;color:var(--muted);border-bottom:1px solid var(--line);padding-bottom:10px;
+margin-bottom:20px;display:flex;flex-wrap:wrap;gap:6px 16px;align-items:baseline}
+.top .path{color:var(--text);font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;overflow-wrap:anywhere}
+a{color:var(--accent)}
+h1,h2,h3,h4,h5,h6{line-height:1.25;margin:1.4em 0 .5em;overflow-wrap:anywhere}
+p,ul,ol,blockquote{margin:.6em 0}
+ul,ol{padding-left:1.4em}
+li,p{overflow-wrap:anywhere}
+blockquote{margin:.8em 0;padding:.1em 0 .1em 14px;border-left:3px solid var(--accent);color:var(--muted)}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.92em;
+background:var(--code);padding:.1em .3em;border-radius:4px;overflow-wrap:anywhere}
+pre{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px;line-height:1.45;
+background:var(--code);border:1px solid var(--line);border-radius:6px;padding:12px;margin:.8em 0;
+overflow-x:auto;white-space:pre;tab-size:2}
+pre code{background:none;padding:0;border-radius:0;font-size:inherit;overflow-wrap:normal}
+.tw{overflow-x:auto;margin:.8em 0}
+table{border-collapse:collapse;font-size:14px}
+th,td{border:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}
+td{overflow-wrap:anywhere}
+th{background:var(--code)}
+hr{border:0;border-top:1px solid var(--line);margin:1.5em 0}
+.patch span{display:block;width:max-content;min-width:100%}
+.patch .file{font-weight:700}
+.patch .meta{color:var(--muted)}
+.patch .hunk{color:var(--accent);background:var(--hunk)}
+.patch .add{background:var(--add)}
+.patch .del{background:var(--del)}
+</style>
+</head>
+<body>
+<main>
+<div class="top"><span class="path">T1/M-T1-05/out_NOTES.md</span><a href="out_NOTES.md">Raw file</a><a href="../../../index.html#T1">Back to the case study</a></div>
+<h1>Task T1 notes</h1>
+<h2>What was run</h2>
+<ul><li><code>PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m ledgerguard.evaluation.benchmark</code> (no arguments, from <code>repo/</code>).</li><li>No API key variables were set, no <code>.env</code> exists, and OmniRoute was not reachable on localhost:20128, so <code>get_provider()</code> fell back to the offline <code>heuristic_stub</code>. The run printed: &quot;the hybrid run used the offline heuristic stub, not a model.&quot;</li><li>The test suite and the dashboard were not run (not part of this task).</li></ul>
+<h2>Results from this run (stub, not a model)</h2>
+<ul><li>Holdout: 85 lifecycles, batch SHA-256 <code>3e28d4572d4cfc95a7ebd5ad1a04531475e0044e63eb1c732e38e303866f20fa</code> (matches the frozen manifest; no mismatch error).</li><li>Baseline accuracy 0.8941, hybrid accuracy 1.0. Hybrid auto-resolved 21, human review 10, false auto resolutions 0.</li><li>These differ from the committed results (hybrid accuracy 0.9765, 19 auto-resolved, from the <code>fallback(groq-&gt;...)</code> run). That is expected: the committed numbers come from a live model and this run used the naive offline stub.</li></ul>
+<h2>Repo integrity</h2>
+<ul><li>Before running, I copied <code>repo/</code> (excluding nothing) to <code>work/tmp/repo_orig_backup/</code>.</li><li>The run overwrote four files in <code>ledgerguard/evaluation/outputs/</code>. I saved the new versions to <code>work/tmp/run_outputs/</code> and restored the originals from the backup.</li><li>Verification: SHA-256 of every file in <code>ledgerguard/evaluation/frozen/</code> and <code>ledgerguard/evaluation/outputs/</code> matches the hashes recorded before the run. A recursive diff against the backup (excluding nothing) shows no differences.</li><li><code>PYTHONDONTWRITEBYTECODE=1</code> was set so no <code>__pycache__</code> was created.</li><li>Because I restored the committed artifacts, the repo still shows the committed (live-model) numbers. The stub numbers exist only in <code>work/tmp/run_outputs/</code>.</li></ul>
+<h2>Artifact list</h2>
+<ul><li>The benchmark writes <code>benchmark.md</code>, <code>benchmark.json</code>, <code>cases.json</code> and <code>unresolved_exceptions.csv</code> under <code>ledgerguard/evaluation/outputs/</code>. It reads <code>frozen/holdout_20260905_320.json</code> and only writes it if missing (it exists, so it is only verified).</li></ul>
+<h2>Ambiguities and choices</h2>
+<ul><li>&quot;hybrid_provider&quot; is the value from this run (<code>heuristic_stub</code>). &quot;committed_results_provider&quot; is taken from the committed <code>benchmark.json</code> (<code>hybrid.provider</code>); the committed <code>benchmark.md</code> says the same thing.</li><li>Accuracy is reported as the fraction used in <code>benchmark.json</code> (0.8941, 1.0), not as a percentage.</li><li>Pycache and <code>.pytest_cache</code> are excluded from <code>artifacts_written</code>, as the ground rules allow.</li><li>Scratch files are in <code>work/tmp/</code> (<code>repo_orig_backup</code>, <code>run_outputs</code>, <code>orig_hashes.txt</code>, <code>restored_hashes.txt</code>).</li></ul>
+</main>
+</body>
+</html>

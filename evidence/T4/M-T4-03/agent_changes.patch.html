@@ -1,0 +1,308 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>T4/M-T4-03/agent_changes.patch</title>
+<style>
+*{box-sizing:border-box}
+:root{--bg:#f6f7f6;--text:#16191c;--muted:#5b636b;--line:#d9dddb;--accent:#0f6b4f;
+--code:rgba(15,23,28,.06);--add:rgba(46,160,67,.20);--del:rgba(218,54,51,.17);--hunk:rgba(15,107,79,.10)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#111416;--text:#e8ebe9;
+--muted:#9aa3a0;--line:#2b3134;--accent:#4fbf95;--code:rgba(255,255,255,.07);
+--add:rgba(63,185,80,.22);--del:rgba(248,81,73,.22);--hunk:rgba(79,191,149,.12)}}
+body{margin:0;background:var(--bg);color:var(--text);
+font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:900px;margin:0 auto;padding:16px}
+.top{font-size:14px;color:var(--muted);border-bottom:1px solid var(--line);padding-bottom:10px;
+margin-bottom:20px;display:flex;flex-wrap:wrap;gap:6px 16px;align-items:baseline}
+.top .path{color:var(--text);font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;overflow-wrap:anywhere}
+a{color:var(--accent)}
+h1,h2,h3,h4,h5,h6{line-height:1.25;margin:1.4em 0 .5em;overflow-wrap:anywhere}
+p,ul,ol,blockquote{margin:.6em 0}
+ul,ol{padding-left:1.4em}
+li,p{overflow-wrap:anywhere}
+blockquote{margin:.8em 0;padding:.1em 0 .1em 14px;border-left:3px solid var(--accent);color:var(--muted)}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.92em;
+background:var(--code);padding:.1em .3em;border-radius:4px;overflow-wrap:anywhere}
+pre{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px;line-height:1.45;
+background:var(--code);border:1px solid var(--line);border-radius:6px;padding:12px;margin:.8em 0;
+overflow-x:auto;white-space:pre;tab-size:2}
+pre code{background:none;padding:0;border-radius:0;font-size:inherit;overflow-wrap:normal}
+.tw{overflow-x:auto;margin:.8em 0}
+table{border-collapse:collapse;font-size:14px}
+th,td{border:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}
+td{overflow-wrap:anywhere}
+th{background:var(--code)}
+hr{border:0;border-top:1px solid var(--line);margin:1.5em 0}
+.patch span{display:block;width:max-content;min-width:100%}
+.patch .file{font-weight:700}
+.patch .meta{color:var(--muted)}
+.patch .hunk{color:var(--accent);background:var(--hunk)}
+.patch .add{background:var(--add)}
+.patch .del{background:var(--del)}
+</style>
+</head>
+<body>
+<main>
+<div class="top"><span class="path">T4/M-T4-03/agent_changes.patch</span><a href="agent_changes.patch">Raw file</a><a href="../../../index.html#T4">Back to the case study</a></div>
+<pre class="patch"><span class="meta">--- a/ledgerguard/evidence/safety.py
+</span><span class="meta">+++ b/ledgerguard/evidence/safety.py
+</span><span class="hunk">@@ -115,6 +115,32 @@
+</span><span>     secondary = exc.evidence.get(&quot;secondary_findings&quot;) or []
+</span><span> 
+</span><span>     if exc_type in _DETERMINISTIC_AUTO_CLOSE:
+</span><span class="add">+        if exc_type is ExceptionType.FEE_MISMATCH and not exc.evidence.get(&quot;fee_variance_paise&quot;):
+</span><span class="add">+            # Fee and tax equal the schedule, so there is no fee variance to
+</span><span class="add">+            # prove. The classification therefore has no cause behind it, and
+</span><span class="add">+            # the case is a settlement whose own arithmetic does not balance.
+</span><span class="add">+            # Nothing in the batch explains that, so it must not close.
+</span><span class="add">+            gap = (
+</span><span class="add">+                f&quot; Against the shadow ledger, {to_rupees_str(abs(residual))} INR &quot;
+</span><span class="add">+                &quot;is unattributed.&quot;
+</span><span class="add">+                if residual
+</span><span class="add">+                else &quot;&quot;
+</span><span class="add">+            )
+</span><span class="add">+            return Decision(
+</span><span class="add">+                case_id=case.case_id,
+</span><span class="add">+                state=HUMAN_REVIEW_REQUIRED,
+</span><span class="add">+                reason=(
+</span><span class="add">+                    &quot;Fee and tax equal the fee schedule exactly, so no fee variance &quot;
+</span><span class="add">+                    &quot;is proven and the fee classification has no cause. The settlement&#x27;s &quot;
+</span><span class="add">+                    &quot;reported net does not equal its own gross less fees, tax and refunds, &quot;
+</span><span class="add">+                    &quot;and no record explains the difference.&quot; + gap
+</span><span class="add">+                ),
+</span><span class="add">+                missing_evidence=[&quot;explanation for the settlement arithmetic break&quot;],
+</span><span class="add">+                suggested_action=(
+</span><span class="add">+                    &quot;Obtain the line-level settlement detail from the provider and &quot;
+</span><span class="add">+                    &quot;identify the deduction before closing.&quot;
+</span><span class="add">+                ),
+</span><span class="add">+            )
+</span><span>         if residual:
+</span><span>             # Money the proven cause does not account for. Closing here would be
+</span><span>             # closing a case on the strength of the part that was proved while
+</span><span class="meta">--- a/ledgerguard/reconciliation/matcher.py
+</span><span class="meta">+++ b/ledgerguard/reconciliation/matcher.py
+</span><span class="hunk">@@ -352,18 +352,21 @@
+</span><span>     elif exc_type is ExceptionType.FEE_MISMATCH:
+</span><span>         expected_value = expected.fees + expected.tax
+</span><span>         observed_value = settlement.fees + settlement.tax
+</span><span class="del">-        # A proven cause is not the same as a fully explained case. Correct the
+</span><span class="del">-        # fee and tax back to schedule and ask whether the settlement now
+</span><span class="del">-        # reconciles. Whatever is left over is money the fee variance does not
+</span><span class="del">-        # account for, and it must not be closed on the strength of the part
+</span><span class="del">-        # that was proved.
+</span><span class="del">-        corrected_net = (
+</span><span class="del">-            settlement.gross_amount
+</span><span class="del">-            - expected.fees
+</span><span class="del">-            - expected.tax
+</span><span class="del">-            - settlement.refund_adjustments
+</span><span class="del">-            + settlement.other_adjustments
+</span><span class="del">-        )
+</span><span class="add">+        # A proven cause is not the same as a fully explained case. The fee
+</span><span class="add">+        # variance is the amount by which the provider&#x27;s fee and tax exceed the
+</span><span class="add">+        # schedule. Correct the *reported* net by that variance and ask whether
+</span><span class="add">+        # it now matches the shadow ledger. Whatever is left over is money the
+</span><span class="add">+        # fee variance does not account for, and it must not be closed on the
+</span><span class="add">+        # strength of the part that was proved.
+</span><span class="add">+        #
+</span><span class="add">+        # The correction starts from the reported net, not from the settlement&#x27;s
+</span><span class="add">+        # own gross/fee/refund fields. Recomputing from those fields would
+</span><span class="add">+        # silently assume the settlement is internally consistent, and then a
+</span><span class="add">+        # settlement whose net is short of its own components would show no
+</span><span class="add">+        # residual at all.
+</span><span class="add">+        fee_variance = observed_value - expected_value
+</span><span class="add">+        corrected_net = settlement.net_amount + fee_variance
+</span><span class="add">+        evidence[&quot;fee_variance_paise&quot;] = fee_variance
+</span><span>         evidence[&quot;residual_paise&quot;] = expected.net_amount - corrected_net
+</span><span>     elif exc_type is ExceptionType.DELAYED_SETTLEMENT:
+</span><span>         expected_value, observed_value = expected.net_amount, settlement.net_amount
+</span><span class="meta">--- a/ledgerguard/tests/test_fee_residual.py
+</span><span class="meta">+++ b/ledgerguard/tests/test_fee_residual.py
+</span><span class="hunk">@@ -0,0 +1,181 @@
+</span><span class="add">+&quot;&quot;&quot;A fee mismatch closes only when the fee variance explains all of the money.
+</span><span class="add">+
+</span><span class="add">+Regression for a settlement that arrived INR 250.00 short of what its own
+</span><span class="add">+gross, fees, tax and refunds add up to, with fees and tax exactly per schedule.
+</span><span class="add">+It was closed AUTO_RESOLVED as a fee mismatch, because the residual check
+</span><span class="add">+rebuilt the &quot;corrected&quot; net from the settlement&#x27;s own gross/fee/refund fields.
+</span><span class="add">+Any settlement whose reported net disagreed with those fields therefore showed
+</span><span class="add">+no residual at all.
+</span><span class="add">+
+</span><span class="add">+The rule being pinned is the one already documented in ``docs/architecture.md``:
+</span><span class="add">+a proven cause licenses closure only if it accounts for all of the money.
+</span><span class="add">+&quot;&quot;&quot;
+</span><span class="add">+
+</span><span class="add">+from __future__ import annotations
+</span><span class="add">+
+</span><span class="add">+from datetime import datetime, timedelta
+</span><span class="add">+
+</span><span class="add">+from ledgerguard.evidence.safety import AUTO_RESOLVED, HUMAN_REVIEW_REQUIRED
+</span><span class="add">+from ledgerguard.ledger.models import (
+</span><span class="add">+    Batch,
+</span><span class="add">+    BankEntry,
+</span><span class="add">+    CreditDebit,
+</span><span class="add">+    Order,
+</span><span class="add">+    Payment,
+</span><span class="add">+    Settlement,
+</span><span class="add">+)
+</span><span class="add">+from ledgerguard.ledger.money import gst_on_fee, platform_fee, to_paise
+</span><span class="add">+from ledgerguard.pipeline import run
+</span><span class="add">+
+</span><span class="add">+T0 = datetime(2026, 7, 15, 10, 0, 0)
+</span><span class="add">+
+</span><span class="add">+
+</span><span class="add">+def _single_payment_batch(
+</span><span class="add">+    tag: str,
+</span><span class="add">+    amount_rupees: str = &quot;10000.00&quot;,
+</span><span class="add">+    *,
+</span><span class="add">+    fee_overcharge: int = 0,
+</span><span class="add">+    short_by: int = 0,
+</span><span class="add">+    refund_adjustment: int = 0,
+</span><span class="add">+    breakdown_refund: int = 0,
+</span><span class="add">+) -&gt; Batch:
+</span><span class="add">+    &quot;&quot;&quot;One captured payment and one settlement, with faults applied explicitly.
+</span><span class="add">+
+</span><span class="add">+    ``fee_overcharge``  adds paise to the reported fee (tax follows it, as GST does).
+</span><span class="add">+    ``short_by``        reduces the reported net without changing any component,
+</span><span class="add">+                        so the settlement no longer adds up to its own fields.
+</span><span class="add">+    ``refund_adjustment`` is a refund deducted on the settlement with no refund
+</span><span class="add">+                        record anywhere in the batch.
+</span><span class="add">+    ``breakdown_refund`` misstates the refund field without moving the net.
+</span><span class="add">+    &quot;&quot;&quot;
+</span><span class="add">+    amount = to_paise(amount_rupees)
+</span><span class="add">+    customer = f&quot;CUST-{tag}&quot;
+</span><span class="add">+    order = Order(
+</span><span class="add">+        order_id=f&quot;ord_{tag}&quot;,
+</span><span class="add">+        merchant_id=&quot;mch_T&quot;,
+</span><span class="add">+        amount=amount,
+</span><span class="add">+        created_at=T0,
+</span><span class="add">+        customer_reference=customer,
+</span><span class="add">+    )
+</span><span class="add">+    fee = platform_fee(amount)
+</span><span class="add">+    tax = gst_on_fee(fee)
+</span><span class="add">+    captured = T0 + timedelta(minutes=5)
+</span><span class="add">+    payment = Payment(
+</span><span class="add">+        payment_id=f&quot;pay_{tag}&quot;,
+</span><span class="add">+        order_id=order.order_id,
+</span><span class="add">+        amount=amount,
+</span><span class="add">+        captured_at=captured,
+</span><span class="add">+        fee=fee,
+</span><span class="add">+        tax=tax,
+</span><span class="add">+        reference=f&quot;PAY/{order.order_id}&quot;,
+</span><span class="add">+    )
+</span><span class="add">+
+</span><span class="add">+    charged_fee = fee + fee_overcharge
+</span><span class="add">+    charged_tax = gst_on_fee(charged_fee)
+</span><span class="add">+    net = amount - charged_fee - charged_tax - refund_adjustment - short_by
+</span><span class="add">+    settlement = Settlement(
+</span><span class="add">+        settlement_id=f&quot;setl_{tag}&quot;,
+</span><span class="add">+        merchant_id=order.merchant_id,
+</span><span class="add">+        payment_ids=[payment.payment_id],
+</span><span class="add">+        gross_amount=amount,
+</span><span class="add">+        fees=charged_fee,
+</span><span class="add">+        tax=charged_tax,
+</span><span class="add">+        refund_adjustments=refund_adjustment + breakdown_refund,
+</span><span class="add">+        other_adjustments=0,
+</span><span class="add">+        net_amount=net,
+</span><span class="add">+        settlement_date=captured + timedelta(days=2),
+</span><span class="add">+        reference=f&quot;STL/setl_{tag}&quot;,
+</span><span class="add">+    )
+</span><span class="add">+    bank = BankEntry(
+</span><span class="add">+        bank_entry_id=f&quot;bnk_{tag}&quot;,
+</span><span class="add">+        amount=net,
+</span><span class="add">+        credit_or_debit=CreditDebit.CREDIT,
+</span><span class="add">+        date=settlement.settlement_date,
+</span><span class="add">+        reference=settlement.reference,
+</span><span class="add">+    )
+</span><span class="add">+    return Batch(
+</span><span class="add">+        orders=[order],
+</span><span class="add">+        payments=[payment],
+</span><span class="add">+        refunds=[],
+</span><span class="add">+        settlements=[settlement],
+</span><span class="add">+        bank_entries=[bank],
+</span><span class="add">+    )
+</span><span class="add">+
+</span><span class="add">+
+</span><span class="add">+def _only_outcome(batch: Batch):
+</span><span class="add">+    report = run(batch, use_ai=False)
+</span><span class="add">+    assert len(report.outcomes) == 1, report.outcomes
+</span><span class="add">+    return report.outcomes[0]
+</span><span class="add">+
+</span><span class="add">+
+</span><span class="add">+def test_reported_case_fees_exact_net_short_is_not_auto_closed():
+</span><span class="add">+    &quot;&quot;&quot;The reported case: fees and tax per schedule, net INR 250.00 short.&quot;&quot;&quot;
+</span><span class="add">+    outcome = _only_outcome(_single_payment_batch(&quot;R1&quot;, short_by=to_paise(&quot;250.00&quot;)))
+</span><span class="add">+
+</span><span class="add">+    assert outcome.case.exception.exception_type.value == &quot;EXCEPTION_FEE_MISMATCH&quot;
+</span><span class="add">+    assert outcome.case.exception.evidence[&quot;residual_paise&quot;] == to_paise(&quot;250.00&quot;)
+</span><span class="add">+    assert outcome.state == HUMAN_REVIEW_REQUIRED
+</span><span class="add">+    assert outcome.state != AUTO_RESOLVED
+</span><span class="add">+    assert outcome.decision.resolution is None
+</span><span class="add">+    assert &quot;250.00&quot; in outcome.decision.reason
+</span><span class="add">+    assert &quot;unattributed&quot; in outcome.decision.reason
+</span><span class="add">+    assert outcome.case.exception.evidence[&quot;fee_variance_paise&quot;] == 0
+</span><span class="add">+
+</span><span class="add">+
+</span><span class="add">+def test_fee_overcharge_plus_unexplained_shortfall_is_not_auto_closed():
+</span><span class="add">+    &quot;&quot;&quot;A real fee overcharge does not license closing a further INR 250.00 gap.&quot;&quot;&quot;
+</span><span class="add">+    outcome = _only_outcome(
+</span><span class="add">+        _single_payment_batch(
+</span><span class="add">+            &quot;R2&quot;,
+</span><span class="add">+            fee_overcharge=to_paise(&quot;40.00&quot;),
+</span><span class="add">+            short_by=to_paise(&quot;250.00&quot;),
+</span><span class="add">+        )
+</span><span class="add">+    )
+</span><span class="add">+
+</span><span class="add">+    assert outcome.case.exception.exception_type.value == &quot;EXCEPTION_FEE_MISMATCH&quot;
+</span><span class="add">+    assert outcome.case.exception.evidence[&quot;residual_paise&quot;] == to_paise(&quot;250.00&quot;)
+</span><span class="add">+    assert outcome.state == HUMAN_REVIEW_REQUIRED
+</span><span class="add">+    assert &quot;250.00&quot; in outcome.decision.reason
+</span><span class="add">+    assert outcome.case.exception.evidence[&quot;fee_variance_paise&quot;] &gt; 0
+</span><span class="add">+
+</span><span class="add">+
+</span><span class="add">+def test_fee_overcharge_that_fully_explains_the_gap_still_auto_closes():
+</span><span class="add">+    &quot;&quot;&quot;The fix must not touch the case that is genuinely proven.&quot;&quot;&quot;
+</span><span class="add">+    outcome = _only_outcome(_single_payment_batch(&quot;R3&quot;, fee_overcharge=to_paise(&quot;40.00&quot;)))
+</span><span class="add">+
+</span><span class="add">+    assert outcome.case.exception.exception_type.value == &quot;EXCEPTION_FEE_MISMATCH&quot;
+</span><span class="add">+    assert outcome.case.exception.evidence[&quot;fee_variance_paise&quot;] &gt; 0
+</span><span class="add">+    assert outcome.case.exception.evidence[&quot;residual_paise&quot;] == 0
+</span><span class="add">+    assert outcome.state == AUTO_RESOLVED
+</span><span class="add">+    assert outcome.decision.resolution == &quot;EXCEPTION_FEE_MISMATCH&quot;
+</span><span class="add">+
+</span><span class="add">+
+</span><span class="add">+def test_internal_arithmetic_break_with_no_fee_variance_is_not_closed_as_a_fee():
+</span><span class="add">+    &quot;&quot;&quot;Fees exact, net exactly what the ledger expects, but the breakdown is wrong.
+</span><span class="add">+
+</span><span class="add">+    No fee variance is proven, so there is no fee cause to close on, even though
+</span><span class="add">+    no money is missing against the shadow ledger. The case must escalate.
+</span><span class="add">+    &quot;&quot;&quot;
+</span><span class="add">+    outcome = _only_outcome(
+</span><span class="add">+        _single_payment_batch(&quot;R4&quot;, breakdown_refund=to_paise(&quot;250.00&quot;))
+</span><span class="add">+    )
+</span><span class="add">+
+</span><span class="add">+    assert outcome.case.exception.exception_type.value == &quot;EXCEPTION_FEE_MISMATCH&quot;
+</span><span class="add">+    assert outcome.case.exception.evidence[&quot;fee_variance_paise&quot;] == 0
+</span><span class="add">+    assert outcome.state == HUMAN_REVIEW_REQUIRED
+</span><span class="add">+    assert &quot;no fee variance is proven&quot; in outcome.decision.reason
+</span><span class="add">+
+</span><span class="add">+
+</span><span class="add">+def test_consistent_deduction_without_a_refund_record_still_escalates():
+</span><span class="add">+    &quot;&quot;&quot;Existing behaviour pinned from the other side: a consistent settlement with
+</span><span class="add">+    an unexplained INR 650.00 deduction still reports the residual exactly.&quot;&quot;&quot;
+</span><span class="add">+    outcome = _only_outcome(
+</span><span class="add">+        _single_payment_batch(
+</span><span class="add">+            &quot;R5&quot;,
+</span><span class="add">+            fee_overcharge=to_paise(&quot;40.00&quot;),
+</span><span class="add">+            refund_adjustment=to_paise(&quot;650.00&quot;),
+</span><span class="add">+        )
+</span><span class="add">+    )
+</span><span class="add">+
+</span><span class="add">+    assert outcome.case.exception.evidence[&quot;residual_paise&quot;] == to_paise(&quot;650.00&quot;)
+</span><span class="add">+    assert outcome.state == HUMAN_REVIEW_REQUIRED
+</span><span>
+</span></pre>
+</main>
+</body>
+</html>

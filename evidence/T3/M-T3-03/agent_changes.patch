@@ -1,0 +1,269 @@
+--- a/docs/evaluation.md
++++ b/docs/evaluation.md
+@@ -14,7 +14,11 @@
+ came from a cache, so the run is self-describing either way.
+ 
+ Options: `--seed`, `--count`, `--split {holdout,dev,all}`, and
+-`--provider {auto,fallback,groq,gemini,nvidia,omniroute,openai_compatible,stub,none}`.
++`--provider {auto,fallback,groq,gemini,nvidia,omniroute,openai_compatible,stub,none}`,
++and `--output-dir PATH` to write the four artifacts to `PATH` instead of
++`evaluation/outputs/` (created if missing; the frozen manifest is still read from
++`evaluation/frozen/`, never written to `PATH`; `PATH` may not be inside
++`evaluation/outputs/`).
+ 
+ To compare investigators on the same holdout:
+ 
+--- a/ledgerguard/evaluation/benchmark.py
++++ b/ledgerguard/evaluation/benchmark.py
+@@ -249,9 +249,27 @@
+         help="auto | fallback | groq | gemini | nvidia | omniroute | "
+         "anthropic | cerebras | openai_compatible | stub | none",
+     )
++    parser.add_argument(
++        "--output-dir",
++        type=Path,
++        default=None,
++        metavar="PATH",
++        help="write the artifacts to PATH instead of evaluation/outputs/ "
++        "(created if missing; a relative PATH resolves against the current "
++        "directory). PATH may not be inside evaluation/outputs/.",
++    )
+     args = parser.parse_args(argv)
+ 
+-    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
++    if args.output_dir is None:
++        out_dir = OUTPUT_DIR
++    else:
++        out_dir = args.output_dir.resolve()
++        if out_dir.is_relative_to(OUTPUT_DIR.resolve()):
++            parser.error(
++                f"--output-dir must not be inside {OUTPUT_DIR.resolve()}; "
++                "that directory is reserved for the committed artifacts"
++            )
++    out_dir.mkdir(parents=True, exist_ok=True)
+ 
+     full = build_dataset(seed=args.seed, count=args.count)
+     dev, holdout = split(full)
+@@ -274,8 +292,8 @@
+     costs = estimate(provider, hyb_metrics.investigations, hyb_metrics.total_cases)
+ 
+     md = render_markdown(base_metrics, hyb_metrics, manifest)
+-    (OUTPUT_DIR / "benchmark.md").write_text(md)
+-    (OUTPUT_DIR / "benchmark.json").write_text(
++    (out_dir / "benchmark.md").write_text(md)
++    (out_dir / "benchmark.json").write_text(
+         json.dumps(
+             {
+                 "dataset": {
+@@ -298,9 +316,9 @@
+         + "\n"
+     )
+     n_unresolved = write_unresolved_csv(
+-        hybrid_report, scored, OUTPUT_DIR / "unresolved_exceptions.csv"
+-    )
+-    export_cases(hybrid_report, scored, OUTPUT_DIR / "cases.json")
++        hybrid_report, scored, out_dir / "unresolved_exceptions.csv"
++    )
++    export_cases(hybrid_report, scored, out_dir / "cases.json")
+ 
+     print(md)
+     if fallback_report:
+@@ -334,7 +352,7 @@
+                 f"${d['estimated_usd']} total, "
+                 f"${d['estimated_usd_per_100_records']} per 100 records"
+             )
+-    print(f"\nArtifacts written to {OUTPUT_DIR}")
++    print(f"\nArtifacts written to {out_dir}")
+     print(f"  benchmark.md, benchmark.json, cases.json")
+     print(f"  unresolved_exceptions.csv ({n_unresolved} rows)")
+     if hyb_metrics.provider == "heuristic_stub":
+--- a/ledgerguard/tests/test_benchmark_output_dir.py
++++ b/ledgerguard/tests/test_benchmark_output_dir.py
+@@ -0,0 +1,187 @@
++"""`benchmark --output-dir PATH` writes the same artifacts somewhere else.
++
++Every test redirects OUTPUT_DIR and MANIFEST_DIR into tmp_path, so the real
++evaluation/outputs/ and evaluation/frozen/ are never read-modified by the suite.
++A small seed and count keep each run fast; the stub provider keeps it offline
++and deterministic.
++"""
++
++from __future__ import annotations
++
++import json
++from pathlib import Path
++
++import pytest
++
++from ledgerguard.evaluation import benchmark as bm
++
++SEED = "424242"
++COUNT = "40"
++ARTIFACTS = {"benchmark.md", "benchmark.json", "cases.json", "unresolved_exceptions.csv"}
++TIMING_KEYS = {
++    "wall_seconds",
++    "throughput_per_second",
++    "latency_p50_ms",
++    "latency_p95_ms",
++    "latency_ms",
++}
++TIMING_MD_LABELS = ("Wall time (s)", "Throughput (cases/s)", "Investigation latency")
++
++
++@pytest.fixture
++def sandbox(tmp_path, monkeypatch):
++    """Point the benchmark's default output and manifest locations at tmp_path."""
++    outputs = tmp_path / "sentinel_outputs"  # stands in for evaluation/outputs/
++    frozen = tmp_path / "frozen"
++    frozen.mkdir()
++    monkeypatch.setattr(bm, "OUTPUT_DIR", outputs)
++    monkeypatch.setattr(bm, "MANIFEST_DIR", frozen)
++    return outputs, frozen
++
++
++def _run(*extra: str) -> int:
++    return bm.main(["--seed", SEED, "--count", COUNT, "--provider", "stub", *extra])
++
++
++def _strip_timing(obj):
++    if isinstance(obj, dict):
++        return {k: _strip_timing(v) for k, v in obj.items() if k not in TIMING_KEYS}
++    if isinstance(obj, list):
++        return [_strip_timing(v) for v in obj]
++    return obj
++
++
++def _normalised(path: Path):
++    """Artifact content with only the wall-clock fields removed."""
++    if path.suffix == ".json":
++        return _strip_timing(json.loads(path.read_text()))
++    if path.suffix == ".md":
++        return [
++            line
++            for line in path.read_text().splitlines()
++            if not any(label in line for label in TIMING_MD_LABELS)
++        ]
++    return path.read_bytes()
++
++
++def _written_line(stdout: str) -> str:
++    return next(l for l in stdout.splitlines() if l.startswith("Artifacts written to"))
++
++
++def test_output_dir_writes_the_four_artifacts_and_nothing_else(sandbox, tmp_path, capsys):
++    outputs, frozen = sandbox
++    target = tmp_path / "reports" / "2026" / "run1"  # missing parents on purpose
++
++    assert _run("--output-dir", str(target)) == 0
++
++    assert {p.name for p in target.iterdir()} == ARTIFACTS
++    assert not any(p.name.startswith("holdout_") for p in target.iterdir())
++
++
++def test_output_dir_contents_match_a_default_run(sandbox, tmp_path, capsys):
++    outputs, _frozen = sandbox
++    _run()  # default run, into the sentinel outputs directory
++    capsys.readouterr()
++    target = tmp_path / "custom"
++    _run("--output-dir", str(target))
++    capsys.readouterr()
++
++    assert {p.name for p in outputs.iterdir()} == ARTIFACTS
++    assert {p.name for p in target.iterdir()} == ARTIFACTS
++    for name in sorted(ARTIFACTS):
++        assert _normalised(target / name) == _normalised(outputs / name), name
++
++
++def test_outputs_directory_is_not_created(sandbox, tmp_path):
++    outputs, _frozen = sandbox
++    assert not outputs.exists()
++
++    assert _run("--output-dir", str(tmp_path / "elsewhere")) == 0
++
++    assert not outputs.exists()
++
++
++def test_existing_outputs_files_are_left_byte_identical(sandbox, tmp_path):
++    outputs, _frozen = sandbox
++    outputs.mkdir()
++    sentinel = outputs / "benchmark.md"
++    sentinel.write_text("committed artifact\n")
++    other = outputs / "scale.json"
++    other.write_text("{}\n")
++
++    assert _run("--output-dir", str(tmp_path / "elsewhere")) == 0
++
++    assert sentinel.read_text() == "committed artifact\n"
++    assert other.read_text() == "{}\n"
++    assert sorted(p.name for p in outputs.iterdir()) == ["benchmark.md", "scale.json"]
++
++
++def test_relative_path_resolves_against_current_directory(sandbox, tmp_path, monkeypatch, capsys):
++    work = tmp_path / "work"
++    work.mkdir()
++    monkeypatch.chdir(work)
++
++    assert _run("--output-dir", "rel/out") == 0
++
++    expected = (work / "rel" / "out").resolve()
++    assert {p.name for p in expected.iterdir()} == ARTIFACTS
++    assert f"Artifacts written to {expected}" in capsys.readouterr().out
++
++
++def test_printed_line_names_the_requested_path(sandbox, tmp_path, capsys):
++    target = tmp_path / "named"
++    _run("--output-dir", str(target))
++    line = _written_line(capsys.readouterr().out)
++    assert line == f"Artifacts written to {target.resolve()}"
++
++
++def test_default_run_prints_the_default_outputs_path(sandbox, capsys):
++    outputs, _frozen = sandbox
++    _run()
++    assert _written_line(capsys.readouterr().out) == f"Artifacts written to {outputs}"
++
++
++def test_manifest_is_verified_from_frozen_and_never_written_to_output_dir(sandbox, tmp_path):
++    outputs, frozen = sandbox
++    target = tmp_path / "out"
++
++    assert _run("--output-dir", str(target)) == 0
++    manifests = sorted(frozen.glob("holdout_*.json"))
++    assert len(manifests) == 1  # frozen on first use, as today
++    manifest_bytes = manifests[0].read_bytes()
++
++    # Second run verifies against the frozen manifest and leaves it untouched.
++    assert _run("--output-dir", str(tmp_path / "out2")) == 0
++    assert manifests[0].read_bytes() == manifest_bytes
++    assert sorted(frozen.glob("holdout_*.json")) == manifests
++    assert not list(target.glob("holdout_*")) and not list((tmp_path / "out2").glob("holdout_*"))
++
++
++def test_drifted_frozen_holdout_still_refused_and_writes_nothing(sandbox, tmp_path):
++    _outputs, frozen = sandbox
++    assert _run("--output-dir", str(tmp_path / "first")) == 0
++
++    manifest = next(frozen.glob("holdout_*.json"))
++    data = json.loads(manifest.read_text())
++    data["holdout_batch_sha256"] = "0" * 64
++    manifest.write_text(json.dumps(data, indent=2) + "\n")
++
++    target = tmp_path / "second"
++    with pytest.raises(SystemExit) as excinfo:
++        _run("--output-dir", str(target))
++    assert "FROZEN HOLDOUT MISMATCH" in str(excinfo.value)
++    assert not target.exists() or not any(target.iterdir())
++    assert json.loads(manifest.read_text())["holdout_batch_sha256"] == "0" * 64
++
++
++@pytest.mark.parametrize("subpath", ["", "sub", "sub/deeper"])
++def test_path_inside_outputs_is_refused(sandbox, subpath, capsys):
++    outputs, _frozen = sandbox
++    target = outputs / subpath if subpath else outputs
++
++    with pytest.raises(SystemExit) as excinfo:
++        _run("--output-dir", str(target))
++
++    assert excinfo.value.code == 2
++    assert "reserved for the committed artifacts" in capsys.readouterr().err
++    assert not outputs.exists()

@@ -1,0 +1,282 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>T3/M-T3-02/agent_changes.patch</title>
+<style>
+*{box-sizing:border-box}
+:root{--bg:#f6f7f6;--text:#16191c;--muted:#5b636b;--line:#d9dddb;--accent:#0f6b4f;
+--code:rgba(15,23,28,.06);--add:rgba(46,160,67,.20);--del:rgba(218,54,51,.17);--hunk:rgba(15,107,79,.10)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#111416;--text:#e8ebe9;
+--muted:#9aa3a0;--line:#2b3134;--accent:#4fbf95;--code:rgba(255,255,255,.07);
+--add:rgba(63,185,80,.22);--del:rgba(248,81,73,.22);--hunk:rgba(79,191,149,.12)}}
+body{margin:0;background:var(--bg);color:var(--text);
+font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:900px;margin:0 auto;padding:16px}
+.top{font-size:14px;color:var(--muted);border-bottom:1px solid var(--line);padding-bottom:10px;
+margin-bottom:20px;display:flex;flex-wrap:wrap;gap:6px 16px;align-items:baseline}
+.top .path{color:var(--text);font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;overflow-wrap:anywhere}
+a{color:var(--accent)}
+h1,h2,h3,h4,h5,h6{line-height:1.25;margin:1.4em 0 .5em;overflow-wrap:anywhere}
+p,ul,ol,blockquote{margin:.6em 0}
+ul,ol{padding-left:1.4em}
+li,p{overflow-wrap:anywhere}
+blockquote{margin:.8em 0;padding:.1em 0 .1em 14px;border-left:3px solid var(--accent);color:var(--muted)}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.92em;
+background:var(--code);padding:.1em .3em;border-radius:4px;overflow-wrap:anywhere}
+pre{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px;line-height:1.45;
+background:var(--code);border:1px solid var(--line);border-radius:6px;padding:12px;margin:.8em 0;
+overflow-x:auto;white-space:pre;tab-size:2}
+pre code{background:none;padding:0;border-radius:0;font-size:inherit;overflow-wrap:normal}
+.tw{overflow-x:auto;margin:.8em 0}
+table{border-collapse:collapse;font-size:14px}
+th,td{border:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}
+td{overflow-wrap:anywhere}
+th{background:var(--code)}
+hr{border:0;border-top:1px solid var(--line);margin:1.5em 0}
+.patch span{display:block;width:max-content;min-width:100%}
+.patch .file{font-weight:700}
+.patch .meta{color:var(--muted)}
+.patch .hunk{color:var(--accent);background:var(--hunk)}
+.patch .add{background:var(--add)}
+.patch .del{background:var(--del)}
+</style>
+</head>
+<body>
+<main>
+<div class="top"><span class="path">T3/M-T3-02/agent_changes.patch</span><a href="agent_changes.patch">Raw file</a><a href="../../../index.html#T3">Back to the case study</a></div>
+<pre class="patch"><span class="meta">--- a/ledgerguard/evaluation/benchmark.py
+</span><span class="meta">+++ b/ledgerguard/evaluation/benchmark.py
+</span><span class="hunk">@@ -249,9 +249,28 @@
+</span><span>         help=&quot;auto | fallback | groq | gemini | nvidia | omniroute | &quot;
+</span><span>         &quot;anthropic | cerebras | openai_compatible | stub | none&quot;,
+</span><span>     )
+</span><span class="add">+    parser.add_argument(
+</span><span class="add">+        &quot;--output-dir&quot;,
+</span><span class="add">+        metavar=&quot;PATH&quot;,
+</span><span class="add">+        default=None,
+</span><span class="add">+        help=&quot;write the artifacts to PATH instead of evaluation/outputs/ &quot;
+</span><span class="add">+        &quot;(created if missing; relative paths resolve against the current directory)&quot;,
+</span><span class="add">+    )
+</span><span>     args = parser.parse_args(argv)
+</span><span> 
+</span><span class="del">-    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+</span><span class="add">+    if args.output_dir is None:
+</span><span class="add">+        out_dir = OUTPUT_DIR
+</span><span class="add">+    else:
+</span><span class="add">+        out_dir = Path(args.output_dir).resolve()
+</span><span class="add">+        default_dir = OUTPUT_DIR.resolve()
+</span><span class="add">+        if out_dir == default_dir or default_dir in out_dir.parents:
+</span><span class="add">+            parser.error(
+</span><span class="add">+                f&quot;--output-dir must not be {default_dir} or inside it; &quot;
+</span><span class="add">+                &quot;use the default run to write there&quot;
+</span><span class="add">+            )
+</span><span class="add">+        if out_dir.exists() and not out_dir.is_dir():
+</span><span class="add">+            parser.error(f&quot;--output-dir {out_dir} exists and is not a directory&quot;)
+</span><span class="add">+    out_dir.mkdir(parents=True, exist_ok=True)
+</span><span> 
+</span><span>     full = build_dataset(seed=args.seed, count=args.count)
+</span><span>     dev, holdout = split(full)
+</span><span class="hunk">@@ -274,8 +293,8 @@
+</span><span>     costs = estimate(provider, hyb_metrics.investigations, hyb_metrics.total_cases)
+</span><span> 
+</span><span>     md = render_markdown(base_metrics, hyb_metrics, manifest)
+</span><span class="del">-    (OUTPUT_DIR / &quot;benchmark.md&quot;).write_text(md)
+</span><span class="del">-    (OUTPUT_DIR / &quot;benchmark.json&quot;).write_text(
+</span><span class="add">+    (out_dir / &quot;benchmark.md&quot;).write_text(md)
+</span><span class="add">+    (out_dir / &quot;benchmark.json&quot;).write_text(
+</span><span>         json.dumps(
+</span><span>             {
+</span><span>                 &quot;dataset&quot;: {
+</span><span class="hunk">@@ -298,9 +317,9 @@
+</span><span>         + &quot;\n&quot;
+</span><span>     )
+</span><span>     n_unresolved = write_unresolved_csv(
+</span><span class="del">-        hybrid_report, scored, OUTPUT_DIR / &quot;unresolved_exceptions.csv&quot;
+</span><span class="del">-    )
+</span><span class="del">-    export_cases(hybrid_report, scored, OUTPUT_DIR / &quot;cases.json&quot;)
+</span><span class="add">+        hybrid_report, scored, out_dir / &quot;unresolved_exceptions.csv&quot;
+</span><span class="add">+    )
+</span><span class="add">+    export_cases(hybrid_report, scored, out_dir / &quot;cases.json&quot;)
+</span><span> 
+</span><span>     print(md)
+</span><span>     if fallback_report:
+</span><span class="hunk">@@ -334,7 +353,7 @@
+</span><span>                 f&quot;${d[&#x27;estimated_usd&#x27;]} total, &quot;
+</span><span>                 f&quot;${d[&#x27;estimated_usd_per_100_records&#x27;]} per 100 records&quot;
+</span><span>             )
+</span><span class="del">-    print(f&quot;\nArtifacts written to {OUTPUT_DIR}&quot;)
+</span><span class="add">+    print(f&quot;\nArtifacts written to {out_dir}&quot;)
+</span><span>     print(f&quot;  benchmark.md, benchmark.json, cases.json&quot;)
+</span><span>     print(f&quot;  unresolved_exceptions.csv ({n_unresolved} rows)&quot;)
+</span><span>     if hyb_metrics.provider == &quot;heuristic_stub&quot;:
+</span><span class="meta">--- a/ledgerguard/tests/test_benchmark_output_dir.py
+</span><span class="meta">+++ b/ledgerguard/tests/test_benchmark_output_dir.py
+</span><span class="hunk">@@ -0,0 +1,161 @@
+</span><span class="add">+&quot;&quot;&quot;The benchmark&#x27;s --output-dir option.
+</span><span class="add">+
+</span><span class="add">+Every test points OUTPUT_DIR and MANIFEST_DIR at temporary directories, so the
+</span><span class="add">+committed evaluation/outputs/ and evaluation/frozen/ are never read for writing
+</span><span class="add">+or modified by the suite. Providers are the offline stub; nothing hits the
+</span><span class="add">+network.
+</span><span class="add">+&quot;&quot;&quot;
+</span><span class="add">+
+</span><span class="add">+from __future__ import annotations
+</span><span class="add">+
+</span><span class="add">+import json
+</span><span class="add">+import shutil
+</span><span class="add">+from pathlib import Path
+</span><span class="add">+
+</span><span class="add">+import pytest
+</span><span class="add">+
+</span><span class="add">+from ledgerguard.evaluation import benchmark as bm
+</span><span class="add">+
+</span><span class="add">+REAL_FROZEN = Path(bm.__file__).parent / &quot;frozen&quot;
+</span><span class="add">+ARTIFACTS = [&quot;benchmark.md&quot;, &quot;benchmark.json&quot;, &quot;cases.json&quot;, &quot;unresolved_exceptions.csv&quot;]
+</span><span class="add">+
+</span><span class="add">+# Wall-clock fields. Everything else must match a default run exactly.
+</span><span class="add">+TIMING_KEYS = {&quot;wall_seconds&quot;, &quot;throughput_per_second&quot;, &quot;latency_p50_ms&quot;, &quot;latency_p95_ms&quot;, &quot;latency_ms&quot;}
+</span><span class="add">+
+</span><span class="add">+
+</span><span class="add">+def _strip_timing(obj):
+</span><span class="add">+    if isinstance(obj, dict):
+</span><span class="add">+        return {k: _strip_timing(v) for k, v in obj.items() if k not in TIMING_KEYS}
+</span><span class="add">+    if isinstance(obj, list):
+</span><span class="add">+        return [_strip_timing(v) for v in obj]
+</span><span class="add">+    return obj
+</span><span class="add">+
+</span><span class="add">+
+</span><span class="add">+def _strip_timing_md(text: str) -&gt; list[str]:
+</span><span class="add">+    return [
+</span><span class="add">+        line
+</span><span class="add">+        for line in text.splitlines()
+</span><span class="add">+        if not any(k in line for k in (&quot;Wall time&quot;, &quot;Throughput (cases/s)&quot;, &quot;latency&quot;))
+</span><span class="add">+    ]
+</span><span class="add">+
+</span><span class="add">+
+</span><span class="add">+def _snapshot(root: Path) -&gt; dict[str, bytes]:
+</span><span class="add">+    return {
+</span><span class="add">+        str(p.relative_to(root)): p.read_bytes()
+</span><span class="add">+        for p in sorted(root.rglob(&quot;*&quot;))
+</span><span class="add">+        if p.is_file()
+</span><span class="add">+    }
+</span><span class="add">+
+</span><span class="add">+
+</span><span class="add">+@pytest.fixture
+</span><span class="add">+def sandbox(tmp_path, monkeypatch):
+</span><span class="add">+    &quot;&quot;&quot;A fake outputs/ holding a sentinel, and a copy of the real frozen manifest.&quot;&quot;&quot;
+</span><span class="add">+    fake_outputs = tmp_path / &quot;fake_outputs&quot;
+</span><span class="add">+    fake_outputs.mkdir()
+</span><span class="add">+    (fake_outputs / &quot;sentinel.txt&quot;).write_text(&quot;untouched\n&quot;)
+</span><span class="add">+    frozen_copy = tmp_path / &quot;frozen&quot;
+</span><span class="add">+    shutil.copytree(REAL_FROZEN, frozen_copy)
+</span><span class="add">+    monkeypatch.setattr(bm, &quot;OUTPUT_DIR&quot;, fake_outputs)
+</span><span class="add">+    monkeypatch.setattr(bm, &quot;MANIFEST_DIR&quot;, frozen_copy)
+</span><span class="add">+    return tmp_path, fake_outputs, frozen_copy
+</span><span class="add">+
+</span><span class="add">+
+</span><span class="add">+def test_output_dir_receives_all_artifacts_and_outputs_is_untouched(sandbox, capsys):
+</span><span class="add">+    tmp_path, fake_outputs, frozen_copy = sandbox
+</span><span class="add">+    before_outputs = _snapshot(fake_outputs)
+</span><span class="add">+    before_frozen = _snapshot(frozen_copy)
+</span><span class="add">+    target = tmp_path / &quot;deep&quot; / &quot;nested&quot; / &quot;run&quot;  # parents do not exist yet
+</span><span class="add">+
+</span><span class="add">+    assert bm.main([&quot;--provider&quot;, &quot;stub&quot;, &quot;--output-dir&quot;, str(target)]) == 0
+</span><span class="add">+
+</span><span class="add">+    for name in ARTIFACTS:
+</span><span class="add">+        assert (target / name).is_file(), name
+</span><span class="add">+    # The holdout manifest is read from frozen/, never written to the output dir.
+</span><span class="add">+    assert not any(p.name.startswith(&quot;holdout_&quot;) for p in target.iterdir())
+</span><span class="add">+    assert _snapshot(fake_outputs) == before_outputs
+</span><span class="add">+    assert _snapshot(frozen_copy) == before_frozen
+</span><span class="add">+    out = capsys.readouterr().out
+</span><span class="add">+    assert f&quot;Artifacts written to {target.resolve()}&quot; in out
+</span><span class="add">+
+</span><span class="add">+
+</span><span class="add">+def test_relative_path_resolves_against_current_directory(sandbox, monkeypatch):
+</span><span class="add">+    tmp_path, fake_outputs, _ = sandbox
+</span><span class="add">+    workdir = tmp_path / &quot;cwd&quot;
+</span><span class="add">+    workdir.mkdir()
+</span><span class="add">+    monkeypatch.chdir(workdir)
+</span><span class="add">+
+</span><span class="add">+    assert bm.main([&quot;--provider&quot;, &quot;stub&quot;, &quot;--output-dir&quot;, &quot;rel/out&quot;]) == 0
+</span><span class="add">+
+</span><span class="add">+    for name in ARTIFACTS:
+</span><span class="add">+        assert (workdir / &quot;rel&quot; / &quot;out&quot; / name).is_file(), name
+</span><span class="add">+    assert _snapshot(fake_outputs) == {&quot;sentinel.txt&quot;: b&quot;untouched\n&quot;}
+</span><span class="add">+
+</span><span class="add">+
+</span><span class="add">+def test_contents_match_a_default_run_apart_from_timing(sandbox):
+</span><span class="add">+    tmp_path, fake_outputs, _ = sandbox
+</span><span class="add">+    custom = tmp_path / &quot;custom&quot;
+</span><span class="add">+
+</span><span class="add">+    assert bm.main([&quot;--provider&quot;, &quot;stub&quot;]) == 0  # default -&gt; fake_outputs
+</span><span class="add">+    assert bm.main([&quot;--provider&quot;, &quot;stub&quot;, &quot;--output-dir&quot;, str(custom)]) == 0
+</span><span class="add">+
+</span><span class="add">+    default_json = json.loads((fake_outputs / &quot;benchmark.json&quot;).read_text())
+</span><span class="add">+    custom_json = json.loads((custom / &quot;benchmark.json&quot;).read_text())
+</span><span class="add">+    assert _strip_timing(default_json) == _strip_timing(custom_json)
+</span><span class="add">+
+</span><span class="add">+    default_cases = json.loads((fake_outputs / &quot;cases.json&quot;).read_text())
+</span><span class="add">+    custom_cases = json.loads((custom / &quot;cases.json&quot;).read_text())
+</span><span class="add">+    assert _strip_timing(default_cases) == _strip_timing(custom_cases)
+</span><span class="add">+
+</span><span class="add">+    assert _strip_timing_md((fake_outputs / &quot;benchmark.md&quot;).read_text()) == _strip_timing_md(
+</span><span class="add">+        (custom / &quot;benchmark.md&quot;).read_text()
+</span><span class="add">+    )
+</span><span class="add">+    assert (fake_outputs / &quot;unresolved_exceptions.csv&quot;).read_bytes() == (
+</span><span class="add">+        custom / &quot;unresolved_exceptions.csv&quot;
+</span><span class="add">+    ).read_bytes()
+</span><span class="add">+
+</span><span class="add">+
+</span><span class="add">+def test_default_run_without_option_still_writes_to_outputs(sandbox, capsys):
+</span><span class="add">+    _, fake_outputs, _ = sandbox
+</span><span class="add">+    assert bm.main([&quot;--provider&quot;, &quot;stub&quot;]) == 0
+</span><span class="add">+    for name in ARTIFACTS:
+</span><span class="add">+        assert (fake_outputs / name).is_file(), name
+</span><span class="add">+    assert f&quot;Artifacts written to {fake_outputs}&quot; in capsys.readouterr().out
+</span><span class="add">+
+</span><span class="add">+
+</span><span class="add">+def test_frozen_manifest_is_still_verified_when_output_dir_is_given(sandbox):
+</span><span class="add">+    tmp_path, _, frozen_copy = sandbox
+</span><span class="add">+    manifest_file = frozen_copy / &quot;holdout_20260905_320.json&quot;
+</span><span class="add">+    tampered = json.loads(manifest_file.read_text())
+</span><span class="add">+    tampered[&quot;holdout_batch_sha256&quot;] = &quot;0&quot; * 64
+</span><span class="add">+    manifest_file.write_text(json.dumps(tampered, indent=2) + &quot;\n&quot;)
+</span><span class="add">+    target = tmp_path / &quot;refused&quot;
+</span><span class="add">+
+</span><span class="add">+    with pytest.raises(SystemExit) as excinfo:
+</span><span class="add">+        bm.main([&quot;--provider&quot;, &quot;stub&quot;, &quot;--output-dir&quot;, str(target)])
+</span><span class="add">+    assert &quot;FROZEN HOLDOUT MISMATCH&quot; in str(excinfo.value)
+</span><span class="add">+    assert not any((target / name).exists() for name in ARTIFACTS)
+</span><span class="add">+
+</span><span class="add">+
+</span><span class="add">+def test_output_dir_inside_default_outputs_is_refused(sandbox, capsys):
+</span><span class="add">+    _, fake_outputs, _ = sandbox
+</span><span class="add">+    before = _snapshot(fake_outputs)
+</span><span class="add">+
+</span><span class="add">+    for bad in (fake_outputs, fake_outputs / &quot;sub&quot;):
+</span><span class="add">+        with pytest.raises(SystemExit) as excinfo:
+</span><span class="add">+            bm.main([&quot;--provider&quot;, &quot;stub&quot;, &quot;--output-dir&quot;, str(bad)])
+</span><span class="add">+        assert excinfo.value.code == 2
+</span><span class="add">+
+</span><span class="add">+    assert _snapshot(fake_outputs) == before
+</span><span class="add">+    assert not (fake_outputs / &quot;sub&quot;).exists()
+</span><span class="add">+
+</span><span class="add">+
+</span><span class="add">+def test_output_dir_that_is_a_file_is_refused(sandbox, tmp_path):
+</span><span class="add">+    _, fake_outputs, _ = sandbox
+</span><span class="add">+    not_a_dir = tmp_path / &quot;file.txt&quot;
+</span><span class="add">+    not_a_dir.write_text(&quot;x&quot;)
+</span><span class="add">+
+</span><span class="add">+    with pytest.raises(SystemExit) as excinfo:
+</span><span class="add">+        bm.main([&quot;--provider&quot;, &quot;stub&quot;, &quot;--output-dir&quot;, str(not_a_dir)])
+</span><span class="add">+    assert excinfo.value.code == 2
+</span><span class="add">+    assert not_a_dir.read_text() == &quot;x&quot;
+</span><span class="add">+    assert _snapshot(fake_outputs) == {&quot;sentinel.txt&quot;: b&quot;untouched\n&quot;}
+</span><span>
+</span></pre>
+</main>
+</body>
+</html>

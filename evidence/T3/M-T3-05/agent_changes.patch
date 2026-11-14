@@ -1,0 +1,248 @@
+--- a/ledgerguard/evaluation/benchmark.py
++++ b/ledgerguard/evaluation/benchmark.py
+@@ -1,10 +1,12 @@
+ """One-command benchmark.
+ 
+-    python -m ledgerguard.evaluation.benchmark
++    python -m ledgerguard.evaluation.benchmark [--output-dir PATH]
+ 
+ Regenerates the dataset from its seed, freezes (or re-verifies) the holdout
+ manifest, runs the rules-only baseline and the full hybrid controller over the
+-same frozen holdout, and writes every artifact under evaluation/outputs/.
++same frozen holdout, and writes every artifact under evaluation/outputs/ (or
++under --output-dir, when given). The frozen manifest is always read from and
++verified against evaluation/frozen/, never written to the output directory.
+ 
+ Every number in every artifact comes from these two runs; nothing is typed in
+ by hand. Rerunning with the same seed reproduces the deterministic path exactly
+@@ -21,6 +23,7 @@
+ import csv
+ import hashlib
+ import json
++import os
+ from dataclasses import asdict
+ from pathlib import Path
+ 
+@@ -249,9 +252,26 @@
+         help="auto | fallback | groq | gemini | nvidia | omniroute | "
+         "anthropic | cerebras | openai_compatible | stub | none",
+     )
++    parser.add_argument(
++        "--output-dir",
++        type=Path,
++        default=None,
++        metavar="PATH",
++        help="write the artifacts to PATH instead of evaluation/outputs/ "
++        "(created, with parents, if missing). Must not be inside evaluation/outputs/.",
++    )
+     args = parser.parse_args(argv)
+ 
+-    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
++    if args.output_dir is None:
++        out_dir = OUTPUT_DIR
++    else:
++        out_dir = Path(os.path.abspath(args.output_dir))
++        if out_dir.resolve() == OUTPUT_DIR.resolve() or OUTPUT_DIR.resolve() in out_dir.resolve().parents:
++            parser.error(
++                f"--output-dir must not be inside {OUTPUT_DIR}: that directory is "
++                "reserved for the published artifacts"
++            )
++    out_dir.mkdir(parents=True, exist_ok=True)
+ 
+     full = build_dataset(seed=args.seed, count=args.count)
+     dev, holdout = split(full)
+@@ -274,8 +294,8 @@
+     costs = estimate(provider, hyb_metrics.investigations, hyb_metrics.total_cases)
+ 
+     md = render_markdown(base_metrics, hyb_metrics, manifest)
+-    (OUTPUT_DIR / "benchmark.md").write_text(md)
+-    (OUTPUT_DIR / "benchmark.json").write_text(
++    (out_dir / "benchmark.md").write_text(md)
++    (out_dir / "benchmark.json").write_text(
+         json.dumps(
+             {
+                 "dataset": {
+@@ -298,9 +318,9 @@
+         + "\n"
+     )
+     n_unresolved = write_unresolved_csv(
+-        hybrid_report, scored, OUTPUT_DIR / "unresolved_exceptions.csv"
+-    )
+-    export_cases(hybrid_report, scored, OUTPUT_DIR / "cases.json")
++        hybrid_report, scored, out_dir / "unresolved_exceptions.csv"
++    )
++    export_cases(hybrid_report, scored, out_dir / "cases.json")
+ 
+     print(md)
+     if fallback_report:
+@@ -334,7 +354,7 @@
+                 f"${d['estimated_usd']} total, "
+                 f"${d['estimated_usd_per_100_records']} per 100 records"
+             )
+-    print(f"\nArtifacts written to {OUTPUT_DIR}")
++    print(f"\nArtifacts written to {out_dir}")
+     print(f"  benchmark.md, benchmark.json, cases.json")
+     print(f"  unresolved_exceptions.csv ({n_unresolved} rows)")
+     if hyb_metrics.provider == "heuristic_stub":
+--- a/ledgerguard/tests/test_benchmark_output_dir.py
++++ b/ledgerguard/tests/test_benchmark_output_dir.py
+@@ -0,0 +1,159 @@
++"""The benchmark's --output-dir option.
++
++Every test patches OUTPUT_DIR and MANIFEST_DIR onto pytest tmp paths and uses
++the offline stub investigator, so nothing here touches the real
++evaluation/outputs/ or evaluation/frozen/ directories, and nothing calls a model.
++"""
++
++from __future__ import annotations
++
++import csv
++import json
++import os
++
++import pytest
++
++from ledgerguard.evaluation import benchmark as bm
++
++SEED = 424242
++COUNT = 40
++ARTIFACTS = ["benchmark.md", "benchmark.json", "cases.json", "unresolved_exceptions.csv"]
++
++# Wall-clock measurements. Everything else must match a default run exactly.
++TIMING_JSON_KEYS = {"wall_seconds", "throughput_per_second", "latency_p50_ms", "latency_p95_ms", "latency_ms"}
++TIMING_MD_LABELS = ("Wall time", "Throughput", "Investigation latency")
++
++
++@pytest.fixture
++def sandbox(tmp_path, monkeypatch):
++    """Point the module at throwaway outputs/ and frozen/ directories."""
++    outputs = tmp_path / "sandbox_outputs"
++    frozen = tmp_path / "sandbox_frozen"
++    frozen.mkdir()
++    monkeypatch.setattr(bm, "OUTPUT_DIR", outputs)
++    monkeypatch.setattr(bm, "MANIFEST_DIR", frozen)
++    return outputs, frozen
++
++
++def _run(extra: list[str]) -> int:
++    return bm.main(["--seed", str(SEED), "--count", str(COUNT), "--provider", "stub", *extra])
++
++
++def _strip_timing_json(obj):
++    if isinstance(obj, dict):
++        return {k: _strip_timing_json(v) for k, v in obj.items() if k not in TIMING_JSON_KEYS}
++    if isinstance(obj, list):
++        return [_strip_timing_json(v) for v in obj]
++    return obj
++
++
++def _strip_timing_md(text: str) -> str:
++    return "\n".join(line for line in text.splitlines() if not any(label in line for label in TIMING_MD_LABELS))
++
++
++def _normalised(directory):
++    md = _strip_timing_md((directory / "benchmark.md").read_text())
++    js = _strip_timing_json(json.loads((directory / "benchmark.json").read_text()))
++    cases = _strip_timing_json(json.loads((directory / "cases.json").read_text()))
++    csv_rows = list(csv.reader((directory / "unresolved_exceptions.csv").open(newline="")))
++    return md, js, cases, csv_rows
++
++
++def test_output_dir_receives_every_artifact_and_creates_missing_parents(sandbox, tmp_path):
++    outputs, _frozen = sandbox
++    target = tmp_path / "deep" / "nested" / "run"
++    assert not target.exists()
++
++    assert _run(["--output-dir", str(target)]) == 0
++
++    for name in ARTIFACTS:
++        assert (target / name).is_file(), name
++    assert not outputs.exists()
++
++
++def test_relative_output_dir_resolves_against_working_directory(sandbox, tmp_path, monkeypatch, capsys):
++    outputs, _frozen = sandbox
++    monkeypatch.chdir(tmp_path)
++
++    assert _run(["--output-dir", "rel/out"]) == 0
++
++    expected = tmp_path / "rel" / "out"
++    for name in ARTIFACTS:
++        assert (expected / name).is_file(), name
++    assert not outputs.exists()
++    assert f"Artifacts written to {os.path.abspath(os.path.join('rel', 'out'))}" in capsys.readouterr().out
++
++
++def test_printed_line_names_the_output_dir(sandbox, tmp_path, capsys):
++    target = tmp_path / "named"
++    assert _run(["--output-dir", str(target)]) == 0
++    out = capsys.readouterr().out
++    assert f"Artifacts written to {target}" in out
++
++
++def test_default_run_still_writes_to_output_dir(sandbox, capsys):
++    outputs, _frozen = sandbox
++    assert _run([]) == 0
++    for name in ARTIFACTS:
++        assert (outputs / name).is_file(), name
++    assert f"Artifacts written to {outputs}" in capsys.readouterr().out
++
++
++def test_output_dir_artifacts_match_a_default_run(sandbox, tmp_path):
++    outputs, _frozen = sandbox
++    target = tmp_path / "custom"
++
++    assert _run([]) == 0
++    assert _run(["--output-dir", str(target)]) == 0
++
++    default = _normalised(outputs)
++    custom = _normalised(target)
++    assert custom[0] == default[0], "benchmark.md differs beyond timing rows"
++    assert custom[1] == default[1], "benchmark.json differs beyond timing fields"
++    assert custom[2] == default[2], "cases.json differs beyond timing fields"
++    assert custom[3] == default[3], "unresolved_exceptions.csv differs"
++
++
++def test_frozen_manifest_is_written_to_frozen_not_output_dir(sandbox, tmp_path):
++    _outputs, frozen = sandbox
++    target = tmp_path / "custom"
++
++    assert _run(["--output-dir", str(target)]) == 0
++
++    assert (frozen / f"holdout_{SEED}_{COUNT}.json").is_file()
++    assert not any("holdout" in p.name for p in target.iterdir())
++
++
++def test_frozen_manifest_is_still_verified_with_output_dir(sandbox, tmp_path):
++    """A drifted frozen manifest must still abort, even when writing elsewhere."""
++    _outputs, frozen = sandbox
++    target = tmp_path / "custom"
++    bad = {
++        "seed": SEED,
++        "count": COUNT,
++        "generator_version": "not-the-real-one",
++        "holdout_lifecycle_ids": [],
++        "holdout_batch_sha256": "0" * 64,
++    }
++    (frozen / f"holdout_{SEED}_{COUNT}.json").write_text(json.dumps(bad) + "\n")
++
++    with pytest.raises(SystemExit) as excinfo:
++        _run(["--output-dir", str(target)])
++    assert "FROZEN HOLDOUT MISMATCH" in str(excinfo.value)
++    assert not target.exists() or not any(target.iterdir())
++
++
++def test_output_dir_inside_outputs_is_refused(sandbox, capsys):
++    outputs, _frozen = sandbox
++    with pytest.raises(SystemExit) as excinfo:
++        _run(["--output-dir", str(outputs / "sub")])
++    assert excinfo.value.code == 2
++    assert "must not be inside" in capsys.readouterr().err
++    assert not outputs.exists()
++
++
++def test_output_dir_equal_to_outputs_is_refused(sandbox):
++    outputs, _frozen = sandbox
++    with pytest.raises(SystemExit):
++        _run(["--output-dir", str(outputs)])
++    assert not outputs.exists()

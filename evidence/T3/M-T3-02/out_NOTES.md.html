@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>T3/M-T3-02/out_NOTES.md</title>
+<style>
+*{box-sizing:border-box}
+:root{--bg:#f6f7f6;--text:#16191c;--muted:#5b636b;--line:#d9dddb;--accent:#0f6b4f;
+--code:rgba(15,23,28,.06);--add:rgba(46,160,67,.20);--del:rgba(218,54,51,.17);--hunk:rgba(15,107,79,.10)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#111416;--text:#e8ebe9;
+--muted:#9aa3a0;--line:#2b3134;--accent:#4fbf95;--code:rgba(255,255,255,.07);
+--add:rgba(63,185,80,.22);--del:rgba(248,81,73,.22);--hunk:rgba(79,191,149,.12)}}
+body{margin:0;background:var(--bg);color:var(--text);
+font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:900px;margin:0 auto;padding:16px}
+.top{font-size:14px;color:var(--muted);border-bottom:1px solid var(--line);padding-bottom:10px;
+margin-bottom:20px;display:flex;flex-wrap:wrap;gap:6px 16px;align-items:baseline}
+.top .path{color:var(--text);font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;overflow-wrap:anywhere}
+a{color:var(--accent)}
+h1,h2,h3,h4,h5,h6{line-height:1.25;margin:1.4em 0 .5em;overflow-wrap:anywhere}
+p,ul,ol,blockquote{margin:.6em 0}
+ul,ol{padding-left:1.4em}
+li,p{overflow-wrap:anywhere}
+blockquote{margin:.8em 0;padding:.1em 0 .1em 14px;border-left:3px solid var(--accent);color:var(--muted)}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.92em;
+background:var(--code);padding:.1em .3em;border-radius:4px;overflow-wrap:anywhere}
+pre{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px;line-height:1.45;
+background:var(--code);border:1px solid var(--line);border-radius:6px;padding:12px;margin:.8em 0;
+overflow-x:auto;white-space:pre;tab-size:2}
+pre code{background:none;padding:0;border-radius:0;font-size:inherit;overflow-wrap:normal}
+.tw{overflow-x:auto;margin:.8em 0}
+table{border-collapse:collapse;font-size:14px}
+th,td{border:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}
+td{overflow-wrap:anywhere}
+th{background:var(--code)}
+hr{border:0;border-top:1px solid var(--line);margin:1.5em 0}
+.patch span{display:block;width:max-content;min-width:100%}
+.patch .file{font-weight:700}
+.patch .meta{color:var(--muted)}
+.patch .hunk{color:var(--accent);background:var(--hunk)}
+.patch .add{background:var(--add)}
+.patch .del{background:var(--del)}
+</style>
+</head>
+<body>
+<main>
+<div class="top"><span class="path">T3/M-T3-02/out_NOTES.md</span><a href="out_NOTES.md">Raw file</a><a href="../../../index.html#T3">Back to the case study</a></div>
+<h1>T3 notes: <code>benchmark --output-dir</code></h1>
+<h2>What changed</h2>
+<ul><li><code>ledgerguard/evaluation/benchmark.py</code>: new <code>--output-dir PATH</code> option. Without it, <code>out_dir = OUTPUT_DIR</code> and the code path is the same as before. With it, <code>out_dir</code> is <code>Path(PATH).resolve()</code> (relative paths resolve against the cwd) and all four artifacts are written there. <code>out_dir</code> is created with <code>parents=True</code>. <code>OUTPUT_DIR</code> is no longer created on a run that uses the option.</li><li><code>ledgerguard/tests/test_benchmark_output_dir.py</code>: 7 new tests. They redirect <code>OUTPUT_DIR</code> and <code>MANIFEST_DIR</code> to temp directories, so the real <code>outputs/</code> and <code>frozen/</code> are never written by the suite.</li></ul>
+<h2>Verification</h2>
+<ul><li><code>pytest ledgerguard/tests -q</code>: 74 passed (67 existing + 7 new).</li><li>CLI run <code>--provider stub --output-dir ../tmp/cli_run/sub/dir</code> wrote all four artifacts, and the printed line named the resolved path.</li><li>SHA-256 of every file in <code>evaluation/outputs/</code> and <code>evaluation/frozen/</code> is identical before and after all work (snapshot in <code>../tmp/before.sha</code> and <code>../tmp/after.sha</code>).</li></ul>
+<h2>Choices I made (where the request was open)</h2>
+<ol><li>**PATH inside <code>evaluation/outputs/</code> is refused** (exit 2, before any work). Requirement 3 says nothing under <code>outputs/</code> may be created or modified when the option is given, so writing there would contradict it. The check uses resolved paths, so symlinks into <code>outputs/</code> are also refused.</li><li><strong>A PATH that exists as a regular file is refused</strong> (exit 2), rather than failing later inside <code>mkdir</code>.</li><li><strong>The &quot;Artifacts written to&quot; line prints the resolved absolute path.</strong> For an absolute PATH this is the same string. For a relative PATH it is the absolute location, which names the same directory unambiguously.</li><li><strong>Timing fields</strong> (<code>wall_seconds</code>, <code>throughput_per_second</code>, <code>latency_p50_ms</code>, <code>latency_p95_ms</code>, per-case <code>latency_ms</code>, and the matching markdown rows) are the only fields excluded from the &quot;same as default&quot; comparison in the tests.</li><li>**The frozen manifest is still written to <code>frozen/</code> if it is missing.** That is existing behaviour and I left it alone. The option never writes it to <code>PATH</code>. The committed manifest matches the regenerated data, so no write happened.</li></ol>
+<h2>Not done</h2>
+<ul><li><code>README.md</code> and <code>docs/</code> still describe only the default output location. I did not edit them, since the task did not ask for documentation changes.</li><li>No live-provider run. The tests and the CLI check use <code>--provider stub</code>, which is the offline heuristic, as the ground rules require.</li></ul>
+</main>
+</body>
+</html>

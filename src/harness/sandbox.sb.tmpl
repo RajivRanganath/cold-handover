@@ -1,0 +1,9 @@
+(version 1)
+(allow default)
+; read boundary: nothing under home/temp except the agent's workspace, its config, and the claude binary
+(deny file-read* (subpath "/Users") (subpath "/private/tmp") (subpath "/private/var/folders") (subpath "/Volumes"))
+(allow file-read-metadata @ANCESTORS@ (literal "@ATTEMPT@"))
+(allow file-read* (subpath "@ATTEMPT@/work") (subpath "@ATTEMPT@/claude-config") (literal "@CLAUDE_BIN@") (subpath "@SHIMS@"))
+; write boundary: only the workspace and the config dir; harness files in @ATTEMPT@ are read/write-protected
+(deny file-write* (subpath "/Users") (subpath "/private/tmp") (subpath "/private/var/folders") (subpath "/Volumes"))
+(allow file-write* (subpath "@ATTEMPT@/work") (subpath "@ATTEMPT@/claude-config"))

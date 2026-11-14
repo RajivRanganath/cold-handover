@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>T2/M-T2-05/out_NOTES.md</title>
+<style>
+*{box-sizing:border-box}
+:root{--bg:#f6f7f6;--text:#16191c;--muted:#5b636b;--line:#d9dddb;--accent:#0f6b4f;
+--code:rgba(15,23,28,.06);--add:rgba(46,160,67,.20);--del:rgba(218,54,51,.17);--hunk:rgba(15,107,79,.10)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#111416;--text:#e8ebe9;
+--muted:#9aa3a0;--line:#2b3134;--accent:#4fbf95;--code:rgba(255,255,255,.07);
+--add:rgba(63,185,80,.22);--del:rgba(248,81,73,.22);--hunk:rgba(79,191,149,.12)}}
+body{margin:0;background:var(--bg);color:var(--text);
+font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:900px;margin:0 auto;padding:16px}
+.top{font-size:14px;color:var(--muted);border-bottom:1px solid var(--line);padding-bottom:10px;
+margin-bottom:20px;display:flex;flex-wrap:wrap;gap:6px 16px;align-items:baseline}
+.top .path{color:var(--text);font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;overflow-wrap:anywhere}
+a{color:var(--accent)}
+h1,h2,h3,h4,h5,h6{line-height:1.25;margin:1.4em 0 .5em;overflow-wrap:anywhere}
+p,ul,ol,blockquote{margin:.6em 0}
+ul,ol{padding-left:1.4em}
+li,p{overflow-wrap:anywhere}
+blockquote{margin:.8em 0;padding:.1em 0 .1em 14px;border-left:3px solid var(--accent);color:var(--muted)}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.92em;
+background:var(--code);padding:.1em .3em;border-radius:4px;overflow-wrap:anywhere}
+pre{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px;line-height:1.45;
+background:var(--code);border:1px solid var(--line);border-radius:6px;padding:12px;margin:.8em 0;
+overflow-x:auto;white-space:pre;tab-size:2}
+pre code{background:none;padding:0;border-radius:0;font-size:inherit;overflow-wrap:normal}
+.tw{overflow-x:auto;margin:.8em 0}
+table{border-collapse:collapse;font-size:14px}
+th,td{border:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}
+td{overflow-wrap:anywhere}
+th{background:var(--code)}
+hr{border:0;border-top:1px solid var(--line);margin:1.5em 0}
+.patch span{display:block;width:max-content;min-width:100%}
+.patch .file{font-weight:700}
+.patch .meta{color:var(--muted)}
+.patch .hunk{color:var(--accent);background:var(--hunk)}
+.patch .add{background:var(--add)}
+.patch .del{background:var(--del)}
+</style>
+</head>
+<body>
+<main>
+<div class="top"><span class="path">T2/M-T2-05/out_NOTES.md</span><a href="out_NOTES.md">Raw file</a><a href="../../../index.html#T2">Back to the case study</a></div>
+<h1>Task T2: respect settlement status — notes</h1>
+<h2>Result</h2>
+<p>Only <code>processed</code> settlements now settle a payment. <code>pending</code> and <code>failed</code> settlements are ignored by the duplicate pre-pass, the multiple-settlement check, the invariants and bank matching. A payment with no processed settlement is <code>EXCEPTION_MISSING_SETTLEMENT</code>, with the same expected value, observed 0 and final state as a payment with no settlement at all. When non-processed settlements exist, its evidence gains <code>non_processed_settlements</code>.</p>
+<p>Test suite: 84 passed (67 existing, 17 new in <code>ledgerguard/tests/test_settlement_status.py</code>). Against the pre-change code, 14 of the 17 new tests fail; the other 3 are controls for unchanged behaviour.</p>
+<h2>Files changed</h2>
+<ul><li><code>ledgerguard/ledger/shadow_ledger.py</code> — the settlement index holds only processed settlements. Non-processed ones go to a separate <code>non_processed_settlements_by_payment</code> index, read via <code>non_processed_settlements_for()</code>.</li><li><code>ledgerguard/reconciliation/matcher.py</code> — the duplicate pre-pass considers only processed settlements. The no-settlement branch adds <code>non_processed_settlements</code> when the list is non-empty.</li><li><code>ledgerguard/tests/test_settlement_status.py</code> — new tests (no existing test file was touched).</li><li><code>docs/architecture.md</code> — one paragraph on the settlement-status rule.</li></ul>
+<h2>Choices I made</h2>
+<ul><li><strong>Shape of the evidence list.</strong> One entry per non-processed settlement record, not deduplicated. Sorted by <code>settlement_id</code>, with ties kept in batch order. Each entry is <code>{&quot;settlement_id&quot;, &quot;status&quot;}</code>, with status <code>&quot;pending&quot;</code> or <code>&quot;failed&quot;</code>.</li><li><strong>Missing-settlement case shape.</strong> <code>settlement</code> stays <code>None</code> and <code>transaction_ids</code> stays as today (payment and order ids only). The non-processed settlement ids are not added to <code>transaction_ids</code>, so the case is identical to the no-settlement case apart from the evidence key.</li><li><strong>Duplicate precedence.</strong> Payment-level duplicates (same <code>payment_id</code>, both identical and conflicting) still return before the settlement checks. No <code>non_processed_settlements</code> key appears in those cases.</li><li><strong>Pending copy of a processed settlement.</strong> Excluded from the duplicate pre-pass, so it cannot create a <code>DUPLICATE_RECORD</code> or a <code>content_conflict</code>.</li><li><strong>Decision text.</strong> The safety gate&#x27;s <code>MISSING_SETTLEMENT</code> wording is unchanged.</li><li>**<code>ShadowLedger.totals()</code>.** Still counts every settlement record. This is a count of ingested records, not a matching step, so I left it alone.</li></ul>
+<h2>Verification</h2>
+<ul><li>Frozen holdout: the generator only emits <code>PROCESSED</code> settlements, so the holdout batch hash is unchanged. I ran the benchmark with <code>--provider none</code> on a copy of the code before and after the change (the benchmark writes to a fixed output directory, so I ran it on copies). <code>benchmark.json</code>, <code>cases.json</code>, <code>unresolved_exceptions.csv</code> and <code>benchmark.md</code> are identical except for the wall-clock timing fields (throughput, latency).</li><li>Protected artifacts: SHA-256 checksums of all 21 files under <code>ledgerguard/evaluation/outputs/</code> and <code>ledgerguard/evaluation/frozen/</code> match before and after. No artifact was regenerated in the repository.</li></ul>
+<h2>Not done</h2>
+<ul><li>The canonical benchmark (<code>--provider groq</code> / <code>fallback</code>) was not re-run. It needs API keys, which I must not set, and live model output is not reproducible anyway. The offline <code>--provider none</code> comparison above is the evidence for requirement 6.</li><li><code>ledgerguard.tests.rehearsal_check</code> was not run. It needs a live server on port 8137, and the demo beats do not involve pending or failed settlements.</li></ul>
+</main>
+</body>
+</html>

@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>T4/M-T4-01/out_NOTES.md</title>
+<style>
+*{box-sizing:border-box}
+:root{--bg:#f6f7f6;--text:#16191c;--muted:#5b636b;--line:#d9dddb;--accent:#0f6b4f;
+--code:rgba(15,23,28,.06);--add:rgba(46,160,67,.20);--del:rgba(218,54,51,.17);--hunk:rgba(15,107,79,.10)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#111416;--text:#e8ebe9;
+--muted:#9aa3a0;--line:#2b3134;--accent:#4fbf95;--code:rgba(255,255,255,.07);
+--add:rgba(63,185,80,.22);--del:rgba(248,81,73,.22);--hunk:rgba(79,191,149,.12)}}
+body{margin:0;background:var(--bg);color:var(--text);
+font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:900px;margin:0 auto;padding:16px}
+.top{font-size:14px;color:var(--muted);border-bottom:1px solid var(--line);padding-bottom:10px;
+margin-bottom:20px;display:flex;flex-wrap:wrap;gap:6px 16px;align-items:baseline}
+.top .path{color:var(--text);font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;overflow-wrap:anywhere}
+a{color:var(--accent)}
+h1,h2,h3,h4,h5,h6{line-height:1.25;margin:1.4em 0 .5em;overflow-wrap:anywhere}
+p,ul,ol,blockquote{margin:.6em 0}
+ul,ol{padding-left:1.4em}
+li,p{overflow-wrap:anywhere}
+blockquote{margin:.8em 0;padding:.1em 0 .1em 14px;border-left:3px solid var(--accent);color:var(--muted)}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.92em;
+background:var(--code);padding:.1em .3em;border-radius:4px;overflow-wrap:anywhere}
+pre{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px;line-height:1.45;
+background:var(--code);border:1px solid var(--line);border-radius:6px;padding:12px;margin:.8em 0;
+overflow-x:auto;white-space:pre;tab-size:2}
+pre code{background:none;padding:0;border-radius:0;font-size:inherit;overflow-wrap:normal}
+.tw{overflow-x:auto;margin:.8em 0}
+table{border-collapse:collapse;font-size:14px}
+th,td{border:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}
+td{overflow-wrap:anywhere}
+th{background:var(--code)}
+hr{border:0;border-top:1px solid var(--line);margin:1.5em 0}
+.patch span{display:block;width:max-content;min-width:100%}
+.patch .file{font-weight:700}
+.patch .meta{color:var(--muted)}
+.patch .hunk{color:var(--accent);background:var(--hunk)}
+.patch .add{background:var(--add)}
+.patch .del{background:var(--del)}
+</style>
+</head>
+<body>
+<main>
+<div class="top"><span class="path">T4/M-T4-01/out_NOTES.md</span><a href="out_NOTES.md">Raw file</a><a href="../../../index.html#T4">Back to the case study</a></div>
+<h1>T4: a short payment was closed automatically</h1>
+<h2>Summary</h2>
+<p>A settlement whose reported net was INR 250.00 below what its own gross, fees, tax and refunds add up to was closed <code>AUTO_RESOLVED</code> as <code>EXCEPTION_FEE_MISMATCH</code>. Fees and tax were exactly on the schedule, and nothing explained the 250.00.</p>
+<p>Two defects in <code>ledgerguard/reconciliation/matcher.py</code> produced it. Both are fixed, and a closure guard was added in <code>ledgerguard/evidence/safety.py</code> so that no settlement which does not add up to itself can be closed automatically. The reported shape now escalates to <code>HUMAN_REVIEW_REQUIRED</code>.</p>
+<h2>The cause</h2>
+<p>I reproduced it with one lifecycle: payment 5,000.00, fee and tax exactly on the schedule, settlement <code>net_amount</code> reduced by 250.00 with nothing else changed. Before the fix, the case came out <code>EXCEPTION_FEE_MISMATCH</code>, <code>residual_paise = 0</code>, and <code>AUTO_RESOLVED</code> under both rules-only and the hybrid run.</p>
+<p><strong>Defect 1: the arithmetic break was classified as a fee mismatch.</strong> <code>_classify</code> checked I1 (<code>gross − fees − tax − refunds + adjustments == net</code>) and mapped a failure to <code>FEE_MISMATCH</code>. I2 (fees and tax match the schedule) held in this case, so the label asserted a fee problem that the deterministic layer had just proved did not exist. I1 was also listed as &quot;explained by&quot; the fee mismatch, so it never appeared as a secondary finding either.</p>
+<p><strong>Defect 2: the residual guard could not see the break.</strong> The guard exists so that a proven cause (here a fee variance) does not license closing a case that still has unexplained money. It computed the residual as</p>
+<p>corrected_net = gross − expected fees − expected tax − refunds + adjustments residual      = expected.net − corrected_net</p>
+<p><code>corrected_net</code> is rebuilt from the settlement&#x27;s *components*, not taken from its *reported net*. A settlement whose net contradicts its components therefore gets residual 0, and the 250.00 disappears. This is the decisive defect: even with the label wrong, a correct residual would have escalated the case.</p>
+<h2>The fix</h2>
+<ol><li><strong>Residual measured against the reported net</strong> (<code>matcher.py</code>, <code>FEE_MISMATCH</code> branch):</li></ol>
+<p>fee_variance = observed (fees + tax) − expected (fees + tax) residual     = expected.net − (settlement.net + fee_variance)</p>
+<p>When I1 holds this is algebraically identical to the old formula (<code>settlement.net + fee_variance</code> equals <code>corrected_net</code> exactly), so every residual that exists today is unchanged. It differs only where the reported net contradicts the components, which is the case that was missed. Pinned values C2 = 650.00 and C5 = 900.00 are unchanged.</p>
+<ol><li><strong>An I1 failure with I2 holding is no longer a fee mismatch.</strong> It is classified <code>UNEXPLAINED_SHORTFALL</code>: money is missing and no cause is proved. I1 is removed from the <code>FEE_MISMATCH</code> explained-set and added to the <code>UNEXPLAINED_SHORTFALL</code> one, so it is the driver and not a secondary finding. The I2 and I3 fee paths are unchanged.</li><li><strong>Closure guard on arithmetic.</strong> The matcher records <code>settlement_arithmetic_gap_paise</code> (derived − reported net; 0 when I1 holds). <code>safety.decide()</code> returns <code>HUMAN_REVIEW_REQUIRED</code> for any non-zero gap, placed before every auto-close route, so it applies to all classifications.</li></ol>
+<p>The guard is deliberately stricter than the Evidence Gate. A same-customer orphan refund of exactly 250.00 *does* make the Shadow Ledger balance, so the gate verifies it (I verified this in a test: the verdict is <code>VERIFIED</code>). But the gate&#x27;s check E7 only re-tests the same contradictory reported net, so a matching refund proves nothing about this row. The test <code>test_a_matching_orphan_refund_cannot_close_a_settlement_that_does_not_add_up</code> pins this.</p>
+<h2>Why this is the right fix</h2>
+<p>It comes straight from the project&#x27;s documented rules, in <code>docs/architecture.md</code>:</p>
+<ul><li>Financial truth is deterministic accounting state plus verified evidence. A row that contradicts its own arithmetic has no accounting state to be true to.</li><li>&quot;A proven cause licenses closing a case only if it accounts for all of the money.&quot; The residual guard exists to enforce that, and it was measuring the wrong quantity.</li><li>&quot;Abstention is a designed outcome.&quot; When proof is missing, escalate.</li><li>The label must be a claim the system proved. &quot;Fee mismatch&quot; is a claim about fees, and I2 showed the fees were right.</li></ul>
+<p>It is also the minimal change. It adds no exception type, no configuration and no model involvement, and every case that closes today still closes the same way.</p>
+<h2>What I checked</h2>
+<p><strong>Existing tests:</strong> 67 of 67 pass before the new tests were added.</p>
+<p><strong>New tests:</strong> <code>ledgerguard/tests/test_p1_settlement_arithmetic.py</code>, 8 tests, all pass. Seven of them fail on the unmodified code. The eighth, a late settlement with consistent arithmetic still closing, passes on both. It is a regression guard. Total suite: 75 passed.</p>
+<p><strong>Holdout unchanged, checked per case.</strong> The frozen holdout has 85 lifecycles and its digest is still <code>3e28d4572d4cfc95</code>. I dumped every case&#x27;s status, state, resolution, verification verdict, residual and decision reason before and after the change, for the rules-only baseline and for the hybrid run with the offline heuristic. The two dumps are identical. The rules-only baseline auto-resolves 12 cases, as published. The hybrid auto-resolves 21 under the heuristic, and makes 15 investigations.</p>
+<p><strong>Whole dataset unchanged.</strong> The same comparison over all 320 generated lifecycles and the 5 compound cases is also identical, both rules-only and hybrid.</p>
+<p><strong>Why the holdout cannot move:</strong> the new behaviour is reachable only when I1 fails. Zero of the 85 holdout cases fail I1, because the fault injector keeps the arithmetic consistent for every fault class. F4 and F6 change fees or refunds and recompute the net, and F3 touches only the refund&#x27;s linkage. So no holdout decision can change.</p>
+<p><strong>Artifacts untouched.</strong> A recursive diff against an untouched snapshot shows changes only to the two source files, <code>docs/architecture.md</code> and the new test file. Nothing under <code>ledgerguard/evaluation/outputs/</code> or <code>ledgerguard/evaluation/frozen/</code> differs. I did not run <code>python -m ledgerguard.evaluation.benchmark</code>, because it rewrites <code>outputs/</code> and needs a live key. The frozen manifest was verified by digest instead.</p>
+<h2>Changes</h2>
+<ul><li><code>ledgerguard/reconciliation/matcher.py</code>: <code>_classify</code>, <code>_EXPLAINED_BY</code>, residual computation, and the <code>settlement_arithmetic_gap_paise</code> evidence field.</li><li><code>ledgerguard/evidence/safety.py</code>: the arithmetic guard in <code>decide()</code>.</li><li><code>ledgerguard/tests/test_p1_settlement_arithmetic.py</code>: new tests.</li><li><code>docs/architecture.md</code>: the guard table and an I1 note.</li></ul>
+<h2>Decisions I made, and what I did not do</h2>
+<ul><li><strong>No new exception type.</strong> I used the existing <code>UNEXPLAINED_SHORTFALL</code> for an I1-only failure. A new type would change the taxonomy that the investigator prompt and the risk tables are built on.</li><li><strong>The guard applies to the investigator too.</strong> A verified refund hypothesis does not close an arithmetically broken row. This is stricter than the gate, for the reason given above. It means an I1-broken row still makes a model call. I did not change <code>should_investigate</code>, to keep this change to the closure path. Making the call is wasted for these rows, and it is a possible follow-up.</li><li><strong>Not re-run against a live provider.</strong> The committed hybrid figures came from Groq. I have no key, so I could not regenerate them. The argument that they are unchanged is the one above: the new path is never reached on a holdout case.</li><li><strong>Limitation.</strong> The holdout contains no I1 breaks, so the benchmark cannot show this fix working. It is pinned by the unit tests and by the per-case comparison showing no holdout change. A future fault class that breaks settlement arithmetic should be added to the generator and to the holdout deliberately, with the frozen manifest handled as the docs describe.</li></ul>
+</main>
+</body>
+</html>

@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>T2/M-T2-01/out_NOTES.md</title>
+<style>
+*{box-sizing:border-box}
+:root{--bg:#f6f7f6;--text:#16191c;--muted:#5b636b;--line:#d9dddb;--accent:#0f6b4f;
+--code:rgba(15,23,28,.06);--add:rgba(46,160,67,.20);--del:rgba(218,54,51,.17);--hunk:rgba(15,107,79,.10)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#111416;--text:#e8ebe9;
+--muted:#9aa3a0;--line:#2b3134;--accent:#4fbf95;--code:rgba(255,255,255,.07);
+--add:rgba(63,185,80,.22);--del:rgba(248,81,73,.22);--hunk:rgba(79,191,149,.12)}}
+body{margin:0;background:var(--bg);color:var(--text);
+font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:900px;margin:0 auto;padding:16px}
+.top{font-size:14px;color:var(--muted);border-bottom:1px solid var(--line);padding-bottom:10px;
+margin-bottom:20px;display:flex;flex-wrap:wrap;gap:6px 16px;align-items:baseline}
+.top .path{color:var(--text);font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;overflow-wrap:anywhere}
+a{color:var(--accent)}
+h1,h2,h3,h4,h5,h6{line-height:1.25;margin:1.4em 0 .5em;overflow-wrap:anywhere}
+p,ul,ol,blockquote{margin:.6em 0}
+ul,ol{padding-left:1.4em}
+li,p{overflow-wrap:anywhere}
+blockquote{margin:.8em 0;padding:.1em 0 .1em 14px;border-left:3px solid var(--accent);color:var(--muted)}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.92em;
+background:var(--code);padding:.1em .3em;border-radius:4px;overflow-wrap:anywhere}
+pre{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px;line-height:1.45;
+background:var(--code);border:1px solid var(--line);border-radius:6px;padding:12px;margin:.8em 0;
+overflow-x:auto;white-space:pre;tab-size:2}
+pre code{background:none;padding:0;border-radius:0;font-size:inherit;overflow-wrap:normal}
+.tw{overflow-x:auto;margin:.8em 0}
+table{border-collapse:collapse;font-size:14px}
+th,td{border:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}
+td{overflow-wrap:anywhere}
+th{background:var(--code)}
+hr{border:0;border-top:1px solid var(--line);margin:1.5em 0}
+.patch span{display:block;width:max-content;min-width:100%}
+.patch .file{font-weight:700}
+.patch .meta{color:var(--muted)}
+.patch .hunk{color:var(--accent);background:var(--hunk)}
+.patch .add{background:var(--add)}
+.patch .del{background:var(--del)}
+</style>
+</head>
+<body>
+<main>
+<div class="top"><span class="path">T2/M-T2-01/out_NOTES.md</span><a href="out_NOTES.md">Raw file</a><a href="../../../index.html#T2">Back to the case study</a></div>
+<h1>Task T2: settlement status — notes</h1>
+<h2>What changed</h2>
+<ul><li><code>ledgerguard/ledger/shadow_ledger.py</code><ul><li><code>settlements_by_payment</code> now indexes **only <code>processed</code>** settlements, so <code>settlements_for()</code> (used by the matcher, the invariants&#x27; inputs, bank matching and <code>evaluation/ablation.py</code>) never sees pending or failed rows.</li><li>New index <code>non_processed_settlements_by_payment</code> and accessor <code>non_processed_settlements_for()</code>, used only to build evidence.</li></ul></li><li><code>ledgerguard/reconciliation/matcher.py</code><ul><li><code>find_duplicates()</code> builds settlement duplicate/conflict sets from processed settlements only.</li><li>The no-processed-settlement branch (<code>MISSING_SETTLEMENT</code>) adds <code>non_processed_settlements</code> to evidence when at least one pending/failed settlement references the payment. Entries are <code>{&quot;settlement_id&quot;, &quot;status&quot;}</code>, sorted by <code>settlement_id</code>. Nothing else about the exception changed (same <code>expected_value</code>, <code>observed_value</code> 0, transaction ids, risk, final state).</li></ul></li><li><code>ledgerguard/tests/test_settlement_status.py</code> — 19 new tests (no existing test file was modified).</li><li><code>docs/architecture.md</code> — one paragraph in the matcher section describing the rule.</li></ul>
+<h2>Choices made where the brief was open</h2>
+<ol><li><strong>Duplicate non-processed rows are each listed.</strong> If the batch contains two identical pending rows for one payment, <code>non_processed_settlements</code> has two entries. I did not de-duplicate, because each entry describes a row the batch actually contains.</li><li><strong>Sort tie-break.</strong> Sorting is by <code>settlement_id</code> alone (stable sort), so rows sharing an id keep batch order.</li><li><strong>A non-processed row sharing an id with a processed row is ignored</strong>, not treated as a content conflict (rule 1). The processed row is reconciled normally.</li><li><strong>Payment with one processed plus non-processed rows:</strong> no evidence key (rule 4 says &quot;exactly as if absent&quot;).</li><li><strong>Payment with two or more processed settlements plus non-processed rows:</strong> still <code>DUPLICATE_RECORD</code>, and the non-processed rows are not listed, since they take no part in that decision.</li><li>**<code>MISSING_SETTLEMENT</code> <code>transaction_ids</code> unchanged.** Non-processed settlement ids are not added there; they appear only in evidence.</li><li><strong>Reporting counts left alone.</strong> <code>ShadowLedger.totals()</code> and <code>evaluation/scale.py</code> still count every settlement row in the batch. They are inventory counts, not matching steps.</li></ol>
+<h2>Verification</h2>
+<ul><li><code>.venv/bin/python -m pytest ledgerguard/tests -q</code>: <strong>86 passed</strong> (67 existing + 19 new).</li><li>The 19 new tests were also run against the original code: <strong>15 fail</strong> there, as they should. The other 4 are regression guards (processed still matches, no-key cases, payment-duplicate precedence) that pass on both versions.</li><li>Behaviour on the data: I dumped every per-case outcome (status, state, exception type, expected/observed/difference, transaction ids, full evidence, settlement id) for the full 320-lifecycle set, the dev split and the frozen holdout, under rules-only and the offline stub investigator. The dumps from the original code and the modified code are <strong>byte-identical</strong>. The generator only emits <code>processed</code> settlements, so no existing batch changes.</li><li>Artifacts: SHA-256 of every file under <code>ledgerguard/evaluation/outputs/</code> and <code>ledgerguard/evaluation/frozen/</code> is identical before and after.</li></ul>
+<h2>Not done / caveats</h2>
+<ul><li><strong>The benchmark was not re-run.</strong> It writes into <code>evaluation/outputs/</code> and would break the &quot;unchanged&quot; requirement. The equivalence check above covers the same batch and the deterministic layer, but not the live-provider hybrid numbers, which were never affected by this change (the holdout has no non-processed rows).</li><li><strong>The repository is not a git repository</strong>, so there is no commit. The original code is kept as a snapshot at <code>../tmp/orig/</code> for comparison, and the scripts used for the before/after dump are in <code>../tmp/</code>.</li><li>No open questions. The existing 67 tests and the frozen manifest hash are untouched.</li></ul>
+</main>
+</body>
+</html>

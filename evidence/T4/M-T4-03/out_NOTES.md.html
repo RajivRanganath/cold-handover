@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>T4/M-T4-03/out_NOTES.md</title>
+<style>
+*{box-sizing:border-box}
+:root{--bg:#f6f7f6;--text:#16191c;--muted:#5b636b;--line:#d9dddb;--accent:#0f6b4f;
+--code:rgba(15,23,28,.06);--add:rgba(46,160,67,.20);--del:rgba(218,54,51,.17);--hunk:rgba(15,107,79,.10)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#111416;--text:#e8ebe9;
+--muted:#9aa3a0;--line:#2b3134;--accent:#4fbf95;--code:rgba(255,255,255,.07);
+--add:rgba(63,185,80,.22);--del:rgba(248,81,73,.22);--hunk:rgba(79,191,149,.12)}}
+body{margin:0;background:var(--bg);color:var(--text);
+font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:900px;margin:0 auto;padding:16px}
+.top{font-size:14px;color:var(--muted);border-bottom:1px solid var(--line);padding-bottom:10px;
+margin-bottom:20px;display:flex;flex-wrap:wrap;gap:6px 16px;align-items:baseline}
+.top .path{color:var(--text);font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;overflow-wrap:anywhere}
+a{color:var(--accent)}
+h1,h2,h3,h4,h5,h6{line-height:1.25;margin:1.4em 0 .5em;overflow-wrap:anywhere}
+p,ul,ol,blockquote{margin:.6em 0}
+ul,ol{padding-left:1.4em}
+li,p{overflow-wrap:anywhere}
+blockquote{margin:.8em 0;padding:.1em 0 .1em 14px;border-left:3px solid var(--accent);color:var(--muted)}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.92em;
+background:var(--code);padding:.1em .3em;border-radius:4px;overflow-wrap:anywhere}
+pre{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px;line-height:1.45;
+background:var(--code);border:1px solid var(--line);border-radius:6px;padding:12px;margin:.8em 0;
+overflow-x:auto;white-space:pre;tab-size:2}
+pre code{background:none;padding:0;border-radius:0;font-size:inherit;overflow-wrap:normal}
+.tw{overflow-x:auto;margin:.8em 0}
+table{border-collapse:collapse;font-size:14px}
+th,td{border:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}
+td{overflow-wrap:anywhere}
+th{background:var(--code)}
+hr{border:0;border-top:1px solid var(--line);margin:1.5em 0}
+.patch span{display:block;width:max-content;min-width:100%}
+.patch .file{font-weight:700}
+.patch .meta{color:var(--muted)}
+.patch .hunk{color:var(--accent);background:var(--hunk)}
+.patch .add{background:var(--add)}
+.patch .del{background:var(--del)}
+</style>
+</head>
+<body>
+<main>
+<div class="top"><span class="path">T4/M-T4-03/out_NOTES.md</span><a href="out_NOTES.md">Raw file</a><a href="../../../index.html#T4">Back to the case study</a></div>
+<h1>Task T4: a short payment was closed automatically</h1>
+<h2>Summary</h2>
+<p>A settlement arrived INR 250.00 short of what its own gross, fees, tax and refunds add up to, with fees and tax exactly per the fee schedule. LedgerGuard closed it <code>AUTO_RESOLVED</code> as <code>EXCEPTION_FEE_MISMATCH</code>. The fee classification had no proven cause behind it, and the residual check that should have caught the missing money could not see it.</p>
+<p>Fixed: the case now escalates to <code>HUMAN_REVIEW_REQUIRED</code> and reports the INR 250.00 as unattributed. Nothing that was closed correctly before changes.</p>
+<h2>The cause</h2>
+<p><code>ledgerguard/reconciliation/matcher.py</code>, the <code>FEE_MISMATCH</code> branch of <code>reconcile_payment</code>. The residual is the part of the money that a proven fee variance does not explain. It was computed as:</p>
+<pre><code>corrected_net = (
+    settlement.gross_amount
+    - expected.fees - expected.tax
+    - settlement.refund_adjustments
+    + settlement.other_adjustments
+)
+evidence[&quot;residual_paise&quot;] = expected.net_amount - corrected_net</code></pre>
+<p><code>corrected_net</code> is rebuilt from the settlement&#x27;s own gross, refund and adjustment fields. It never reads the settlement&#x27;s reported <code>net_amount</code>. So whenever those fields add up to the expected net, the residual is zero, even if the reported net is short. That is exactly the reported case: fees and tax match the schedule (no fee variance), refunds match the ledger, and the reported net is INR 250.00 below its own components. The check corrected a number that was not the one in dispute and reported nothing.</p>
+<p>Reproduced through <code>pipeline.run(batch, use_ai=False)</code> before the fix:</p>
+<pre><code>EXCEPTION_FEE_MISMATCH | state: AUTO_RESOLVED
+residual: 0
+reason: Fee and tax reconciled against the independent fee schedule; the exact variance is quantified.</code></pre>
+<p>The same bug also lets a real fee overcharge hide a shortfall. A settlement with an INR 40.00 overcharge and a further INR 250.00 short net was also auto-closed before the fix, for the same reason.</p>
+<h2>The fix</h2>
+<p>Two changes, both small.</p>
+<ol><li>**<code>matcher.py</code>: measure the residual from the reported net.** The fee variance is now <code>observed fee + tax - expected fee + tax</code>. The corrected net is the reported <code>net_amount</code> plus that variance. The residual is the expected net minus that. The fee variance is also stored as <code>evidence[&quot;fee_variance_paise&quot;]</code>. When the settlement&#x27;s components are internally consistent, this is algebraically identical to the old formula, which is why the existing compound cases (<code>residual_paise</code> 650.00 and 900.00) are unchanged.</li><li>**<code>evidence/safety.py</code>: a fee classification needs a proven fee variance.** A <code>FEE_MISMATCH</code> closes only if the fee variance is non-zero and the residual is zero. A zero fee variance means the fees match the schedule, so the fee cause is not proven, and the case escalates with a reason that says so. This covers a settlement whose internal arithmetic is broken while its net still matches the ledger. Its breakdown is wrong, but nothing is missing against the ledger. This second rule is my reading of the documented principle that a proven cause must account for the case. It is not strictly needed for the reported case, which the residual change alone already escalates.</li></ol>
+<h3>Why this is the right behaviour</h3>
+<p>It follows the project&#x27;s own documented principles, not a new rule:</p>
+<ul><li><code>docs/architecture.md</code>, <code>evidence/safety.py</code>: a proven cause licenses closure only if it accounts for all of the money. <code>residual_paise</code> exists for that purpose. It was built to block exactly this kind of case, and it failed silently.</li><li><code>README.md</code> and <code>docs/architecture.md</code>: &quot;Financial truth is deterministic accounting state plus verified evidence.&quot; A settlement that does not add up to its own fields has an unproven cause, and the controller must not assert one.</li><li><code>docs/architecture.md</code>, <code>safety.py</code>: &quot;Abstention is a designed outcome, not a failure.&quot; Escalating the case is the intended outcome. Nothing here needs the AI or a new heuristic.</li></ul>
+<p>The fee variance also cannot be dismissed as zero-when-unknown. If it were inferred, the reported fee-mismatch label would be asserting a cause the batch does not contain.</p>
+<h2>Verification</h2>
+<p>Commands were run from <code>repo/</code> with <code>.venv/bin/python</code>.</p>
+<ul><li><strong>Test suite.</strong> Baseline: 67 passed. After the fix: 72 passed, with the 5 new tests in <code>ledgerguard/tests/test_fee_residual.py</code>. No existing test was modified.</li><li><strong>New tests against the unmodified code.</strong> Four of the five fail on the baseline, as they should: the reported case, the overcharge-plus-shortfall case, the fee overcharge that fully explains the gap (failing on a new evidence key, so it proves nothing about behaviour on its own), and the internal-break case. The fifth, consistent overcharge plus a INR 650.00 refund, is a guard on existing behaviour and passes on both versions.</li><li><strong>Frozen holdout.</strong> I ran <code>python -m ledgerguard.evaluation.benchmark</code> in two copies under <code>../tmp/</code>: one of the unmodified code and one of the fixed code. Both used the offline stub, which is deterministic. The only differences are wall-clock and latency fields. <code>benchmark.md</code>, <code>benchmark.json</code>, <code>cases.json</code> and <code>unresolved_exceptions.csv</code> are otherwise identical. Disposition accuracy, false auto resolutions (0), value falsely auto resolved (INR 0.00), and the unresolved list did not change.</li><li><strong>Every generated case.</strong> I compared every per-case status, state, resolution and exposure across the full 320-lifecycle dataset (deterministic and AI-path runs), the five compound cases and the adversarial pair, baseline versus fixed. No case changed. The generator never produces a settlement whose reported net disagrees with its own components, so the bug is latent in the generated data.</li><li><strong>Repository artifacts.</strong> Nothing in <code>ledgerguard/evaluation/outputs/</code> or <code>ledgerguard/evaluation/frozen/</code> was regenerated. All of them still carry the extraction timestamp, 00:31:48 to 00:31:49. All benchmark runs wrote to <code>../tmp/</code> copies.</li></ul>
+<h2>Choices and limits</h2>
+<ul><li><strong>Committed artifacts are not regenerated.</strong> The committed benchmark and report were produced by live model runs, which are not reproducible offline. My before-and-after comparison therefore uses the deterministic stub. It shows the fix changes no output on this dataset. It does not reproduce the committed live numbers, and I did not try to.</li><li><strong>Classification unchanged.</strong> An I1-only break (fees exact) is still labelled <code>FEE_MISMATCH</code>, since <code>_classify</code> maps I1 to it and I changed nothing there. The label is imprecise, and the case now escalates regardless. A cleaner label would need a new exception type. That would touch the taxonomy and the frozen per-type metrics, so I left it alone.</li><li><strong>Documentation not edited.</strong> <code>docs/architecture.md</code> already describes the residual principle correctly, so it needed no change.</li><li><strong>Not finished.</strong> Nothing blocked. There is no open item in this task.</li></ul>
+</main>
+</body>
+</html>

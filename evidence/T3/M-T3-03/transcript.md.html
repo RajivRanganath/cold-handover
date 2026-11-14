@@ -1,0 +1,765 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>T3/M-T3-03/transcript.md</title>
+<style>
+*{box-sizing:border-box}
+:root{--bg:#f6f7f6;--text:#16191c;--muted:#5b636b;--line:#d9dddb;--accent:#0f6b4f;
+--code:rgba(15,23,28,.06);--add:rgba(46,160,67,.20);--del:rgba(218,54,51,.17);--hunk:rgba(15,107,79,.10)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#111416;--text:#e8ebe9;
+--muted:#9aa3a0;--line:#2b3134;--accent:#4fbf95;--code:rgba(255,255,255,.07);
+--add:rgba(63,185,80,.22);--del:rgba(248,81,73,.22);--hunk:rgba(79,191,149,.12)}}
+body{margin:0;background:var(--bg);color:var(--text);
+font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:900px;margin:0 auto;padding:16px}
+.top{font-size:14px;color:var(--muted);border-bottom:1px solid var(--line);padding-bottom:10px;
+margin-bottom:20px;display:flex;flex-wrap:wrap;gap:6px 16px;align-items:baseline}
+.top .path{color:var(--text);font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;overflow-wrap:anywhere}
+a{color:var(--accent)}
+h1,h2,h3,h4,h5,h6{line-height:1.25;margin:1.4em 0 .5em;overflow-wrap:anywhere}
+p,ul,ol,blockquote{margin:.6em 0}
+ul,ol{padding-left:1.4em}
+li,p{overflow-wrap:anywhere}
+blockquote{margin:.8em 0;padding:.1em 0 .1em 14px;border-left:3px solid var(--accent);color:var(--muted)}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.92em;
+background:var(--code);padding:.1em .3em;border-radius:4px;overflow-wrap:anywhere}
+pre{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px;line-height:1.45;
+background:var(--code);border:1px solid var(--line);border-radius:6px;padding:12px;margin:.8em 0;
+overflow-x:auto;white-space:pre;tab-size:2}
+pre code{background:none;padding:0;border-radius:0;font-size:inherit;overflow-wrap:normal}
+.tw{overflow-x:auto;margin:.8em 0}
+table{border-collapse:collapse;font-size:14px}
+th,td{border:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}
+td{overflow-wrap:anywhere}
+th{background:var(--code)}
+hr{border:0;border-top:1px solid var(--line);margin:1.5em 0}
+.patch span{display:block;width:max-content;min-width:100%}
+.patch .file{font-weight:700}
+.patch .meta{color:var(--muted)}
+.patch .hunk{color:var(--accent);background:var(--hunk)}
+.patch .add{background:var(--add)}
+.patch .del{background:var(--del)}
+</style>
+</head>
+<body>
+<main>
+<div class="top"><span class="path">T3/M-T3-03/transcript.md</span><a href="transcript.md">Raw file</a><a href="../../../index.html#T3">Back to the case study</a></div>
+<h1>M-T3-03 transcript (PASS)</h1>
+<p><strong>Bash:</strong></p>
+<pre><code>ls -la &amp;&amp; ls -la ../ &amp;&amp; cat *.md 2&gt;/dev/null | head -200</code></pre>
+<p><strong>Result:</strong></p>
+<pre><code>total 88
+drwxr-xr-x@ 10 user  staff    320 Nov  1 23:22 .
+drwxr-xr-x@  5 user  staff    160 Nov  1 23:22 ..
+-rw-r--r--@  1 user  staff   1992 Nov  1 23:22 .env.example
+-rw-r--r--@  1 user  staff     56 Nov  1 23:22 .gitignore
+drwxr-xr-x@  7 user  staff    224 Nov  1 23:22 .venv
+drwxr-xr-x@  7 user  staff    224 Nov  1 23:22 docs
+drwxr-xr-x@ 14 user  staff    448 Nov  1 23:22 ledgerguard
+-rw-r--r--@  1 user  staff  26848 Nov  1 23:22 README.md
+-rw-r--r--@  1 user  staff    466 Nov  1 23:22 requirements.txt
+-rwxr-xr-x@  1 user  staff   1447 Nov  1 23:22 run_demo.sh
+total 0
+drwxr-xr-x@  5 user  staff  160 Nov  1 23:22 .
+drwxr-xr-x@ 10 user  staff  320 Nov  1 23:22 ..
+drwxr-xr-x@  2 user  staff   64 Nov  1 23:22 out
+drwxr-xr-x@ 10 user  staff  320 Nov  1 23:22 repo
+drwxr-xr-x@  4 user  staff  128 Nov  1 23:22 tmp
+# LedgerGuard
+
+**A self verifying AI finance controller.** Razorpay AI Buildathon, Track 04.
+
+The workflow is settlement reconciliation: inspect the source records, verify an
+ambiguous refund, and export the exceptions that still need a human.
+
+I built LedgerGuard to answer a question that a reconciliation chatbot does not
+answer: an LLM can generate a plausible explanation for a financial discrepancy
+in about two seconds — but how do you know whether that explanation is
+*financially true*?
+
+**The core claim: LLM reasoning is not financial truth. Financial truth is
+deterministic accounting state plus verified evidence. The AI may propose, the
+financial system must prove.**
+
+## Quick start
+</code></pre>
+<p>git clone https://github.com/RajivRanganath/ledgerguard.git &amp;&amp; cd ledgerguard python3 -m venv .venv &amp;&amp; .venv/bin/pip install -r requirements.txt ./run_demo.sh          # tests, then benchmark, then http://127.0.0.1:8137</p>
+<pre><code>
+**No API key is needed.** Without one the AI investigation step degrades to an
+offline stand-in and says so on the page; the deterministic engine, Shadow
+Ledger, Evidence Gate, benchmark and dashboard all run unchanged.
+
+---
+
+## Where to verify each published requirement
+
+Track 04, AI Finance Controller, checked against the official Buildathon page.
+The official description does not mandate multiple agents, a particular frontend
+framework, or a Razorpay payment API integration. Synthetic settlement
+reconciliation is the chosen workflow, and no payment is ever initiated.
+
+| Published requirement | Where to verify it |
+|---|---|
+| One finance-operations loop | Dashboard: records → investigation → checks → disposition → exception report |
+| At least 50 synthetic records | 320 generated lifecycles; 85 held out and frozen for the benchmark |
+| Match rate | `evaluation/outputs/benchmark.json` — `baseline.match_rate`, `hybrid.match_rate` |
+| Throughput and measured accuracy | Same artifact; wall-clock figures include provider latency |
+| Exceptions that could not be resolved | Dashboard exception queue, and `evaluation/outputs/unresolved_exceptions.csv` |
+| Architecture | [`docs/architecture.md`](docs/architecture.md) |
+
+---
+
+## What it does
+
+LedgerGuard reconciles orders, payments, refunds, settlements and bank records.
+
+1. **The Shadow Ledger** independently reconstructs what the money movement
+   *should* have been, from first principles:
+   `expected_net = captured − refunds − fees − tax ± valid adjustments`.
+   It never reads settlement or bank records to decide what to expect. Six named
+   invariants (`I1`–`I6`) compare that reconstruction against what the provider
+   actually reported. All money is integer paise; no float ever touches it.
+
+2. **A deterministic engine reconciles everything it can prove** — exact
+   identifier matching, settlement arithmetic against the fee schedule,
+   duplicate detection, timing windows, bank matching. On the frozen holdout it
+   resolves 54 of 85 cases with zero AI involvement, and never sends a case to
+   the model that it could prove on its own.
+
+3. **The AI investigator only sees what could not be proved.** It gets the
+   records, the Shadow Ledger&#x27;s expec
+... [6980 more characters in transcript.jsonl]</code></pre>
+<p><strong>Bash:</strong></p>
+<pre><code>find ledgerguard/evaluation -maxdepth 2 | head -100 &amp;&amp; cat ledgerguard/evaluation/benchmark.py</code></pre>
+<p><strong>Result:</strong></p>
+<pre><code>ledgerguard/evaluation
+ledgerguard/evaluation/metrics.py
+ledgerguard/evaluation/benchmark.py
+ledgerguard/evaluation/baseline.py
+ledgerguard/evaluation/ablation.py
+ledgerguard/evaluation/drift.py
+ledgerguard/evaluation/__init__.py
+ledgerguard/evaluation/no_gate_ablation.py
+ledgerguard/evaluation/replay.py
+ledgerguard/evaluation/model_comparison.py
+ledgerguard/evaluation/cost.py
+ledgerguard/evaluation/frozen
+ledgerguard/evaluation/outputs
+ledgerguard/evaluation/scale.py
+ledgerguard/evaluation/report.py
+ledgerguard/evaluation/calibration.py
+ledgerguard/evaluation/frozen/holdout_20260905_320.json
+ledgerguard/evaluation/outputs/reconciliation_report.csv
+ledgerguard/evaluation/outputs/scale.json
+ledgerguard/evaluation/outputs/calibration.json
+ledgerguard/evaluation/outputs/no_gate_ablation.json
+ledgerguard/evaluation/outputs/scale.md
+ledgerguard/evaluation/outputs/reconciliation_report.md
+ledgerguard/evaluation/outputs/ablation.json
+ledgerguard/evaluation/outputs/calibration.md
+ledgerguard/evaluation/outputs/benchmark.json
+ledgerguard/evaluation/outputs/model_comparison.md
+ledgerguard/evaluation/outputs/drift.json
+ledgerguard/evaluation/outputs/benchmark.md
+ledgerguard/evaluation/outputs/model_comparison.json
+ledgerguard/evaluation/outputs/cases.json
+ledgerguard/evaluation/outputs/unresolved_exceptions.csv
+ledgerguard/evaluation/outputs/evidence_ledger.csv
+ledgerguard/evaluation/outputs/drift.md
+ledgerguard/evaluation/outputs/decision_log.json
+ledgerguard/evaluation/outputs/no_gate_ablation.md
+ledgerguard/evaluation/outputs/ablation.md
+&quot;&quot;&quot;One-command benchmark.
+
+    python -m ledgerguard.evaluation.benchmark
+
+Regenerates the dataset from its seed, freezes (or re-verifies) the holdout
+manifest, runs the rules-only baseline and the full hybrid controller over the
+same frozen holdout, and writes every artifact under evaluation/outputs/.
+
+Every number in every artifact comes from these two runs; nothing is typed in
+by hand. Rerunning with the same seed reproduces the deterministic path exactly
+-- same dispositions, same money, same unresolved rows, byte for byte, with only
+wall-clock timing fields differing. The AI-investigated path is not reproducible
+in that sense: the same prompt to the same model can yield a different
+hypothesis, so a live rerun can land on a different accuracy. Runs are labelled
+with the investigator that produced them for exactly this reason.
+&quot;&quot;&quot;
+
+from __future__ import annotations
+
+import argparse
+import csv
+import hashlib
+import json
+from dataclasses import asdict
+from pathlib import Path
+
+from ..ai.provider import get_provider
+from ..evidence.safety import AUTO_RESOLVED
+from ..ledger.money import to_rupees_str
+from ..pipeline import RunReport, run
+from ..synthetic.fault_injector import build_dataset, split
+from ..synthetic.generator import Dataset
+from .cost import estimate
+from .metrics import Metrics, compute
+
+OUTPUT_DIR = Path(__file__).parent / &quot;outputs&quot;
+MANIFEST_DIR = Path(__file__).parent / &quot;frozen&quot;
+
+
+def manifest_path(seed: int, count: int) -&gt; Path:
+    &quot;&quot;&quot;One frozen manifest per dataset configuration.
+
+    Keyed by config so that running the benchmark with a different seed or size
+    can never silently overwrite the holdout an earlier result was scored on.
+    &quot;&quot;&quot;
+    return MANIFEST_DIR / f&quot;holdout_{seed}_{count}.json&quot;
+
+
+def batch_digest(dataset: Dataset) -&gt; str:
+    return hashlib.sha256(dataset.batch().model_dump_json().encode()).hexdigest()
+
+
+def freeze_or_verify_holdout(holdout: Dataset, seed: int, count: int) -&gt; dict:
+    &quot;&quot;&quot;Write the holdout manifest once; afterwards, verify nothing drifted.&quot;&quot;&quot;
+    manifest = {
+        &quot;seed&quot;: seed,
+        &quot;count&quot;: count,
+        &quot;generator_version&quot;: holdout.generator_version,
+        &quot;holdout_lifecycle_ids&quot;: sorted(lc.lifecycle_id for lc in holdout.lifecycles),
+        &quot;holdout_batch_sha256&quot;: batch_digest(holdout),
+    }
+    path = manifest_path(seed, count)
+    if path.exists():
+        existing = json.loads(path.read_text())
+        if existing != manifest:
+
+... [13572 more characters in transcript.jsonl]</code></pre>
+<p><strong>Bash:</strong></p>
+<pre><code>ls docs &amp;&amp; grep -rn &quot;outputs\|OUTPUT_DIR\|MANIFEST_DIR\|frozen&quot; --include=*.py . | grep -v .venv | head -60; ls ledgerguard; find . -path ./.venv -prune -o -name &quot;test*&quot; -print | head -50; find . -path ./.venv -prune -o -name &quot;*.md&quot; -print | head -30</code></pre>
+<p><strong>Result:</strong></p>
+<pre><code>analyses.md
+architecture.md
+evaluation.md
+limitations.md
+model_comparison.md
+(eval):1: no matches found: --include=*.py
+__init__.py
+ai
+backend
+evaluation
+evidence
+frontend
+ledger
+pipeline.py
+qa.py
+reconciliation
+synthetic
+tests
+./ledgerguard/tests
+./ledgerguard/tests/test_p0_core.py
+./ledgerguard/tests/test_p2_evaluation.py
+./ledgerguard/tests/test_p1_compound.py
+./ledgerguard/tests/test_p1_extended.py
+./ledgerguard/tests/test_fallback.py
+./ledgerguard/tests/test_evidence_download.py
+./ledgerguard/tests/test_dashboard_startup.py
+./README.md
+./docs/architecture.md
+./docs/limitations.md
+./docs/model_comparison.md
+./docs/analyses.md
+./docs/evaluation.md
+./ledgerguard/evaluation/outputs/scale.md
+./ledgerguard/evaluation/outputs/reconciliation_report.md
+./ledgerguard/evaluation/outputs/calibration.md
+./ledgerguard/evaluation/outputs/model_comparison.md
+./ledgerguard/evaluation/outputs/benchmark.md
+./ledgerguard/evaluation/outputs/drift.md
+./ledgerguard/evaluation/outputs/no_gate_ablation.md
+./ledgerguard/evaluation/outputs/ablation.md</code></pre>
+<p><strong>Bash:</strong></p>
+<pre><code>grep -rn &quot;outputs\|OUTPUT_DIR\|MANIFEST_DIR\|frozen\|benchmark&quot; --include=*.py ledgerguard | grep -v &quot;^ledgerguard/evaluation/benchmark.py&quot; | head -60; echo ---; cat docs/evaluation.md | head -120; echo ---; grep -n &quot;benchmark&quot; ledgerguard/tests/*.py | head -40; echo; cat run_demo.sh</code></pre>
+<p><strong>Result:</strong></p>
+<pre><code>(eval):1: no matches found: --include=*.py
+---
+# Evaluation
+
+## How to reproduce
+</code></pre>
+<p>.venv/bin/python -m ledgerguard.evaluation.benchmark</p>
+<pre><code>
+The canonical benchmark runs through the default chain with
+`LEDGERGUARD_NO_CACHE=1`. Groq is first in the chain and does not cache, so it
+serves the whole run in practice; the flag guards against OmniRoute&#x27;s
+`temperature: 0` response cache in the event the run falls through to it. The
+benchmark prints which provider served how many investigations, and how many
+came from a cache, so the run is self-describing either way.
+
+Options: `--seed`, `--count`, `--split {holdout,dev,all}`, and
+`--provider {auto,fallback,groq,gemini,nvidia,omniroute,openai_compatible,stub,none}`.
+
+To compare investigators on the same holdout:
+</code></pre>
+<p>.venv/bin/python -m ledgerguard.evaluation.model_comparison --providers groq,gemini,stub</p>
+<pre><code>
+## Dataset and split
+
+320 lifecycles from seed `20260905`, generator version `1.0.0`. Ground truth is
+computed before any fault is injected and stored in a structure the matcher, the
+investigator and the gate never receive.
+
+The split is 75/25, **stratified by fault class**. Stratifying matters: an
+unstratified 25% slice of a 320-case dataset can easily contain zero F6 cases,
+which would make the headline safety metric meaningless. Paired F6 lifecycles
+(the victim and the donor whose refund it is) are always kept on the same side.
+
+| Fault class | Total | Holdout |
+|---|---|---|
+| Clean | 218 | 54 |
+| F1 missing settlement | 15 | 4 |
+| F2 duplicate record | 15 | 4 |
+| F3 unlinked partial refund | 29 | 9 |
+| F4 fee or tax mismatch | 15 | 4 |
+| F5 delayed settlement | 16 | 4 |
+| F6 incorrect linkage | 12 | 6 |
+
+## Freezing
+
+The holdout is frozen to `evaluation/frozen/holdout_{seed}_{count}.json`,
+recording the lifecycle ids and the batch SHA-256. Every later run regenerates
+the data and compares. A mismatch aborts with `FROZEN HOLDOUT MISMATCH` rather
+than silently scoring against changed data.
+
+Manifests are keyed per `(seed, count)`. An earlier version used a single file,
+which meant running with a different `--count` silently overwrote the manifest an
+earlier result had been scored against — a result would then be reported against
+a holdout that no longer existed. That was a real hole, and keying the manifest
+by configuration is what closed it.
+
+No system was tuned using individual holdout answers.
+
+## Reproducibility
+
+Verified, not assumed:
+
+- Two `build_dataset()` calls produce a batch with identical SHA-256
+  (`c320c559e8ff564a` for the full set, `3e28d4572d4cfc95` for the holdout).
+- `unresolved_exceptions.csv` is byte-identical across two benchmark runs.
+- `benchmark.json` is identical across runs excluding the four wall-clock timing
+  fields (`wall_seconds`, `throughput_per_second`, `latency_p50_ms`,
+  `latency_p95_ms`), which vary by machine and by run and are not decisions.
+
+These guarantees cover the **dataset and the deterministic layer**, and they
+hold with `--provider stub` or `--provider none`. They do **not** extend to a
+model run: five `groq` runs on the identical holdout resolved between 5 and 7
+of the 9 F3 cases at `temperature: 0`. The historical notes report stable safety across all five
+(0 false auto resolutions, INR 0.00 falsely closed, all 6 F6 escalated); the
+variance is confined to how much is safely closed. Report the range, not the
+best run.
+
+## Metrics
+
+Defined in `evaluation/metrics.py`. Every figure in every artifact is rendered
+from the `Metrics` dataclass; no literal number appears in any template.
+
+The two reported first, deliberately:
+
+- **`false_auto_resolutions`** — cases closed automatically that ground truth
+  says required a human. This is the failure mode the whole architecture exists
+  to prevent.
+- **`false_auto_resolved_value_paise`** — the rupee value behind those closures.
+
+Also reported: total cases, match rate, exceptions raised, false exceptions,
+missed faults, exception-type accuracy, disposition accuracy, auto resolved,
+
+... [3354 more characters in transcript.jsonl]</code></pre>
+<p><strong>Bash:</strong></p>
+<pre><code>cd ledgerguard &amp;&amp; grep -rn &quot;outputs\|OUTPUT_DIR\|MANIFEST_DIR\|write_text\|open(.*w&quot; --include=*.py . | grep -v &quot;evaluation/benchmark.py&quot; ; cd ..; sed -n 440,560p ledgerguard/tests/test_p1_extended.py; grep -n &quot;^import\|^from&quot; ledgerguard/tests/test_p1_extended.py</code></pre>
+<p><strong>Result:</strong></p>
+<pre><code>(eval):1: no matches found: --include=*.py
+        expected_value=100, observed_value=90, evidence={},
+    )
+    case = CaseResult(
+        case_id=&quot;pay_U&quot;, payment_id=&quot;pay_U&quot;, order_id=&quot;ord_U&quot;,
+        status=exc.exception_type.value,
+        expected=ExpectedSettlement(&quot;pay_U&quot;, 0, 0, 0, 0, 0, 0),
+        settlement=None, exception=exc,
+    )
+    decision = decide(case, None, None)
+    assert decision.state == UNRESOLVED
+    assert decision.state != AUTO_RESOLVED
+
+
+def test_frozen_holdout_mismatch_is_refused(tmp_path, monkeypatch):
+    &quot;&quot;&quot;A holdout that drifted must abort scoring, not be silently re-frozen.
+
+    The frozen manifest is what makes the benchmark a measurement rather than a
+    claim. If the generator changes and this check stops firing, every published
+    number quietly becomes a score against a different dataset.
+    &quot;&quot;&quot;
+    from ledgerguard.evaluation import benchmark as bm
+
+    monkeypatch.setattr(bm, &quot;MANIFEST_DIR&quot;, tmp_path)
+    full = build_dataset(seed=424242, count=40)
+    _dev, holdout = split(full)
+
+    first = bm.freeze_or_verify_holdout(holdout, 424242, 40)
+    assert first[&quot;holdout_batch_sha256&quot;]
+    # Re-verifying the identical holdout is a no-op, not a rewrite.
+    assert bm.freeze_or_verify_holdout(holdout, 424242, 40) == first
+
+    drifted = split(build_dataset(seed=525252, count=40))[1]
+    with pytest.raises(SystemExit) as excinfo:
+        bm.freeze_or_verify_holdout(drifted, 424242, 40)
+    assert &quot;FROZEN HOLDOUT MISMATCH&quot; in str(excinfo.value)
+
+
+def test_hypothesis_must_be_admissible_for_the_exception_it_would_close():
+    &quot;&quot;&quot;A passing evidence battery must not close an exception it never explains.
+
+    The refund battery reconstructs the settlement net. A bank-side discrepancy
+    is a different discrepancy, so `unlinked_partial_refund` must not be
+    verifiable against it even if every individual check would pass.
+    &quot;&quot;&quot;
+    from ledgerguard.evidence.verifier import UNVERIFIED, verify
+    from ledgerguard.ledger.shadow_ledger import ExpectedSettlement, ShadowLedger
+    from ledgerguard.reconciliation.exceptions import ADMISSIBLE_HYPOTHESES, make_exception
+    from ledgerguard.reconciliation.matcher import CaseResult
+
+    assert &quot;unlinked_partial_refund&quot; not in ADMISSIBLE_HYPOTHESES[ExceptionType.BANK_MISMATCH]
+
+    exc = make_exception(
+        case_id=&quot;pay_B&quot;, lifecycle_id=&quot;LC&quot;, transaction_ids=[&quot;pay_B&quot;],
+        exception_type=ExceptionType.BANK_MISMATCH,
+        detected_by=&quot;deterministic_matcher&quot;,
+        expected_value=1000, observed_value=900, evidence={},
+    )
+    case = CaseResult(
+        case_id=&quot;pay_B&quot;, payment_id=&quot;pay_B&quot;, order_id=&quot;ord_B&quot;,
+        status=exc.exception_type.value,
+        expected=ExpectedSettlement(&quot;pay_B&quot;, 0, 0, 0, 0, 0, 0),
+        settlement=None, exception=exc,
+    )
+    result = InvestigationResult(
+        hypothesis=&quot;unlinked_partial_refund&quot;,
+        reason=&quot;the amounts line up&quot;,
+        candidate_evidence_ids=[&quot;rfnd_X&quot;],
+        recommended_action=&quot;resolve&quot;,
+        source=&quot;model&quot;,
+    )
+    outcome = verify(ShadowLedger(Batch()), case, result)
+    assert outcome.verdict == UNVERIFIED
+    assert &quot;not an admissible explanation&quot; in outcome.note
+    # The battery must not have run at all -- no checks were weighed.
+    assert outcome.checks == []
+
+
+def test_a_broken_provider_is_reported_not_silently_dropped():
+    &quot;&quot;&quot;A configured-but-broken provider must not look like an absent one.
+
+    A missing key is a legitimate way to run on a subset and stays quiet. A
+    provider that raises for any other reason is a defect, and a benchmark that
+    silently ran on fewer providers than intended is not the run it claims.
+    &quot;&quot;&quot;
+    from ledgerguard.ai import provider as prov
+
+    def _boom(kind: str):
+        if kind == &quot;groq&quot;:
+            raise AttributeError(&quot;simulated defect&quot;)
+        raise prov.ProviderNotConfigured(f&quot;{kind} is not configured&quot;)
+
+    original = prov._build
+    try:
+        prov._build = _boom
+        chain = prov.build_chain([&quot;groq&quot;, &quot;gemini&quot;
+... [1653 more characters in transcript.jsonl]</code></pre>
+<p><strong>Bash:</strong></p>
+<pre><code>cd ledgerguard &amp;&amp; grep -rn -e &quot;outputs&quot; -e &quot;OUTPUT_DIR&quot; -e &quot;write_text&quot; -e &quot;\.write(&quot; -e &quot;open(&quot; --include=&quot;*.py&quot; . | grep -v &quot;evaluation/benchmark.py&quot;; cd ..; cd ..; cd ..; ls; ls ../out ../tmp; cd repo; find ledgerguard/evaluation/outputs ledgerguard/evaluation/frozen -type f -exec shasum -a 256 {} \; &gt; ../tmp/before_checksums.txt; cat ../tmp/before_checksums.txt | wc -l; .venv/bin/python -m pytest ledgerguard/tests -q 2&gt;&amp;1 | tail -5</code></pre>
+<p><strong>Result:</strong></p>
+<pre><code>tests/rehearsal_check.py:28:    with urllib.request.urlopen(BASE + path, timeout=20) as r:
+tests/rehearsal_check.py:140:    with urllib.request.urlopen(BASE + &quot;/&quot;, timeout=20) as r:
+ai/provider.py:92:    &quot;&quot;&quot;Claude-backed investigator using structured outputs.&quot;&quot;&quot;
+tests/test_p1_extended.py:582:                self.wfile.write(body)
+evaluation/no_gate_ablation.py:28:OUTPUT_DIR = Path(__file__).resolve().parent / &quot;outputs&quot;
+evaluation/no_gate_ablation.py:29:COMPARISON = OUTPUT_DIR / &quot;model_comparison.json&quot;
+evaluation/no_gate_ablation.py:30:ABLATION = OUTPUT_DIR / &quot;ablation.json&quot;
+evaluation/no_gate_ablation.py:151:    (OUTPUT_DIR / &quot;no_gate_ablation.json&quot;).write_text(json.dumps(r, indent=2) + &quot;\n&quot;)
+evaluation/no_gate_ablation.py:153:    (OUTPUT_DIR / &quot;no_gate_ablation.md&quot;).write_text(md)
+evaluation/no_gate_ablation.py:155:    print(f&quot;Artifacts written to {OUTPUT_DIR}&quot;)
+evaluation/drift.py:34:OUTPUT_DIR = Path(__file__).parent / &quot;outputs&quot;
+evaluation/drift.py:163:    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+evaluation/drift.py:165:    (OUTPUT_DIR / &quot;drift.md&quot;).write_text(md)
+evaluation/drift.py:166:    (OUTPUT_DIR / &quot;drift.json&quot;).write_text(
+evaluation/drift.py:170:    print(f&quot;Artifacts written to {OUTPUT_DIR}&quot;)
+evaluation/model_comparison.py:29:OUTPUT_DIR = Path(__file__).parent / &quot;outputs&quot;
+evaluation/model_comparison.py:170:    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+evaluation/model_comparison.py:172:    (OUTPUT_DIR / &quot;model_comparison.md&quot;).write_text(md)
+evaluation/model_comparison.py:173:    (OUTPUT_DIR / &quot;model_comparison.json&quot;).write_text(
+evaluation/model_comparison.py:177:    print(f&quot;Artifacts written to {OUTPUT_DIR}&quot;)
+evaluation/scale.py:32:OUTPUT_DIR = Path(__file__).parent / &quot;outputs&quot;
+evaluation/scale.py:144:    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+evaluation/scale.py:146:    (OUTPUT_DIR / &quot;scale.md&quot;).write_text(md)
+evaluation/scale.py:147:    (OUTPUT_DIR / &quot;scale.json&quot;).write_text(
+evaluation/ablation.py:38:OUTPUT_DIR = Path(__file__).parent / &quot;outputs&quot;
+evaluation/ablation.py:411:    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+evaluation/ablation.py:413:    (OUTPUT_DIR / &quot;ablation.md&quot;).write_text(md)
+evaluation/ablation.py:414:    (OUTPUT_DIR / &quot;ablation.json&quot;).write_text(
+evaluation/ablation.py:421:    print(f&quot;Artifacts written to {OUTPUT_DIR}&quot;)
+evaluation/replay.py:5:and outputs of a run, re-run from the captured inputs alone, and assert the
+evaluation/replay.py:34:OUTPUT_DIR = Path(__file__).parent / &quot;outputs&quot;
+evaluation/replay.py:153:    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+evaluation/replay.py:154:    path = OUTPUT_DIR / &quot;decision_log.json&quot;
+evaluation/replay.py:155:    path.write_text(json.dumps(captured, indent=2, default=str) + &quot;\n&quot;)
+evaluation/calibration.py:35:OUTPUT_DIR = Path(__file__).parent / &quot;outputs&quot;
+evaluation/calibration.py:167:    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+evaluation/calibration.py:168:    (OUTPUT_DIR / &quot;calibration.md&quot;).write_text(md)
+evaluation/calibration.py:169:    (OUTPUT_DIR / &quot;calibration.json&quot;).write_text(
+evaluation/report.py:29:OUTPUT_DIR = Path(__file__).parent / &quot;outputs&quot;
+evaluation/report.py:46:    report: RunReport, output_dir: Path = OUTPUT_DIR
+evaluation/report.py:51:    with (output_dir / &quot;reconciliation_report.csv&quot;).open(&quot;w&quot;, newline=&quot;&quot;) as fh:
+evaluation/report.py:106:    with (output_dir / &quot;evidence_ledger.csv&quot;).open(&quot;w&quot;, newline=&quot;&quot;) as fh:
+evaluation/report.py:148:    (output_dir / &quot;reconciliation_report.md&quot;).write_text(&quot;\n&quot;.join(md) + &quot;\n&quot;)
+evaluation/report.py:170:    print((OUTPUT_DIR / &quot;reconciliation_report.md&quot;).read_text())
+evaluation/report.py:171:    print(f&quot;Artifacts written to {OUTPUT_DIR}&quot;)
+ls: .: Operation not permitted
+ls: ../out: No such file or directory
+ls: ../tmp: No such file or directory
+(eval):cd:1: no such file or directory: repo
+(eval):1: no such file or directory: ../tmp/before_checksums.txt
+cat: ../tmp/before_checksums.txt: No such file or directory
+       0
+(eval):1: no such file or directory: .venv/bin/pytho
+... [77 more characters in transcript.jsonl]</code></pre>
+<p><strong>Bash:</strong></p>
+<pre><code>ls ../out ../tmp &amp;&amp; mkdir -p ../tmp &amp;&amp; find ledgerguard/evaluation/outputs ledgerguard/evaluation/frozen -type f -exec shasum -a 256 {} + | sort &gt; ../tmp/before_checksums.txt; wc -l &lt; ../tmp/before_checksums.txt; .venv/bin/python -m pytest ledgerguard/tests -q 2&gt;&amp;1 | tail -5</code></pre>
+<p><strong>Result:</strong></p>
+<pre><code>../out:
+
+../tmp:
+cc-socks
+claude-501
+      21
+  &lt;attempt&gt;/work/repo/.venv/lib/python3.14/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+67 passed, 1 warning in 6.90s</code></pre>
+<p><strong>Bash:</strong></p>
+<pre><code>grep -rn -i -e &quot;cache_dir\|CACHE\|\.cache\|sqlite\|Path(&quot; --include=&quot;*.py&quot; ledgerguard/ai ledgerguard/pipeline.py ledgerguard/evaluation/cost.py ledgerguard/evaluation/metrics.py 2&gt;/dev/null | head -30; sed -n 1,60p ledgerguard/ai/provider.py | head -80</code></pre>
+<p><strong>Result:</strong></p>
+<pre><code>ledgerguard/ai/fallback.py:171:            &quot;cache_hits&quot;: {
+ledgerguard/ai/fallback.py:172:                p.name.split(&quot;:&quot;, 1)[0]: p.cache_hits
+ledgerguard/ai/fallback.py:174:                if getattr(p, &quot;cache_hits&quot;, 0)
+ledgerguard/ai/provider.py:31:    path = Path(__file__).resolve().parent.parent.parent / &quot;.env&quot;
+ledgerguard/ai/provider.py:225:#: Groq first: fastest of the reliable ones (~1.4s) and it does not cache.
+ledgerguard/ai/provider.py:231:#:   (p50 ~53s uncached) and caches temperature-0 responses.
+ledgerguard/ai/openai_compatible.py:281:        #: Responses the host served from its own cache rather than the model.
+ledgerguard/ai/openai_compatible.py:282:        #: OmniRoute caches temperature-0 requests and does not honour
+ledgerguard/ai/openai_compatible.py:283:        #: Cache-Control: no-cache, so repeated runs over a deterministic
+ledgerguard/ai/openai_compatible.py:286:        self.cache_hits = 0
+ledgerguard/ai/openai_compatible.py:383:            **({} if os.environ.get(&quot;LEDGERGUARD_NO_CACHE&quot;) else {&quot;temperature&quot;: 0}),
+ledgerguard/ai/openai_compatible.py:417:        if str(response.headers.get(&quot;x-omniroute-cache-hit&quot;, &quot;&quot;)).lower() == &quot;true&quot;:
+ledgerguard/ai/openai_compatible.py:418:            self.cache_hits += 1
+ledgerguard/ai/openai_compatible.py:471:            # OmniRoute caches temperature-0 requests and ignores
+ledgerguard/ai/openai_compatible.py:472:            # Cache-Control: no-cache, so a deterministic dataset replays
+ledgerguard/ai/openai_compatible.py:473:            # instead of re-measuring. LEDGERGUARD_NO_CACHE=1 omits temperature
+ledgerguard/ai/openai_compatible.py:475:            **({} if os.environ.get(&quot;LEDGERGUARD_NO_CACHE&quot;) else {&quot;temperature&quot;: 0}),
+ledgerguard/ai/openai_compatible.py:526:        if str(response.headers.get(&quot;x-omniroute-cache-hit&quot;, &quot;&quot;)).lower() == &quot;true&quot;:
+ledgerguard/ai/openai_compatible.py:527:            self.cache_hits += 1
+&quot;&quot;&quot;AI provider interface.
+
+The rest of LedgerGuard depends on exactly one function shape:
+
+    investigate(context: dict) -&gt; InvestigationResult
+
+Several implementations ship. ``AnthropicProvider`` calls Claude through the
+Anthropic SDK, ``OpenAICompatibleProvider`` and ``GeminiProvider`` (in
+``openai_compatible.py``) cover every other host, and ``FallbackProvider`` (in
+``fallback.py``) chains them so one running out of quota does not end the run.
+``HeuristicProvider`` is an offline stand-in that lets the whole pipeline,
+benchmark and demo run with no API key present -- it is deliberately naive,
+because a naive investigator is exactly what the Evidence Gate has to survive.
+Every result records which provider produced it; the benchmark report prints
+that, so a stub run is never mistaken for a model run.
+&quot;&quot;&quot;
+
+from __future__ import annotations
+
+import json
+import os
+import sys
+from pathlib import Path
+from typing import Protocol
+
+from .errors import ProviderNotConfigured
+from .schemas import InvestigationResult, InvestigatorOutput, RequiredEvidence
+
+def _load_dotenv() -&gt; None:
+    &quot;&quot;&quot;Read .env from the repo root if present. Never overrides a real env var.&quot;&quot;&quot;
+    path = Path(__file__).resolve().parent.parent.parent / &quot;.env&quot;
+    if not path.exists():
+        return
+    for line in path.read_text().splitlines():
+        line = line.strip()
+        if not line or line.startswith(&quot;#&quot;) or &quot;=&quot; not in line:
+            continue
+        key, _, value = line.partition(&quot;=&quot;)
+        os.environ.setdefault(key.strip(), value.strip())
+
+
+_load_dotenv()
+
+DEFAULT_MODEL = &quot;claude-opus-5&quot;
+DEFAULT_TIMEOUT_SECONDS = 45.0
+DEFAULT_MAX_TOKENS = 2000
+
+SYSTEM_PROMPT = &quot;&quot;&quot;You are the exception investigator inside LedgerGuard, a payments \
+reconciliation controller.
+
+A deterministic engine has already reconciled everything it could prove. You only \
+ever see exceptions it could not resolve. Your job is to propose the single most \
+likely explanation and point at the specific records that would prove it. You are \
+not the decision maker: an independent Evidence Gate re-checks eve
+... [366 more characters in transcript.jsonl]</code></pre>
+<p><strong>Agent:</strong> Baseline is green (67 passed). The default run rewrites <code>outputs/</code>, so I&#x27;ll test the new option against temporary directories instead of running the default command. Making the edits now.</p>
+<p><strong>Edit:</strong></p>
+<pre><code>&lt;attempt&gt;/work/repo/ledgerguard/evaluation/benchmark.py</code></pre>
+<p><strong>Result:</strong></p>
+<pre><code>The file &lt;attempt&gt;/work/repo/ledgerguard/evaluation/benchmark.py has been updated successfully.</code></pre>
+<p><strong>Bash:</strong></p>
+<pre><code>grep -n &quot;OUTPUT_DIR&quot; ledgerguard/evaluation/benchmark.py</code></pre>
+<p><strong>Result:</strong></p>
+<pre><code>36:OUTPUT_DIR = Path(__file__).parent / &quot;outputs&quot;
+264:        out_dir = OUTPUT_DIR
+267:        if out_dir.is_relative_to(OUTPUT_DIR.resolve()):
+269:                f&quot;--output-dir must not be inside {OUTPUT_DIR.resolve()}; &quot;
+295:    (OUTPUT_DIR / &quot;benchmark.md&quot;).write_text(md)
+296:    (OUTPUT_DIR / &quot;benchmark.json&quot;).write_text(
+319:        hybrid_report, scored, OUTPUT_DIR / &quot;unresolved_exceptions.csv&quot;
+321:    export_cases(hybrid_report, scored, OUTPUT_DIR / &quot;cases.json&quot;)
+355:    print(f&quot;\nArtifacts written to {OUTPUT_DIR}&quot;)</code></pre>
+<p><strong>Edit:</strong></p>
+<pre><code>&lt;attempt&gt;/work/repo/ledgerguard/evaluation/benchmark.py</code></pre>
+<p><strong>Result:</strong></p>
+<pre><code>The file &lt;attempt&gt;/work/repo/ledgerguard/evaluation/benchmark.py has been updated successfully.</code></pre>
+<p><strong>Edit:</strong></p>
+<pre><code>&lt;attempt&gt;/work/repo/ledgerguard/evaluation/benchmark.py</code></pre>
+<p><strong>Result:</strong></p>
+<pre><code>The file &lt;attempt&gt;/work/repo/ledgerguard/evaluation/benchmark.py has been updated successfully.</code></pre>
+<p><strong>Edit:</strong></p>
+<pre><code>&lt;attempt&gt;/work/repo/ledgerguard/evaluation/benchmark.py</code></pre>
+<p><strong>Result:</strong></p>
+<pre><code>The file &lt;attempt&gt;/work/repo/ledgerguard/evaluation/benchmark.py has been updated successfully.</code></pre>
+<p><strong>Agent:</strong> Now I need the exact names of the wall-clock fields so the equivalence test normalises only those.</p>
+<p><strong>Bash:</strong></p>
+<pre><code>grep -n &quot;wall\|throughput\|latency&quot; ledgerguard/evaluation/metrics.py | head; grep -n &quot;latency_ms&quot; -r ledgerguard --include=&quot;*.py&quot; | grep -v tests | head -5; grep -n &quot;def get_provider&quot; -A12 ledgerguard/ai/provider.py | head -30</code></pre>
+<p><strong>Result:</strong></p>
+<pre><code>68:    # --- cost / throughput -------------------------------------------------
+69:    wall_seconds: float = 0.0
+70:    throughput_per_second: float = 0.0
+75:    latency_p50_ms: float = 0.0
+76:    latency_p95_ms: float = 0.0
+176:    m.wall_seconds = round(report.wall_seconds, 3)
+177:    m.throughput_per_second = (
+178:        round(m.total_cases / report.wall_seconds, 1) if report.wall_seconds else 0.0
+188:    m.latency_p50_ms = _percentile(report.investigation_latencies_ms, 50)
+189:    m.latency_p95_ms = _percentile(report.investigation_latencies_ms, 95)
+ledgerguard/pipeline.py:130:                latencies.append(inv.latency_ms)
+ledgerguard/pipeline.py:146:                    latency_ms=0.0,
+ledgerguard/backend/app.py:152:                        &quot;latency_ms&quot;: round(outcome.investigation.latency_ms, 2),
+ledgerguard/ai/investigator.py:28:    latency_ms: float
+ledgerguard/ai/investigator.py:135:    latency_ms = (time.perf_counter() - started) * 1000
+313:def get_provider(kind: str | None = None) -&gt; InvestigatorProvider:
+314-    &quot;&quot;&quot;Select an investigator provider.
+315-
+316-    ``kind`` (or LEDGERGUARD_PROVIDER) may be:
+317-      groq | gemini | nvidia | omniroute | openai_compatible
+318-                          -- one specific provider (anthropic and cerebras are
+319-                             still constructible but are not used here)
+320-      fallback            -- chain every configured provider, failing over
+321-      stub                -- the offline stand-in
+322-      none                -- a dead provider, for testing degradation
+323-      auto                -- fallback across everything configured, else the stub
+324-
+325-    A provider that is named explicitly but cannot be configured is an error,</code></pre>
+<p><strong>Agent:</strong> Now the tests. They use a small seed/count with <code>MANIFEST_DIR</code> and <code>OUTPUT_DIR</code> redirected into <code>tmp_path</code>, so the real <code>outputs/</code> and <code>frozen/</code> are never touched.</p>
+<p><strong>Write:</strong></p>
+<pre><code>&lt;attempt&gt;/work/repo/ledgerguard/tests/test_benchmark_output_dir.py</code></pre>
+<p><strong>Result:</strong></p>
+<pre><code>File created successfully at: &lt;attempt&gt;/work/repo/ledgerguard/tests/test_benchmark_output_dir.py (file state is current in your context — no need to Read it back)</code></pre>
+<p><strong>Agent:</strong> I left a few meaningless <code>or True</code> assertions in that file. Replacing them with real checks before running anything.</p>
+<p><strong>Edit:</strong></p>
+<pre><code>&lt;attempt&gt;/work/repo/ledgerguard/tests/test_benchmark_output_dir.py</code></pre>
+<p><strong>Result:</strong></p>
+<pre><code>The file &lt;attempt&gt;/work/repo/ledgerguard/tests/test_benchmark_output_dir.py has been updated successfully. (file state is current in your context — no need to Read it back)</code></pre>
+<p><strong>Edit:</strong></p>
+<pre><code>&lt;attempt&gt;/work/repo/ledgerguard/tests/test_benchmark_output_dir.py</code></pre>
+<p><strong>Result:</strong></p>
+<pre><code>The file &lt;attempt&gt;/work/repo/ledgerguard/tests/test_benchmark_output_dir.py has been updated successfully. (file state is current in your context — no need to Read it back)</code></pre>
+<p><strong>Bash:</strong></p>
+<pre><code>.venv/bin/python -m pytest ledgerguard/tests/test_benchmark_output_dir.py -q 2&gt;&amp;1 | tail -40</code></pre>
+<p><strong>Result:</strong></p>
+<pre><code>............                                                             [100%]
+12 passed in 0.20s</code></pre>
+<p><strong>Agent:</strong> All 12 pass. Now the full suite, the real CLI against the committed frozen manifest (offline, stub provider, into <code>../tmp</code>), and a checksum comparison of <code>outputs/</code> and <code>frozen/</code>.</p>
+<p><strong>Bash:</strong></p>
+<pre><code>.venv/bin/python -m pytest ledgerguard/tests -q 2&gt;&amp;1 | tail -2; .venv/bin/python -m ledgerguard.evaluation.benchmark --provider stub --output-dir ../tmp/cli_run/nested 2&gt;&amp;1 | tail -4; echo &quot;exit=$?&quot;; ls ../tmp/cli_run/nested; .venv/bin/python -m ledgerguard.evaluation.benchmark --help | grep -A3 output-dir; find ledgerguard/evaluation/outputs ledgerguard/evaluation/frozen -type f -exec shasum -a 256 {} + | sort &gt; ../tmp/after_checksums.txt; diff ../tmp/before_checksums.txt ../tmp/after_checksums.txt &amp;&amp; echo &quot;outputs+frozen UNCHANGED&quot;</code></pre>
+<p><strong>Result:</strong></p>
+<pre><code>-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+79 passed, 1 warning in 4.80s
+  benchmark.md, benchmark.json, cases.json
+  unresolved_exceptions.csv (10 rows)
+
+NOTE: the hybrid run used the offline heuristic stub, not a model. Configure a provider key (GROQ_API_KEY, GEMINI_API_KEY, NVIDIA_API_KEY or OMNIROUTE_API_KEY) and rerun to measure against a real investigator.
+exit=0
+benchmark.json
+benchmark.md
+cases.json
+unresolved_exceptions.csv
+                                                  [--output-dir PATH]
+
+LedgerGuard benchmark
+
+--
+  --output-dir PATH     write the artifacts to PATH instead of
+                        evaluation/outputs/ (created if missing; a relative
+                        PATH resolves against the current directory). PATH may
+                        not be inside evaluation/outputs/.
+outputs+frozen UNCHANGED</code></pre>
+<p><strong>Agent:</strong> Suite is at 79 passed (67 existing + 12 new), the real CLI run verified against the committed manifest, and <code>outputs/</code> and <code>frozen/</code> checksums are unchanged. Last, I&#x27;ll add the option to the evaluation doc&#x27;s options line and write the notes file.</p>
+<p><strong>Edit:</strong></p>
+<pre><code>&lt;attempt&gt;/work/repo/docs/evaluation.md</code></pre>
+<p><strong>Result:</strong></p>
+<pre><code>The file &lt;attempt&gt;/work/repo/docs/evaluation.md has been updated successfully.</code></pre>
+<p><strong>Write:</strong></p>
+<pre><code>~/Desktop/tms-work/out/NOTES.md</code></pre>
+<p><strong>Result (error):</strong></p>
+<pre><code>EPERM: operation not permitted, open &#x27;~/Desktop/tms-work&#x27;</code></pre>
+<p><strong>Agent:</strong> I wrote the notes to the wrong <code>out/</code> path (the repo&#x27;s <code>../out</code> is <code>work/out</code>). Writing to the correct location.</p>
+<p><strong>Bash:</strong></p>
+<pre><code>ls -la ../out &amp;&amp; echo ok</code></pre>
+<p><strong>Result:</strong></p>
+<pre><code>total 0
+drwxr-xr-x@ 2 user  staff   64 Nov  1 23:22 .
+drwxr-xr-x@ 5 user  staff  160 Nov  1 23:22 ..
+ok</code></pre>
+<p><strong>Write:</strong></p>
+<pre><code>&lt;attempt&gt;/work/out/NOTES.md</code></pre>
+<p><strong>Result:</strong></p>
+<pre><code>File created successfully at: &lt;attempt&gt;/work/out/NOTES.md (file state is current in your context — no need to Read it back)</code></pre>
+<p><strong>Agent:</strong> <code>python -m ledgerguard.evaluation.benchmark --output-dir PATH</code> now writes the four artifacts to <code>PATH</code>. The full suite passes (79 tests: the 67 existing ones plus 12 new), and the committed <code>outputs/</code> and <code>frozen/</code> files are byte-identical to before.</p>
+<p><strong>What changed</strong></p>
+<ul><li><code>ledgerguard/evaluation/benchmark.py</code>: the new option. Without it, behaviour is unchanged. With it, <code>PATH</code> is created with parents, the artifacts go there, and the &quot;Artifacts written to&quot; line prints the resolved absolute path.</li><li><code>ledgerguard/tests/test_benchmark_output_dir.py</code>: 12 tests. They redirect the output and manifest directories into <code>tmp_path</code>, so the real <code>outputs/</code> and <code>frozen/</code> are never touched.</li><li><code>docs/evaluation.md</code>: one line added to the options list.</li><li>Notes are in <code>../out/NOTES.md</code>.</li></ul>
+<p><strong>Choices I made</strong></p>
+<ul><li>**A <code>PATH</code> inside <code>evaluation/outputs/</code> is refused** with a usage error (exit 2). Requirement 3 rules out writing there, so the two requirements conflict for that case.</li><li>The printed path is absolute, so a relative <code>PATH</code> shows where the files actually went.</li><li>The frozen manifest is still read and verified from <code>frozen/</code> and never written to <code>PATH</code>. A tampered manifest still aborts with <code>FROZEN HOLDOUT MISMATCH</code>, and nothing is written.</li></ul>
+<p><strong>Verification</strong></p>
+<ul><li>A real CLI run with <code>--provider stub</code> into <code>../tmp/cli_run/nested</code> passed the check against the committed manifest and exited 0.</li><li>The &quot;same artifacts as a default run&quot; test compares the default and <code>--output-dir</code> outputs with the same seed and count. It ignores only the wall-clock fields. I did not run the default command in the repo, since it would overwrite the committed artifacts.</li></ul>
+<p><strong>Not done</strong></p>
+<ul><li>No live-model run, since there are no API keys.</li><li>The other evaluation scripts still write only to <code>outputs/</code>. The request covered only the benchmark.</li></ul>
+</main>
+</body>
+</html>

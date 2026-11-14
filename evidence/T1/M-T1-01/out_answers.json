@@ -1,0 +1,26 @@
+{
+  "scored_lifecycles": 85,
+  "holdout_batch_sha256": "3e28d4572d4cfc95a7ebd5ad1a04531475e0044e63eb1c732e38e303866f20fa",
+  "hybrid_provider": "heuristic_stub",
+  "baseline": {
+    "accuracy": 0.8941,
+    "auto_resolved": 12,
+    "human_review_required": 19,
+    "false_auto_resolutions": 0,
+    "unresolved_value_paise": 19178059
+  },
+  "hybrid": {
+    "accuracy": 1.0,
+    "auto_resolved": 21,
+    "human_review_required": 10,
+    "false_auto_resolutions": 0,
+    "unresolved_value_paise": 12189954
+  },
+  "artifacts_written": [
+    "ledgerguard/evaluation/outputs/benchmark.json",
+    "ledgerguard/evaluation/outputs/benchmark.md",
+    "ledgerguard/evaluation/outputs/cases.json",
+    "ledgerguard/evaluation/outputs/unresolved_exceptions.csv"
+  ],
+  "committed_results_provider": "fallback(groq->gemini->nvidia->omniroute)"
+}

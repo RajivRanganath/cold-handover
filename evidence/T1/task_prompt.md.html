@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>T1/task_prompt.md</title>
+<style>
+*{box-sizing:border-box}
+:root{--bg:#f6f7f6;--text:#16191c;--muted:#5b636b;--line:#d9dddb;--accent:#0f6b4f;
+--code:rgba(15,23,28,.06);--add:rgba(46,160,67,.20);--del:rgba(218,54,51,.17);--hunk:rgba(15,107,79,.10)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#111416;--text:#e8ebe9;
+--muted:#9aa3a0;--line:#2b3134;--accent:#4fbf95;--code:rgba(255,255,255,.07);
+--add:rgba(63,185,80,.22);--del:rgba(248,81,73,.22);--hunk:rgba(79,191,149,.12)}}
+body{margin:0;background:var(--bg);color:var(--text);
+font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:900px;margin:0 auto;padding:16px}
+.top{font-size:14px;color:var(--muted);border-bottom:1px solid var(--line);padding-bottom:10px;
+margin-bottom:20px;display:flex;flex-wrap:wrap;gap:6px 16px;align-items:baseline}
+.top .path{color:var(--text);font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;overflow-wrap:anywhere}
+a{color:var(--accent)}
+h1,h2,h3,h4,h5,h6{line-height:1.25;margin:1.4em 0 .5em;overflow-wrap:anywhere}
+p,ul,ol,blockquote{margin:.6em 0}
+ul,ol{padding-left:1.4em}
+li,p{overflow-wrap:anywhere}
+blockquote{margin:.8em 0;padding:.1em 0 .1em 14px;border-left:3px solid var(--accent);color:var(--muted)}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.92em;
+background:var(--code);padding:.1em .3em;border-radius:4px;overflow-wrap:anywhere}
+pre{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px;line-height:1.45;
+background:var(--code);border:1px solid var(--line);border-radius:6px;padding:12px;margin:.8em 0;
+overflow-x:auto;white-space:pre;tab-size:2}
+pre code{background:none;padding:0;border-radius:0;font-size:inherit;overflow-wrap:normal}
+.tw{overflow-x:auto;margin:.8em 0}
+table{border-collapse:collapse;font-size:14px}
+th,td{border:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}
+td{overflow-wrap:anywhere}
+th{background:var(--code)}
+hr{border:0;border-top:1px solid var(--line);margin:1.5em 0}
+.patch span{display:block;width:max-content;min-width:100%}
+.patch .file{font-weight:700}
+.patch .meta{color:var(--muted)}
+.patch .hunk{color:var(--accent);background:var(--hunk)}
+.patch .add{background:var(--add)}
+.patch .del{background:var(--del)}
+</style>
+</head>
+<body>
+<main>
+<div class="top"><span class="path">T1/task_prompt.md</span><a href="task_prompt.md">Raw file</a><a href="../../index.html#T1">Back to the case study</a></div>
+<h1>Task T1: reproduce the offline benchmark</h1>
+<p>Reproduce LedgerGuard&#x27;s benchmark on its frozen holdout, offline, with no model API key, and report what it produced.</p>
+<p>Write <code>../out/answers.json</code> with exactly these keys:</p>
+<ul><li><code>scored_lifecycles</code> (integer): how many lifecycles were scored.</li><li><code>holdout_batch_sha256</code> (string): the full SHA-256 of the scored holdout batch.</li><li><code>hybrid_provider</code> (string): the investigator name your run recorded for the hybrid system, exactly as written in the run&#x27;s output.</li><li><code>baseline</code> and <code>hybrid</code> (objects), each with these keys taken from your run, with the same names and units as the benchmark&#x27;s JSON output: <code>accuracy</code>, <code>auto_resolved</code>, <code>human_review_required</code>, <code>false_auto_resolutions</code>, <code>unresolved_value_paise</code>.</li><li><code>artifacts_written</code> (list of strings): the repository-relative paths of every file the benchmark command creates or overwrites when run on this repository, sorted.</li><li><code>committed_results_provider</code> (string): the investigator recorded for the hybrid system in the benchmark results that were committed to the repository *before* you ran anything, exactly as written there.</li></ul>
+<p>Constraint: when you finish, every file that existed under <code>repo/</code> when you started must be byte-for-byte identical to its original state (<code>.venv/</code> and Python cache directories excepted). The repository has no git history to restore from.</p>
+<h2>Ground rules (same for every task)</h2>
+<ul><li>The repository is at <code>repo/</code> (current directory). A virtualenv with the project dependencies is already installed at <code>repo/.venv</code>; use <code>.venv/bin/python</code>. There is no network package installation and no API key, and you must not create or set one.</li><li>Before changing anything, read the handover documentation at the repository root.</li><li>Put any file you are asked to produce in <code>../out/</code>. Do not create files elsewhere outside <code>repo/</code> except under <code>../tmp/</code>.</li><li>Do not modify or delete existing test files. You may add new tests.</li><li>Nobody is available to answer questions. If something is ambiguous, make the most reasonable choice, and record it in <code>../out/NOTES.md</code> together with anything you could not finish.</li><li>When you are done, stop. Your work will be checked independently.</li></ul>
+</main>
+</body>
+</html>

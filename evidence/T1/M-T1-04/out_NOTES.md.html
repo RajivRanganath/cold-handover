@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>T1/M-T1-04/out_NOTES.md</title>
+<style>
+*{box-sizing:border-box}
+:root{--bg:#f6f7f6;--text:#16191c;--muted:#5b636b;--line:#d9dddb;--accent:#0f6b4f;
+--code:rgba(15,23,28,.06);--add:rgba(46,160,67,.20);--del:rgba(218,54,51,.17);--hunk:rgba(15,107,79,.10)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#111416;--text:#e8ebe9;
+--muted:#9aa3a0;--line:#2b3134;--accent:#4fbf95;--code:rgba(255,255,255,.07);
+--add:rgba(63,185,80,.22);--del:rgba(248,81,73,.22);--hunk:rgba(79,191,149,.12)}}
+body{margin:0;background:var(--bg);color:var(--text);
+font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:900px;margin:0 auto;padding:16px}
+.top{font-size:14px;color:var(--muted);border-bottom:1px solid var(--line);padding-bottom:10px;
+margin-bottom:20px;display:flex;flex-wrap:wrap;gap:6px 16px;align-items:baseline}
+.top .path{color:var(--text);font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;overflow-wrap:anywhere}
+a{color:var(--accent)}
+h1,h2,h3,h4,h5,h6{line-height:1.25;margin:1.4em 0 .5em;overflow-wrap:anywhere}
+p,ul,ol,blockquote{margin:.6em 0}
+ul,ol{padding-left:1.4em}
+li,p{overflow-wrap:anywhere}
+blockquote{margin:.8em 0;padding:.1em 0 .1em 14px;border-left:3px solid var(--accent);color:var(--muted)}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.92em;
+background:var(--code);padding:.1em .3em;border-radius:4px;overflow-wrap:anywhere}
+pre{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px;line-height:1.45;
+background:var(--code);border:1px solid var(--line);border-radius:6px;padding:12px;margin:.8em 0;
+overflow-x:auto;white-space:pre;tab-size:2}
+pre code{background:none;padding:0;border-radius:0;font-size:inherit;overflow-wrap:normal}
+.tw{overflow-x:auto;margin:.8em 0}
+table{border-collapse:collapse;font-size:14px}
+th,td{border:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}
+td{overflow-wrap:anywhere}
+th{background:var(--code)}
+hr{border:0;border-top:1px solid var(--line);margin:1.5em 0}
+.patch span{display:block;width:max-content;min-width:100%}
+.patch .file{font-weight:700}
+.patch .meta{color:var(--muted)}
+.patch .hunk{color:var(--accent);background:var(--hunk)}
+.patch .add{background:var(--add)}
+.patch .del{background:var(--del)}
+</style>
+</head>
+<body>
+<main>
+<div class="top"><span class="path">T1/M-T1-04/out_NOTES.md</span><a href="out_NOTES.md">Raw file</a><a href="../../../index.html#T1">Back to the case study</a></div>
+<h1>T1 notes: offline benchmark reproduction</h1>
+<h2>What was run</h2>
+<ul><li><code>.venv/bin/python -m ledgerguard.evaluation.benchmark</code> (defaults, no arguments).</li><li>No API key was set (<code>GROQ_API_KEY</code>, <code>GEMINI_API_KEY</code>, <code>NVIDIA_API_KEY</code>, <code>OMNIROUTE_API_KEY</code>, <code>ANTHROPIC_API_KEY</code> all unset), there is no <code>.env</code>, and no <code>--provider</code> was passed. <code>get_provider()</code> therefore resolved to the offline <code>HeuristicProvider</code>, so the hybrid run is labelled <code>heuristic_stub</code>. It is not a model run.</li><li>The frozen holdout manifest <code>evaluation/frozen/holdout_20260905_320.json</code> already existed. The run verified it and did not rewrite it. The regenerated batch hash matches the frozen value.</li></ul>
+<h2>Results from this run</h2>
+<ul><li>85 scored lifecycles, batch SHA-256 <code>3e28d4572d4cfc95a7ebd5ad1a04531475e0044e63eb1c732e38e303866f20fa</code>.</li><li>Baseline (rules only): accuracy 0.8941, auto_resolved 12, human_review_required 19, false_auto_resolutions 0, unresolved_value_paise 19178059.</li><li>Hybrid (<code>heuristic_stub</code>): accuracy 1.0, auto_resolved 21, human_review_required 10, false_auto_resolutions 0, unresolved_value_paise 12189954.</li><li>The hybrid&#x27;s accuracy and auto-resolution figures here come from the naive offline stub. They do not reproduce the committed model-run numbers, and they say nothing about a live model.</li></ul>
+<h2>Committed results (read before running anything)</h2>
+<ul><li><code>evaluation/outputs/benchmark.json</code> records <code>hybrid.provider</code> as <code>fallback(groq-&gt;gemini-&gt;nvidia-&gt;omniroute)</code>, so <code>committed_results_provider</code> is that string. The committed <code>benchmark.md</code> gives the same investigator on its line 5.</li><li>The committed <code>benchmark.json</code> also contains the stale <code>investigator_chain.chain</code> entry for NVIDIA, as <code>docs/evaluation.md</code> already records. I did not touch it.</li></ul>
+<h2>Artifacts</h2>
+<ul><li>The benchmark overwrites four files: <code>benchmark.json</code>, <code>benchmark.md</code>, <code>cases.json</code> and <code>unresolved_exceptions.csv</code>. The list is sorted in <code>answers.json</code>.</li><li>The frozen manifest is written only when absent, so it was not written here.</li><li>Python writes <code>__pycache__/</code> directories inside <code>repo/</code> when it imports the package. These are excluded by the ground rules, and I left them in place. They are not in <code>artifacts_written</code>, because they are an interpreter side effect and not benchmark output.</li></ul>
+<h2>Determinism check</h2>
+<ul><li>A second run produced byte-identical <code>cases.json</code>, <code>unresolved_exceptions.csv</code>, and <code>benchmark.json</code> metrics once the four timing fields were excluded.</li><li><code>benchmark.md</code> differed only in its <code>Wall time</code>, <code>Throughput</code>, and latency rows, as expected.</li></ul>
+<h2>Repository restored</h2>
+<ul><li>Before running, I snapshotted all 82 non-venv files with SHA-256. I restored the four overwritten committed outputs from a pre-run copy. The whole tree now matches the snapshot, and the only additions are <code>__pycache__</code> directories.</li><li>The run&#x27;s output copies are kept under <code>../tmp/run1/</code> and <code>../tmp/rerun2/</code>. They are not part of the deliverable.</li></ul>
+<h2>Not done / limits</h2>
+<ul><li>No live model run, by design (no key and offline constraint). The <code>hybrid_provider</code> value and the hybrid figures describe the stub only.</li><li><code>answers.json</code> numbers come from my run. The committed artifacts in the repo remain the originals.</li></ul>
+</main>
+</body>
+</html>

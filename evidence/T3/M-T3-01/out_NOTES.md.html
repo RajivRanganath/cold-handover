@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>T3/M-T3-01/out_NOTES.md</title>
+<style>
+*{box-sizing:border-box}
+:root{--bg:#f6f7f6;--text:#16191c;--muted:#5b636b;--line:#d9dddb;--accent:#0f6b4f;
+--code:rgba(15,23,28,.06);--add:rgba(46,160,67,.20);--del:rgba(218,54,51,.17);--hunk:rgba(15,107,79,.10)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#111416;--text:#e8ebe9;
+--muted:#9aa3a0;--line:#2b3134;--accent:#4fbf95;--code:rgba(255,255,255,.07);
+--add:rgba(63,185,80,.22);--del:rgba(248,81,73,.22);--hunk:rgba(79,191,149,.12)}}
+body{margin:0;background:var(--bg);color:var(--text);
+font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:900px;margin:0 auto;padding:16px}
+.top{font-size:14px;color:var(--muted);border-bottom:1px solid var(--line);padding-bottom:10px;
+margin-bottom:20px;display:flex;flex-wrap:wrap;gap:6px 16px;align-items:baseline}
+.top .path{color:var(--text);font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;overflow-wrap:anywhere}
+a{color:var(--accent)}
+h1,h2,h3,h4,h5,h6{line-height:1.25;margin:1.4em 0 .5em;overflow-wrap:anywhere}
+p,ul,ol,blockquote{margin:.6em 0}
+ul,ol{padding-left:1.4em}
+li,p{overflow-wrap:anywhere}
+blockquote{margin:.8em 0;padding:.1em 0 .1em 14px;border-left:3px solid var(--accent);color:var(--muted)}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.92em;
+background:var(--code);padding:.1em .3em;border-radius:4px;overflow-wrap:anywhere}
+pre{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px;line-height:1.45;
+background:var(--code);border:1px solid var(--line);border-radius:6px;padding:12px;margin:.8em 0;
+overflow-x:auto;white-space:pre;tab-size:2}
+pre code{background:none;padding:0;border-radius:0;font-size:inherit;overflow-wrap:normal}
+.tw{overflow-x:auto;margin:.8em 0}
+table{border-collapse:collapse;font-size:14px}
+th,td{border:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}
+td{overflow-wrap:anywhere}
+th{background:var(--code)}
+hr{border:0;border-top:1px solid var(--line);margin:1.5em 0}
+.patch span{display:block;width:max-content;min-width:100%}
+.patch .file{font-weight:700}
+.patch .meta{color:var(--muted)}
+.patch .hunk{color:var(--accent);background:var(--hunk)}
+.patch .add{background:var(--add)}
+.patch .del{background:var(--del)}
+</style>
+</head>
+<body>
+<main>
+<div class="top"><span class="path">T3/M-T3-01/out_NOTES.md</span><a href="out_NOTES.md">Raw file</a><a href="../../../index.html#T3">Back to the case study</a></div>
+<h1>T3 notes: <code>--output-dir</code> for the benchmark</h1>
+<h2>What changed</h2>
+<ul><li><code>ledgerguard/evaluation/benchmark.py</code>: new <code>--output-dir PATH</code> option. Without it, <code>out_dir = OUTPUT_DIR</code> and the behaviour is the same as before. With it, the path is resolved (relative paths against the CWD), created with parents, and all four artifacts (<code>benchmark.md</code>, <code>benchmark.json</code>, <code>cases.json</code>, <code>unresolved_exceptions.csv</code>) are written there. The final line prints the resolved absolute path.</li><li><code>ledgerguard/tests/test_benchmark_output_dir.py</code>: 7 new tests (offline, stub provider, small seed/count, <code>OUTPUT_DIR</code> and <code>MANIFEST_DIR</code> redirected into <code>tmp_path</code>).</li><li><code>docs/evaluation.md</code>: options line mentions the new flag.</li></ul>
+<h2>Choices I made (not specified in the task)</h2>
+<ul><li>**Refusing a path inside <code>evaluation/outputs/</code>.** Requirement 3 says nothing under that directory may be created or modified when the option is given, so a PATH inside it is rejected with a <code>SystemExit</code> before any work is done. Nothing else is restricted; a PATH inside <code>frozen/</code> is allowed (only the artifacts go there; the manifest logic is unchanged).</li><li><strong>Printed path is the resolved absolute path</strong>, not the string as typed, so a relative PATH is printed unambiguously.</li><li><code>~</code> is not expanded by the code; the shell does that before the argument arrives.</li><li>A PATH that exists as a regular file raises the usual <code>FileExistsError</code> from <code>mkdir</code>. I did not add a nicer message.</li></ul>
+<h2>Verification</h2>
+<ul><li>Full suite: <code>.venv/bin/python -m pytest -q ledgerguard/tests</code> → 74 passed (67 existing + 7 new).</li><li>Content equivalence: a default run and an <code>--output-dir</code> run with the same seed/count produce identical <code>benchmark.md</code> (minus the wall-time / throughput / latency lines), identical <code>benchmark.json</code> and <code>cases.json</code> (minus <code>wall_seconds</code>, <code>throughput_per_second</code>, <code>latency_p50_ms</code>, <code>latency_p95_ms</code>, <code>latency_ms</code>), and an identical unresolved CSV.</li><li>CLI check at the real default seed/count (<code>--provider stub --output-dir ../tmp/cli_check</code>) succeeded and verified against the committed frozen manifest.</li><li><code>ledgerguard/evaluation/outputs/</code> and <code>ledgerguard/evaluation/frozen/</code> SHA-256 hashes were taken before and after and are identical. The canonical default run was deliberately NOT executed against the real <code>outputs/</code>, because it would rewrite the committed artifacts.</li></ul>
+<h2>Not done / caveats</h2>
+<ul><li>The provider-backed (non-stub) hybrid run was not exercised; there is no API key, and the change does not touch provider code.</li><li>The other evaluation scripts (<code>ablation</code>, <code>scale</code>, <code>drift</code>, ...) still write to <code>outputs/</code> only; the task asked for the benchmark alone.</li></ul>
+</main>
+</body>
+</html>

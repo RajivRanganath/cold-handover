@@ -1,0 +1,21 @@
+{
+  "checks": {
+    "repo_files_unchanged": true,
+    "answers_json_valid": true,
+    "scored_lifecycles": true,
+    "holdout_batch_sha256": true,
+    "hybrid_provider": true,
+    "committed_results_provider": true,
+    "baseline": true,
+    "hybrid": true,
+    "artifacts_written": true,
+    "regression_67": true
+  },
+  "integrity": {
+    "modified": [],
+    "deleted": [],
+    "added": []
+  },
+  "task": "T1",
+  "pass": true
+}

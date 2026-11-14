@@ -1,0 +1,1405 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>T2/M-T2-01/transcript.md</title>
+<style>
+*{box-sizing:border-box}
+:root{--bg:#f6f7f6;--text:#16191c;--muted:#5b636b;--line:#d9dddb;--accent:#0f6b4f;
+--code:rgba(15,23,28,.06);--add:rgba(46,160,67,.20);--del:rgba(218,54,51,.17);--hunk:rgba(15,107,79,.10)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#111416;--text:#e8ebe9;
+--muted:#9aa3a0;--line:#2b3134;--accent:#4fbf95;--code:rgba(255,255,255,.07);
+--add:rgba(63,185,80,.22);--del:rgba(248,81,73,.22);--hunk:rgba(79,191,149,.12)}}
+body{margin:0;background:var(--bg);color:var(--text);
+font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:900px;margin:0 auto;padding:16px}
+.top{font-size:14px;color:var(--muted);border-bottom:1px solid var(--line);padding-bottom:10px;
+margin-bottom:20px;display:flex;flex-wrap:wrap;gap:6px 16px;align-items:baseline}
+.top .path{color:var(--text);font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;overflow-wrap:anywhere}
+a{color:var(--accent)}
+h1,h2,h3,h4,h5,h6{line-height:1.25;margin:1.4em 0 .5em;overflow-wrap:anywhere}
+p,ul,ol,blockquote{margin:.6em 0}
+ul,ol{padding-left:1.4em}
+li,p{overflow-wrap:anywhere}
+blockquote{margin:.8em 0;padding:.1em 0 .1em 14px;border-left:3px solid var(--accent);color:var(--muted)}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.92em;
+background:var(--code);padding:.1em .3em;border-radius:4px;overflow-wrap:anywhere}
+pre{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px;line-height:1.45;
+background:var(--code);border:1px solid var(--line);border-radius:6px;padding:12px;margin:.8em 0;
+overflow-x:auto;white-space:pre;tab-size:2}
+pre code{background:none;padding:0;border-radius:0;font-size:inherit;overflow-wrap:normal}
+.tw{overflow-x:auto;margin:.8em 0}
+table{border-collapse:collapse;font-size:14px}
+th,td{border:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}
+td{overflow-wrap:anywhere}
+th{background:var(--code)}
+hr{border:0;border-top:1px solid var(--line);margin:1.5em 0}
+.patch span{display:block;width:max-content;min-width:100%}
+.patch .file{font-weight:700}
+.patch .meta{color:var(--muted)}
+.patch .hunk{color:var(--accent);background:var(--hunk)}
+.patch .add{background:var(--add)}
+.patch .del{background:var(--del)}
+</style>
+</head>
+<body>
+<main>
+<div class="top"><span class="path">T2/M-T2-01/transcript.md</span><a href="transcript.md">Raw file</a><a href="../../../index.html#T2">Back to the case study</a></div>
+<h1>M-T2-01 transcript (PASS)</h1>
+<p><strong>Agent:</strong> I&#x27;ll start with the handover documentation at the repository root, then the reconciliation code.</p>
+<p><strong>Bash:</strong></p>
+<pre><code>ls -la &amp;&amp; find . -path ./.venv -prune -o -type f -print | grep -v __pycache__ | grep -v &#x27;\.git/&#x27; | head -200</code></pre>
+<p><strong>Result:</strong></p>
+<pre><code>total 88
+drwxr-xr-x@ 10 user  staff    320 Nov  1 23:13 .
+drwxr-xr-x@  5 user  staff    160 Nov  1 23:13 ..
+-rw-r--r--@  1 user  staff   1992 Nov  1 23:13 .env.example
+-rw-r--r--@  1 user  staff     56 Nov  1 23:13 .gitignore
+drwxr-xr-x@  7 user  staff    224 Nov  1 23:13 .venv
+drwxr-xr-x@  7 user  staff    224 Nov  1 23:13 docs
+drwxr-xr-x@ 14 user  staff    448 Nov  1 23:13 ledgerguard
+-rw-r--r--@  1 user  staff  26848 Nov  1 23:13 README.md
+-rw-r--r--@  1 user  staff    466 Nov  1 23:13 requirements.txt
+-rwxr-xr-x@  1 user  staff   1447 Nov  1 23:13 run_demo.sh
+./requirements.txt
+./README.md
+./run_demo.sh
+./.gitignore
+./.env.example
+./docs/architecture.md
+./docs/limitations.md
+./docs/model_comparison.md
+./docs/analyses.md
+./docs/evaluation.md
+./ledgerguard/__init__.py
+./ledgerguard/pipeline.py
+./ledgerguard/qa.py
+./ledgerguard/reconciliation/matcher.py
+./ledgerguard/reconciliation/__init__.py
+./ledgerguard/reconciliation/exceptions.py
+./ledgerguard/ledger/shadow_ledger.py
+./ledgerguard/ledger/models.py
+./ledgerguard/ledger/__init__.py
+./ledgerguard/ledger/money.py
+./ledgerguard/ledger/invariants.py
+./ledgerguard/evidence/__init__.py
+./ledgerguard/evidence/safety.py
+./ledgerguard/evidence/verifier.py
+./ledgerguard/frontend/index.html
+./ledgerguard/tests/test_p0_core.py
+./ledgerguard/tests/test_p2_evaluation.py
+./ledgerguard/tests/test_p1_compound.py
+./ledgerguard/tests/__init__.py
+./ledgerguard/tests/test_p1_extended.py
+./ledgerguard/tests/test_fallback.py
+./ledgerguard/tests/test_evidence_download.py
+./ledgerguard/tests/rehearsal_check.py
+./ledgerguard/tests/test_dashboard_startup.py
+./ledgerguard/backend/__init__.py
+./ledgerguard/backend/app.py
+./ledgerguard/ai/provider.py
+./ledgerguard/ai/openai_compatible.py
+./ledgerguard/ai/__init__.py
+./ledgerguard/ai/schemas.py
+./ledgerguard/ai/errors.py
+./ledgerguard/ai/investigator.py
+./ledgerguard/ai/fallback.py
+./ledgerguard/synthetic/fault_injector.py
+./ledgerguard/synthetic/adversarial.py
+./ledgerguard/synthetic/__init__.py
+./ledgerguard/synthetic/generator.py
+./ledgerguard/synthetic/compound.py
+./ledgerguard/evaluation/metrics.py
+./ledgerguard/evaluation/benchmark.py
+./ledgerguard/evaluation/baseline.py
+./ledgerguard/evaluation/ablation.py
+./ledgerguard/evaluation/drift.py
+./ledgerguard/evaluation/__init__.py
+./ledgerguard/evaluation/no_gate_ablation.py
+./ledgerguard/evaluation/replay.py
+./ledgerguard/evaluation/model_comparison.py
+./ledgerguard/evaluation/cost.py
+./ledgerguard/evaluation/scale.py
+./ledgerguard/evaluation/report.py
+./ledgerguard/evaluation/calibration.py
+./ledgerguard/evaluation/frozen/holdout_20260905_320.json
+./ledgerguard/evaluation/outputs/reconciliation_report.csv
+./ledgerguard/evaluation/outputs/scale.json
+./ledgerguard/evaluation/outputs/calibration.json
+./ledgerguard/evaluation/outputs/no_gate_ablation.json
+./ledgerguard/evaluation/outputs/scale.md
+./ledgerguard/evaluation/outputs/reconciliation_report.md
+./ledgerguard/evaluation/outputs/ablation.json
+./ledgerguard/evaluation/outputs/calibration.md
+./ledgerguard/evaluation/outputs/benchmark.json
+./ledgerguard/evaluation/outputs/model_comparison.md
+./ledgerguard/evaluation/outputs/drift.json
+./ledgerguard/evaluation/outputs/benchmark.md
+./ledgerguard/evaluation/outputs/model_comparison.json
+./ledgerguard/evaluation/outputs/cases.json
+./ledgerguard/evaluation/outputs/unresolved_exceptions.csv
+./ledgerguard/evaluation/outputs/evidence_ledger.csv
+./ledgerguard/evaluation/outputs/drift.md
+./ledgerguard/evaluation/outputs/decision_log.json
+./ledgerguard/evaluation/outputs/no_gate_ablation.md
+./ledgerguard/evaluation/outputs/ablation.md</code></pre>
+<p><strong>Bash:</strong></p>
+<pre><code>cat README.md | head -400; echo ----; wc -l docs/*.md; ls ../; ls ../out ../tmp 2&gt;&amp;1</code></pre>
+<p><strong>Result:</strong></p>
+<pre><code># LedgerGuard
+
+**A self verifying AI finance controller.** Razorpay AI Buildathon, Track 04.
+
+The workflow is settlement reconciliation: inspect the source records, verify an
+ambiguous refund, and export the exceptions that still need a human.
+
+I built LedgerGuard to answer a question that a reconciliation chatbot does not
+answer: an LLM can generate a plausible explanation for a financial discrepancy
+in about two seconds — but how do you know whether that explanation is
+*financially true*?
+
+**The core claim: LLM reasoning is not financial truth. Financial truth is
+deterministic accounting state plus verified evidence. The AI may propose, the
+financial system must prove.**
+
+## Quick start
+</code></pre>
+<p>git clone https://github.com/RajivRanganath/ledgerguard.git &amp;&amp; cd ledgerguard python3 -m venv .venv &amp;&amp; .venv/bin/pip install -r requirements.txt ./run_demo.sh          # tests, then benchmark, then http://127.0.0.1:8137</p>
+<pre><code>
+**No API key is needed.** Without one the AI investigation step degrades to an
+offline stand-in and says so on the page; the deterministic engine, Shadow
+Ledger, Evidence Gate, benchmark and dashboard all run unchanged.
+
+---
+
+## Where to verify each published requirement
+
+Track 04, AI Finance Controller, checked against the official Buildathon page.
+The official description does not mandate multiple agents, a particular frontend
+framework, or a Razorpay payment API integration. Synthetic settlement
+reconciliation is the chosen workflow, and no payment is ever initiated.
+
+| Published requirement | Where to verify it |
+|---|---|
+| One finance-operations loop | Dashboard: records → investigation → checks → disposition → exception report |
+| At least 50 synthetic records | 320 generated lifecycles; 85 held out and frozen for the benchmark |
+| Match rate | `evaluation/outputs/benchmark.json` — `baseline.match_rate`, `hybrid.match_rate` |
+| Throughput and measured accuracy | Same artifact; wall-clock figures include provider latency |
+| Exceptions that could not be resolved | Dashboard exception queue, and `evaluation/outputs/unresolved_exceptions.csv` |
+| Architecture | [`docs/architecture.md`](docs/architecture.md) |
+
+---
+
+## What it does
+
+LedgerGuard reconciles orders, payments, refunds, settlements and bank records.
+
+1. **The Shadow Ledger** independently reconstructs what the money movement
+   *should* have been, from first principles:
+   `expected_net = captured − refunds − fees − tax ± valid adjustments`.
+   It never reads settlement or bank records to decide what to expect. Six named
+   invariants (`I1`–`I6`) compare that reconstruction against what the provider
+   actually reported. All money is integer paise; no float ever touches it.
+
+2. **A deterministic engine reconciles everything it can prove** — exact
+   identifier matching, settlement arithmetic against the fee schedule,
+   duplicate detection, timing windows, bank matching. On the frozen holdout it
+   resolves 54 of 85 cases with zero AI involvement, and never sends a case to
+   the model that it could prove on its own.
+
+3. **The AI investigator only sees what could not be proved.** It gets the
+   records, the Shadow Ledger&#x27;s expected value, the discrepancy, the permitted
+   hypothesis taxonomy, and candidate related records. It returns structured
+   JSON only. It is instructed not to calculate money; its prose is not used for
+   monetary computation. It has no record-editing or case-closing tools.
+
+4. **The Evidence Gate re-proves every claim.** If the model says a shortfall is
+   a partial refund, the gate checks whether that refund exists, whether it is
+   already owned by another payment, whether its reference identifies *this*
+   order&#x27;s customer, whether the amount matches, whether the timing is possible,
+   and whether re-running the Shadow Ledger with that refund applied restores the
+   invariant exactly. Verdict: `VERIFIED`, `UNVERIFIED`, or `REJECTED`.
+
+5. **When proof is insufficient, it abstains.** Four states —
+   `AUTO_RESOLVED`, `RECOMM
+... [15809 more characters in transcript.jsonl]</code></pre>
+<p><strong>Agent:</strong> This is not a git repo, so I&#x27;ll snapshot the artifact directories before running anything, to verify them unchanged at the end. Then I&#x27;ll read the architecture doc and the matcher.</p>
+<p><strong>Bash:</strong></p>
+<pre><code>mkdir -p ../tmp/orig &amp;&amp; cp -a ledgerguard ../tmp/orig/ &amp;&amp; cd ledgerguard &amp;&amp; find . -name __pycache__ -prune -o -type f -print | sort &gt; /dev/null; cd ..; (cd ledgerguard/evaluation &amp;&amp; shasum -a 256 outputs/* frozen/* &gt; ../../../tmp/orig/artifact_sums.txt); cat ../tmp/orig/artifact_sums.txt | head -30; echo ----; cat docs/architecture.md</code></pre>
+<p><strong>Result:</strong></p>
+<pre><code>7ffa151674c19541ac0b4cf9a8618b4c5a8eef664afd9ab81321961848cecd03  outputs/ablation.json
+fc84418ada9f206e10f07170d5c3e362c531474c13abefed04eadabf32c6cda2  outputs/ablation.md
+249e3bce69daeb83386d9575e66bf4177d4db885a8864ab6b32d80b5717d8536  outputs/benchmark.json
+aa667ebea4ccd41fa0bdff898182200d3bf282ef0b888cabd7b5a215d82edd22  outputs/benchmark.md
+8dc1212f1c93e7c1bf34d92923c1d31f15b7096a0b39e4c2afa4e167f4eda9d4  outputs/calibration.json
+bbfc6509ce38c53329da95bde380675d231fcfbb15efd4428252aae3eef32d12  outputs/calibration.md
+a5552fcb48631411cb08fae4e34987295cca132334d6c31d86601f73e538455b  outputs/cases.json
+c52561e7f550a9c66a045bd6aaebd91f8883f120a624bf773d2a3dfae1753c7d  outputs/decision_log.json
+ac427b5c78460109ba2fb3914c2d04310e80089ea245dcf44f426bc2da5562a7  outputs/drift.json
+b3ceedf8b7067eb970ee33a6f7802ea154a10aa6fcbabe903b7880a0cd5634dc  outputs/drift.md
+3699ea28a60eed7b419b027283ae1a9a3875eeb7c43e674adddfc0d195aa50c1  outputs/evidence_ledger.csv
+1fbca2999ea5f5b76d810ac2955beb5fca7bc5af165320a752be60dbe4b96100  outputs/model_comparison.json
+b877b4cdb9f9dfc33ff7ad0e82915e3e6fad2b84ccd8e3e9170943758834ff4d  outputs/model_comparison.md
+ccc33093b532b19e326ed4ac8f8d16d29645807f3fe97841a10dc7d242f57917  outputs/no_gate_ablation.json
+b2aa14f8b312f1a735663b70b69137f2df190ab9ef731c51c31def8d05bd14e4  outputs/no_gate_ablation.md
+c58809b7c6b57a77dd33ce948b09988c6c9ded01bacb052b2f4f9b2d5193d6d7  outputs/reconciliation_report.csv
+7a9f6520bbeb849b4e6f1f15a78f39a608583c6776c7c310457ed053a82dd41c  outputs/reconciliation_report.md
+530301222288c5c487d56e9029f570bd01720e1fdbd306c90b9f71c71488cd4b  outputs/scale.json
+227f79916be1cbe13addb7096e2f0f453660e2dc4ef83e4081ff8bcbee2ef9cf  outputs/scale.md
+af74f00254d9a8cee944bccdf9fd8940c2a318c0bfd5c6965dbfc5a221e00711  outputs/unresolved_exceptions.csv
+06f71351dd21bdcdb30705986832111987fe71ff6d6787ed2a198c88de50a53f  frozen/holdout_20260905_320.json
+----
+# Architecture
+
+## The one-sentence version
+
+Deterministic accounting decides what is true; the AI only proposes candidate
+explanations for what the accounting could not decide; an independent gate
+re-derives every proposal from records before it can change any state.
+
+## Data flow
+</code></pre>
+<p>Batch (orders, payments, refunds, settlements, bank)</p>
+<p>| +-------------+-------------+</p>
+<p>|                           | ShadowLedger                   deterministic (expected movement)                  matcher</p>
+<p>|                           | +------------+--------------+</p>
+<p>| 6 invariants I1..I6</p>
+<p>| +-------------+--------------+</p>
+<p>|                            | provable outcome              genuinely ambiguous (MATCHED / typed exception)       (UNEXPLAINED_SHORTFALL,</p>
+<p>|                     BANK_MISMATCH, ...)</p>
+<p>|                            |</p>
+<p>|                    AI investigator</p>
+<p>|                  (structured JSON only)</p>
+<p>|                            |</p>
+<p>|                     Evidence Gate</p>
+<p>|               (7 deterministic checks)</p>
+<p>|                            |</p>
+<p>|                  uniqueness pass +-------------+--------------+</p>
+<p>| safety / action gate AUTO_RESOLVED | RECOMMEND_REVIEW HUMAN_REVIEW_REQUIRED | UNRESOLVED</p>
+<pre><code>
+## Components
+
+### `led
+... [10325 more characters in transcript.jsonl]</code></pre>
+<p><strong>Bash:</strong></p>
+<pre><code>cd ledgerguard &amp;&amp; cat reconciliation/matcher.py; echo ----; cat reconciliation/exceptions.py</code></pre>
+<p><strong>Result:</strong></p>
+<pre><code>&quot;&quot;&quot;Deterministic reconciliation engine.
+
+Ordinary software runs first. Exact identifier matching, exact settlement
+arithmetic against the Shadow Ledger, duplicate detection, timing windows and
+bank matching all happen here. Anything provable at this layer never reaches
+the model.
+
+The matcher produces exactly one case per captured payment.
+&quot;&quot;&quot;
+
+from __future__ import annotations
+
+from dataclasses import dataclass, field
+
+from ..ledger.invariants import InvariantResult, check_all
+from ..ledger.models import (
+    Batch,
+    ExceptionType,
+    Payment,
+    PaymentStatus,
+    ReconciliationException,
+    Settlement,
+)
+from ..ledger.shadow_ledger import ExpectedSettlement, ShadowLedger
+from .exceptions import make_exception
+
+MATCHED = &quot;MATCHED&quot;
+
+
+@dataclass
+class CaseResult:
+    case_id: str
+    payment_id: str
+    order_id: str | None
+    status: str                                  # MATCHED or an ExceptionType value
+    expected: ExpectedSettlement
+    settlement: Settlement | None
+    invariants: list[InvariantResult] = field(default_factory=list)
+    exception: ReconciliationException | None = None
+
+    @property
+    def is_exception(self) -&gt; bool:
+        return self.status != MATCHED
+
+    def failing_invariants(self) -&gt; list[InvariantResult]:
+        return [i for i in self.invariants if not i.holds]
+
+
+@dataclass
+class BatchDuplicates:
+    payment_ids: set[str] = field(default_factory=set)
+    settlement_ids: set[str] = field(default_factory=set)
+    bank_signatures: dict[tuple, list[str]] = field(default_factory=dict)
+    #: Ids that appear more than once carrying *different* content. Sharing an
+    #: identifier is not the same finding as being the same record, and the two
+    #: must not resolve the same way -- see ``_id_groups``.
+    payment_conflicts: set[str] = field(default_factory=set)
+    settlement_conflicts: set[str] = field(default_factory=set)
+
+
+def _payment_signature(p: Payment) -&gt; tuple:
+    &quot;&quot;&quot;Everything about a payment except its identifier.&quot;&quot;&quot;
+    return (
+        p.order_id,
+        p.amount,
+        p.currency,
+        p.status,
+        p.method,
+        p.captured_at,
+        p.fee,
+        p.tax,
+        p.reference,
+    )
+
+
+def _settlement_signature(s: Settlement) -&gt; tuple:
+    &quot;&quot;&quot;Everything about a settlement except its identifier.&quot;&quot;&quot;
+    return (
+        s.merchant_id,
+        s.gross_amount,
+        s.fees,
+        s.tax,
+        s.refund_adjustments,
+        s.other_adjustments,
+        s.net_amount,
+        s.settlement_date,
+        s.status,
+        s.reference,
+        tuple(s.payment_ids),
+    )
+
+
+def _id_groups(records, key, signature) -&gt; tuple[set[str], set[str]]:
+    &quot;&quot;&quot;Split repeated identifiers into true duplicates and content conflicts.
+
+    A record ingested twice is a duplicate: the identifier and every other
+    field agree, so suppressing the second copy is provable. Two records that
+    share an identifier but disagree on content are *not* a duplicate -- they
+    are two contradictory versions of the same entity, and which one is real
+    cannot be proved from the batch. Collapsing them would close a case on a
+    content match that never happened.
+    &quot;&quot;&quot;
+    by_id: dict[str, list[tuple]] = {}
+    for record in records:
+        by_id.setdefault(key(record), []).append(signature(record))
+    duplicates, conflicts = set(), set()
+    for record_id, signatures in by_id.items():
+        if len(signatures) &lt; 2:
+            continue
+        if len(set(signatures)) == 1:
+            duplicates.add(record_id)
+        else:
+            conflicts.add(record_id)
+    return duplicates, conflicts
+
+
+def find_duplicates(batch: Batch) -&gt; BatchDuplicates:
+    &quot;&quot;&quot;Pre-pass: identifier and content level duplicate detection.
+
+    Every record type is compared on content, not only on identifier. Payments
+    and settlements are grouped by id and then split by signature; bank entries
+    carry no reliable identifier across systems, so they are matched on content
+    alone.
+    &quot;&quot;&quot;
+    dup = BatchDuplicat
+... [14777 more characters in transcript.jsonl]</code></pre>
+<p><strong>Agent:</strong> The matcher is clear. Now I need every place that consumes settlements, since the requirement covers all settlement-matching steps.</p>
+<p><strong>Bash:</strong></p>
+<pre><code>cd ledgerguard &amp;&amp; cat ledger/shadow_ledger.py; echo ----; grep -rn &quot;settlement&quot; --include=*.py . | grep -v tests/ | grep -v &quot;^./ledger/shadow_ledger.py&quot; | grep -v &quot;^./reconciliation/matcher.py&quot; | grep -iv &quot;settlement_date\|settlement_id\b&quot; | head -120; echo ----; grep -n &quot;status&quot; ledger/models.py</code></pre>
+<p><strong>Result:</strong></p>
+<pre><code>(eval):cd:1: no such file or directory: ledgerguard
+----
+(eval):1: no matches found: --include=*.py
+----
+57:    status: OrderStatus = OrderStatus.PAID
+66:    status: PaymentStatus = PaymentStatus.CAPTURED
+78:    status: RefundStatus = RefundStatus.PROCESSED
+94:    status: SettlementStatus = SettlementStatus.PROCESSED
+141:    status: ExceptionStatus = ExceptionStatus.OPEN</code></pre>
+<p><strong>Bash:</strong></p>
+<pre><code>pwd; cat ledger/shadow_ledger.py; echo ----; grep -rn &quot;settlement&quot; *.py */*.py | grep -v &quot;^tests/&quot; | grep -v &quot;^ledger/shadow_ledger.py&quot; | grep -v &quot;^reconciliation/matcher.py&quot; | head -150</code></pre>
+<p><strong>Result:</strong></p>
+<pre><code>&lt;attempt&gt;/work/repo/ledgerguard
+&quot;&quot;&quot;The Shadow Ledger.
+
+An independent reconstruction of what the financial movement *should* have
+been, computed from first principles out of orders, payments and refunds.
+
+It never reads settlement or bank records to decide what to expect -- that is
+the whole point. Settlements and bank entries are the *observed* side; the
+Shadow Ledger is the *expected* side, and reconciliation is the comparison.
+
+The AI investigator can call ``expected_for_payment`` to inspect output, but
+has no path to change how the number is produced.
+&quot;&quot;&quot;
+
+from __future__ import annotations
+
+from dataclasses import dataclass, field
+from datetime import datetime, timedelta
+
+from .models import (
+    Batch,
+    BankEntry,
+    Order,
+    Payment,
+    PaymentStatus,
+    Refund,
+    RefundStatus,
+    Settlement,
+)
+from .money import gst_on_fee, platform_fee
+
+# Provider settlement window: money captured on day T is expected to settle on
+# T+2, and we allow a one day tolerance either side for weekends/holidays.
+SETTLEMENT_LAG_DAYS = 2
+SETTLEMENT_WINDOW_TOLERANCE_DAYS = 1
+
+# Bank credit is expected on the settlement date, allowing one day of float.
+BANK_CREDIT_TOLERANCE_DAYS = 1
+
+
+@dataclass(frozen=True)
+class ExpectedSettlement:
+    &quot;&quot;&quot;What the Shadow Ledger says a payment should settle for.&quot;&quot;&quot;
+
+    payment_id: str
+    gross_amount: int
+    fees: int
+    tax: int
+    refund_adjustments: int
+    other_adjustments: int
+    net_amount: int
+    refund_ids: tuple[str, ...] = ()
+    window_start: datetime | None = None
+    window_end: datetime | None = None
+
+    def as_dict(self) -&gt; dict:
+        return {
+            &quot;payment_id&quot;: self.payment_id,
+            &quot;gross_amount&quot;: self.gross_amount,
+            &quot;fees&quot;: self.fees,
+            &quot;tax&quot;: self.tax,
+            &quot;refund_adjustments&quot;: self.refund_adjustments,
+            &quot;other_adjustments&quot;: self.other_adjustments,
+            &quot;net_amount&quot;: self.net_amount,
+            &quot;refund_ids&quot;: list(self.refund_ids),
+        }
+
+
+@dataclass
+class ShadowLedger:
+    &quot;&quot;&quot;Indexes a batch and computes expected financial movement.&quot;&quot;&quot;
+
+    batch: Batch
+    orders_by_id: dict[str, Order] = field(default_factory=dict)
+    payments_by_id: dict[str, Payment] = field(default_factory=dict)
+    refunds_by_id: dict[str, Refund] = field(default_factory=dict)
+    refunds_by_payment: dict[str, list[Refund]] = field(default_factory=dict)
+    settlements_by_payment: dict[str, list[Settlement]] = field(default_factory=dict)
+    bank_by_reference: dict[str, list[BankEntry]] = field(default_factory=dict)
+    orphan_refunds: list[Refund] = field(default_factory=list)
+
+    def __post_init__(self) -&gt; None:
+        self._index()
+
+    def _index(self) -&gt; None:
+        for o in self.batch.orders:
+            self.orders_by_id.setdefault(o.order_id, o)
+        for p in self.batch.payments:
+            self.payments_by_id.setdefault(p.payment_id, p)
+        for r in self.batch.refunds:
+            self.refunds_by_id.setdefault(r.refund_id, r)
+            if r.payment_id:
+                self.refunds_by_payment.setdefault(r.payment_id, []).append(r)
+            else:
+                self.orphan_refunds.append(r)
+        for s in self.batch.settlements:
+            for pid in s.payment_ids:
+                self.settlements_by_payment.setdefault(pid, []).append(s)
+        for b in self.batch.bank_entries:
+            self.bank_by_reference.setdefault(b.reference, []).append(b)
+
+    # ---------------------------------------------------------------- expected
+
+    def valid_refunds_for(self, payment_id: str) -&gt; list[Refund]:
+        &quot;&quot;&quot;Refunds that are *provably* linked to this payment and processed.&quot;&quot;&quot;
+        return [
+            r
+            for r in self.refunds_by_payment.get(payment_id, [])
+            if r.status == RefundStatus.PROCESSED
+        ]
+
+    def expected_for_payment(
+        self,
+        payment: Payment,
+        extra_refunds: list[Refund] | None = None,
+        other_adjustments:
+... [16223 more characters in transcript.jsonl]</code></pre>
+<p><strong>Agent:</strong> Two things stand out: the <code>settlements_by_payment</code> index feeds most consumers, and <code>find_duplicates</code> reads <code>batch.settlements</code> directly, so both need the status filter. Next I&#x27;ll check the status enum, the pipeline/safety handling of <code>MISSING_SETTLEMENT</code>, and whether the frozen holdout contains any non-processed settlements.</p>
+<p><strong>Bash:</strong></p>
+<pre><code>sed -n 1,100p ledger/models.py; echo ----; cat pipeline.py | head -150; echo ----; sed -n 1,60p evidence/safety.py; echo; grep -n &quot;MISSING_SETTLEMENT\|def decide&quot; -A6 evidence/safety.py | head -80</code></pre>
+<p><strong>Result:</strong></p>
+<pre><code>&quot;&quot;&quot;Financial data model.
+
+All money fields are integer paise (see ledger/money.py). Pydantic models are
+used so that ingestion of external / malformed data fails loudly rather than
+silently producing a wrong ledger.
+&quot;&quot;&quot;
+
+from __future__ import annotations
+
+from datetime import datetime
+from enum import Enum
+from typing import Optional
+
+from pydantic import BaseModel, ConfigDict, Field
+
+
+class OrderStatus(str, Enum):
+    CREATED = &quot;created&quot;
+    PAID = &quot;paid&quot;
+    ATTEMPTED = &quot;attempted&quot;
+
+
+class PaymentStatus(str, Enum):
+    CAPTURED = &quot;captured&quot;
+    AUTHORIZED = &quot;authorized&quot;
+    FAILED = &quot;failed&quot;
+    REFUNDED = &quot;refunded&quot;
+
+
+class RefundStatus(str, Enum):
+    PROCESSED = &quot;processed&quot;
+    PENDING = &quot;pending&quot;
+    FAILED = &quot;failed&quot;
+
+
+class SettlementStatus(str, Enum):
+    PROCESSED = &quot;processed&quot;
+    PENDING = &quot;pending&quot;
+    FAILED = &quot;failed&quot;
+
+
+class CreditDebit(str, Enum):
+    CREDIT = &quot;credit&quot;
+    DEBIT = &quot;debit&quot;
+
+
+class _Record(BaseModel):
+    model_config = ConfigDict(extra=&quot;forbid&quot;, frozen=False)
+
+
+class Order(_Record):
+    order_id: str
+    merchant_id: str
+    amount: int                      # paise
+    currency: str = &quot;INR&quot;
+    created_at: datetime
+    status: OrderStatus = OrderStatus.PAID
+    customer_reference: str
+
+
+class Payment(_Record):
+    payment_id: str
+    order_id: Optional[str]
+    amount: int                      # paise, captured amount
+    currency: str = &quot;INR&quot;
+    status: PaymentStatus = PaymentStatus.CAPTURED
+    method: str = &quot;upi&quot;
+    captured_at: Optional[datetime]
+    fee: int                         # paise, platform fee charged
+    tax: int                         # paise, GST on fee
+    reference: str
+
+
+class Refund(_Record):
+    refund_id: str
+    payment_id: Optional[str]        # may be absent -&gt; &quot;orphan&quot; refund
+    amount: int                      # paise
+    status: RefundStatus = RefundStatus.PROCESSED
+    created_at: datetime
+    reference: str
+
+
+class Settlement(_Record):
+    settlement_id: str
+    merchant_id: str
+    payment_ids: list[str] = Field(default_factory=list)
+    gross_amount: int                # paise, sum of captured payments
+    fees: int                        # paise
+    tax: int                         # paise
+    refund_adjustments: int          # paise, positive number that is deducted
+    other_adjustments: int = 0       # paise, signed
+    net_amount: int                  # paise, as reported by the provider
+    settlement_date: datetime
+    status: SettlementStatus = SettlementStatus.PROCESSED
+    reference: str
+
+
+class BankEntry(_Record):
+    bank_entry_id: str
+    amount: int                      # paise, always positive
+----
+&quot;&quot;&quot;End to end controller run.
+
+    deterministic reconciliation
+      -&gt; AI investigation, but only for what could not be proved
+      -&gt; Evidence Gate
+      -&gt; uniqueness pass
+      -&gt; safety and action gate
+
+Running with ``use_ai=False`` gives the rules-only baseline: identical
+deterministic layer, no investigation step. That is the comparison the
+benchmark makes.
+&quot;&quot;&quot;
+
+from __future__ import annotations
+
+import time
+from dataclasses import dataclass, field
+
+from .ai.investigator import Investigation, investigate_case, should_investigate
+from .ai.provider import InvestigatorProvider, UnavailableProvider, get_provider
+from .ai.schemas import InvestigationResult
+from .evidence.safety import Decision, HUMAN_REVIEW_REQUIRED, decide
+from .evidence.verifier import (
+    VerificationOutcome,
+    resolve_evidence_conflicts,
+    verify,
+)
+from .ledger.models import Batch
+from .ledger.shadow_ledger import ShadowLedger
+from .reconciliation.matcher import CaseResult, reconcile_batch
+
+
+@dataclass
+class CaseOutcome:
+    case: CaseResult
+    investigation: Investigation | None = None
+    verification: VerificationOutcome | None = None
+    decision: Decision | None = None
+
+    @property
+    def case_id(self) -&gt; str:
+        return self.case.case_id
+
+    @property
+    def state(self) -&gt; str:
+        if not self.case.is_exception:
+            return &quot;MATCHED&quot;
+    
+... [6454 more characters in transcript.jsonl]</code></pre>
+<p><strong>Agent:</strong> The safety path already escalates <code>MISSING_SETTLEMENT</code> without AI, so requirement 7 holds by construction as long as the new case keeps that exception type. Next: whether the generator or holdout ever emits non-processed settlements, and how the existing tests build batches.</p>
+<p><strong>Bash:</strong></p>
+<pre><code>grep -rn &quot;SettlementStatus\|status=&quot; synthetic/*.py | head; echo ----; grep -rln &quot;SettlementStatus\|PENDING\|pending&quot; ledgerguard 2&gt;/dev/null; grep -rn &quot;SettlementStatus&quot; tests/ | head; echo ----; grep -o &#x27;&quot;status&quot;: *&quot;[a-z]*&quot;&#x27; evaluation/frozen/holdout_20260905_320.json | sort | uniq -c; echo; ls tests; sed -n 1,60p tests/test_p0_core.py</code></pre>
+<p><strong>Result:</strong></p>
+<pre><code>synthetic/generator.py:28:    SettlementStatus,
+synthetic/generator.py:160:            status=OrderStatus.PAID,
+synthetic/generator.py:170:            status=PaymentStatus.CAPTURED,
+synthetic/generator.py:187:                    status=RefundStatus.PROCESSED,
+synthetic/generator.py:208:            status=SettlementStatus.PROCESSED,
+----
+----
+
+__init__.py
+rehearsal_check.py
+test_dashboard_startup.py
+test_evidence_download.py
+test_fallback.py
+test_p0_core.py
+test_p1_compound.py
+test_p1_extended.py
+test_p2_evaluation.py
+&quot;&quot;&quot;The five core P0 tests.
+
+Each one protects something that would otherwise break silently:
+
+1. financial arithmetic is exact
+2. the Shadow Ledger invariant separates a good lifecycle from a corrupted one
+3. the Evidence Gate accepts a correctly linked refund
+4. the Evidence Gate rejects a refund that matches on amount but belongs to
+   a different payment  (the adversarial case)
+5. insufficient evidence produces abstention, never a forced auto resolution
+&quot;&quot;&quot;
+
+from __future__ import annotations
+
+from datetime import datetime, timedelta
+
+import pytest
+
+from ledgerguard.ledger.invariants import (
+    check_all,
+    fees_and_tax_match_schedule,
+    net_matches_shadow_ledger,
+    settlement_arithmetic_consistent,
+)
+from ledgerguard.ledger.models import (
+    BankEntry,
+    Batch,
+    CreditDebit,
+    Order,
+    Payment,
+    Refund,
+    Settlement,
+)
+from ledgerguard.ledger.money import gst_on_fee, platform_fee, to_paise, to_rupees_str
+from ledgerguard.ledger.shadow_ledger import ShadowLedger
+
+T0 = datetime(2026, 6, 10, 10, 0, 0)
+
+
+# --------------------------------------------------------------------------- 1
+def test_1_financial_arithmetic_is_exact():
+    &quot;&quot;&quot;A known example must produce the exact expected result, in paise.
+
+    Order of INR 1,234.56, 2% platform fee, 18% GST on the fee, partial
+    refund of INR 300.00.
+
+        gross   123456 paise
+        fee       2469 paise   (123456 * 0.02 = 2469.12 -&gt; 2469)
+        tax        444 paise   (2469 * 0.18 = 444.42   -&gt; 444)
+        refund   30000 paise
+        net      90543 paise
+    &quot;&quot;&quot;
+    gross = to_paise(&quot;1234.56&quot;)
+    assert gross == 123456
+
+    fee = platform_fee(gross)
+    tax = gst_on_fee(fee)
+    assert fee == 2469, f&quot;fee drifted: {fee}&quot;
+    assert tax == 444, f&quot;tax drifted: {tax}&quot;</code></pre>
+<p><strong>Agent:</strong> The frozen holdout file has no <code>&quot;status&quot;</code> pattern match, so I&#x27;ll check its raw content for non-processed statuses directly, and run the existing test suite to get a baseline.</p>
+<p><strong>Bash:</strong></p>
+<pre><code>cd &lt;attempt&gt;/work/repo &amp;&amp; grep -c -i &#x27;&quot;pending&quot;\|&quot;failed&quot;&#x27; ledgerguard/evaluation/frozen/holdout_20260905_320.json; head -c 600 ledgerguard/evaluation/frozen/holdout_20260905_320.json; echo; ls -la ledgerguard/evaluation/frozen/; echo ----; timeout 900 .venv/bin/python -m pytest ledgerguard/tests -q -p no:cacheprovider 2&gt;&amp;1 | tail -15</code></pre>
+<p><strong>Result:</strong></p>
+<pre><code>0
+{
+  &quot;seed&quot;: 20260905,
+  &quot;count&quot;: 320,
+  &quot;generator_version&quot;: &quot;1.0.0&quot;,
+  &quot;holdout_lifecycle_ids&quot;: [
+    &quot;LC0001&quot;,
+    &quot;LC0004&quot;,
+    &quot;LC0006&quot;,
+    &quot;LC0007&quot;,
+    &quot;LC0012&quot;,
+    &quot;LC0013&quot;,
+    &quot;LC0017&quot;,
+    &quot;LC0019&quot;,
+    &quot;LC0020&quot;,
+    &quot;LC0024&quot;,
+    &quot;LC0029&quot;,
+    &quot;LC0033&quot;,
+    &quot;LC0034&quot;,
+    &quot;LC0035&quot;,
+    &quot;LC0037&quot;,
+    &quot;LC0048&quot;,
+    &quot;LC0052&quot;,
+    &quot;LC0062&quot;,
+    &quot;LC0068&quot;,
+    &quot;LC0071&quot;,
+    &quot;LC0075&quot;,
+    &quot;LC0079&quot;,
+    &quot;LC0080&quot;,
+    &quot;LC0084&quot;,
+    &quot;LC0091&quot;,
+    &quot;LC0094&quot;,
+    &quot;LC0100&quot;,
+    &quot;LC0101&quot;,
+    &quot;LC0107&quot;,
+    &quot;LC0108&quot;,
+    &quot;LC0109&quot;,
+    &quot;LC0116&quot;,
+    &quot;LC0117&quot;,
+    &quot;LC0118&quot;,
+    &quot;LC0120&quot;,
+    &quot;LC0122
+total 8
+drwxr-xr-x@  3 user  staff    96 Nov  1 23:13 .
+drwxr-xr-x@ 17 user  staff   544 Nov  1 23:13 ..
+-rw-r--r--@  1 user  staff  1388 Nov  1 23:13 holdout_20260905_320.json
+----
+(eval):1: command not found: timeout</code></pre>
+<p><strong>Bash:</strong></p>
+<pre><code>.venv/bin/python -m pytest ledgerguard/tests -q -p no:cacheprovider 2&gt;&amp;1 | tail -15</code></pre>
+<p><strong>Result:</strong></p>
+<pre><code>...................................................................      [100%]
+=============================== warnings summary ===============================
+.venv/lib/python3.14/site-packages/fastapi/testclient.py:1
+  &lt;attempt&gt;/work/repo/.venv/lib/python3.14/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+67 passed, 1 warning in 5.22s</code></pre>
+<p><strong>Agent:</strong> Baseline: 67 tests pass. The generator only ever emits <code>PROCESSED</code> settlements, so the holdout is unaffected by construction, and I&#x27;ll confirm that empirically later. Now I&#x27;ll find every direct read of <code>batch.settlements</code> so none is missed.</p>
+<p><strong>Bash:</strong></p>
+<pre><code>grep -rn &quot;\.settlements\b&quot; --include=*.py . | grep -v &quot;\.venv&quot; | grep -v &quot;/tests/&quot;; echo ----; grep -rn &quot;settlements_by_payment\|settlements_for\|bank_entries_for_settlement&quot; --include=*.py . | grep -v .venv</code></pre>
+<p><strong>Result:</strong></p>
+<pre><code>(eval):1: no matches found: --include=*.py
+----
+(eval):1: no matches found: --include=*.py</code></pre>
+<p><strong>Bash:</strong></p>
+<pre><code>grep -rn &quot;\.settlements\b&quot; ledgerguard --include=&#x27;*.py&#x27; | grep -v &quot;/tests/&quot;; echo ----; grep -rn &quot;settlements_by_payment\|settlements_for\|bank_entries_for_settlement&quot; ledgerguard --include=&#x27;*.py&#x27;</code></pre>
+<p><strong>Result:</strong></p>
+<pre><code>ledgerguard/reconciliation/matcher.py:130:        batch.settlements, lambda s: s.settlement_id, _settlement_signature
+ledgerguard/ledger/shadow_ledger.py:95:        for s in self.batch.settlements:
+ledgerguard/ledger/shadow_ledger.py:192:            &quot;settlements&quot;: len(self.batch.settlements),
+ledgerguard/synthetic/generator.py:109:            b.settlements += s
+ledgerguard/evaluation/scale.py:58:        + len(batch.settlements) + len(batch.bank_entries)
+----
+ledgerguard/reconciliation/matcher.py:196:    settlements = ledger.settlements_for(payment.payment_id)
+ledgerguard/reconciliation/matcher.py:304:    bank = ledger.bank_entries_for_settlement(settlement)
+ledgerguard/ledger/shadow_ledger.py:77:    settlements_by_payment: dict[str, list[Settlement]] = field(default_factory=dict)
+ledgerguard/ledger/shadow_ledger.py:97:                self.settlements_by_payment.setdefault(pid, []).append(s)
+ledgerguard/ledger/shadow_ledger.py:162:    def settlements_for(self, payment_id: str) -&gt; list[Settlement]:
+ledgerguard/ledger/shadow_ledger.py:163:        return self.settlements_by_payment.get(payment_id, [])
+ledgerguard/ledger/shadow_ledger.py:165:    def bank_entries_for_settlement(self, settlement: Settlement) -&gt; list[BankEntry]:
+ledgerguard/evaluation/ablation.py:173:        settlements = ledger.settlements_for(payment.payment_id)
+ledgerguard/evaluation/ablation.py:178:        entries = ledger.bank_entries_for_settlement(settlement)
+ledgerguard/evaluation/ablation.py:201:    settlements = ledger.settlements_for(payment.payment_id)
+ledgerguard/evaluation/ablation.py:203:    entries = ledger.bank_entries_for_settlement(settlement) if settlement else []
+ledgerguard/evaluation/ablation.py:296:        settlements = ledger.settlements_for(payment.payment_id)</code></pre>
+<p><strong>Agent:</strong> Only two places read raw settlements: the <code>ShadowLedger</code> index and <code>find_duplicates</code>. Everything else goes through <code>settlements_for</code>. The <code>totals()</code> count is informational, not a matching step, so I&#x27;ll leave it alone. Now the ledger change.</p>
+<p><strong>Edit:</strong></p>
+<pre><code>&lt;attempt&gt;/work/repo/ledgerguard/ledger/shadow_ledger.py</code></pre>
+<p><strong>Result:</strong></p>
+<pre><code>The file &lt;attempt&gt;/work/repo/ledgerguard/ledger/shadow_ledger.py has been updated successfully.</code></pre>
+<p><strong>Edit:</strong></p>
+<pre><code>&lt;attempt&gt;/work/repo/ledgerguard/ledger/shadow_ledger.py</code></pre>
+<p><strong>Result:</strong></p>
+<pre><code>The file &lt;attempt&gt;/work/repo/ledgerguard/ledger/shadow_ledger.py has been updated successfully.</code></pre>
+<p><strong>Edit:</strong></p>
+<pre><code>&lt;attempt&gt;/work/repo/ledgerguard/ledger/shadow_ledger.py</code></pre>
+<p><strong>Result:</strong></p>
+<pre><code>The file &lt;attempt&gt;/work/repo/ledgerguard/ledger/shadow_ledger.py has been updated successfully.</code></pre>
+<p><strong>Edit:</strong></p>
+<pre><code>&lt;attempt&gt;/work/repo/ledgerguard/ledger/shadow_ledger.py</code></pre>
+<p><strong>Result:</strong></p>
+<pre><code>The file &lt;attempt&gt;/work/repo/ledgerguard/ledger/shadow_ledger.py has been updated successfully.</code></pre>
+<p><strong>Agent:</strong> Now the matcher: the duplicate pre-pass should see processed settlements only, and the no-processed branch gets the evidence key.</p>
+<p><strong>Edit:</strong></p>
+<pre><code>&lt;attempt&gt;/work/repo/ledgerguard/reconciliation/matcher.py</code></pre>
+<p><strong>Result:</strong></p>
+<pre><code>The file &lt;attempt&gt;/work/repo/ledgerguard/reconciliation/matcher.py has been updated successfully.</code></pre>
+<p><strong>Edit:</strong></p>
+<pre><code>&lt;attempt&gt;/work/repo/ledgerguard/reconciliation/matcher.py</code></pre>
+<p><strong>Result:</strong></p>
+<pre><code>The file &lt;attempt&gt;/work/repo/ledgerguard/reconciliation/matcher.py has been updated successfully.</code></pre>
+<p><strong>Edit:</strong></p>
+<pre><code>&lt;attempt&gt;/work/repo/ledgerguard/reconciliation/matcher.py</code></pre>
+<p><strong>Result:</strong></p>
+<pre><code>The file &lt;attempt&gt;/work/repo/ledgerguard/reconciliation/matcher.py has been updated successfully.</code></pre>
+<p><strong>Agent:</strong> Code changes are in. Before writing tests, I want an empirical check that the holdout results are unchanged. I need to see how the benchmark loads the frozen batch so I can run it without writing outputs.</p>
+<p><strong>Bash:</strong></p>
+<pre><code>grep -n &quot;def \|frozen\|build_dataset\|sha\|OUTPUT\|write&quot; ledgerguard/evaluation/benchmark.py | head -80</code></pre>
+<p><strong>Result:</strong></p>
+<pre><code>7:same frozen holdout, and writes every artifact under evaluation/outputs/.
+31:from ..synthetic.fault_injector import build_dataset, split
+36:OUTPUT_DIR = Path(__file__).parent / &quot;outputs&quot;
+37:MANIFEST_DIR = Path(__file__).parent / &quot;frozen&quot;
+40:def manifest_path(seed: int, count: int) -&gt; Path:
+41:    &quot;&quot;&quot;One frozen manifest per dataset configuration.
+44:    can never silently overwrite the holdout an earlier result was scored on.
+49:def batch_digest(dataset: Dataset) -&gt; str:
+50:    return hashlib.sha256(dataset.batch().model_dump_json().encode()).hexdigest()
+53:def freeze_or_verify_holdout(holdout: Dataset, seed: int, count: int) -&gt; dict:
+60:        &quot;holdout_batch_sha256&quot;: batch_digest(holdout),
+68:                &quot;The holdout for this seed was frozen earlier and the regenerated &quot;
+71:                &quot;delete the manifest deliberately and say so in the write-up.\n&quot;
+72:                f&quot;  frozen sha256:      {existing.get(&#x27;holdout_batch_sha256&#x27;)}\n&quot;
+73:                f&quot;  regenerated sha256: {manifest[&#x27;holdout_batch_sha256&#x27;]}&quot;
+77:    path.write_text(json.dumps(manifest, indent=2) + &quot;\n&quot;)
+81:def _row(label: str, baseline, hybrid, fmt=str) -&gt; str:
+85:def render_markdown(base: Metrics, hyb: Metrics, manifest: dict) -&gt; str:
+86:    def inr(paise: int) -&gt; str:
+94:        f&quot;batch SHA-256 `{manifest[&#x27;holdout_batch_sha256&#x27;][:16]}`.&quot;,
+149:def write_unresolved_csv(report: RunReport, dataset: Dataset, path: Path) -&gt; int:
+154:        writer = csv.writer(fh)
+155:        writer.writerow(
+177:            writer.writerow(
+195:def export_cases(report: RunReport, dataset: Dataset, path: Path) -&gt; None:
+235:    path.write_text(json.dumps(payload, indent=2, default=str) + &quot;\n&quot;)
+238:def main(argv: list[str] | None = None) -&gt; int:
+244:        help=&quot;which slice to score (default: the frozen holdout)&quot;,
+254:    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+256:    full = build_dataset(seed=args.seed, count=args.count)
+277:    (OUTPUT_DIR / &quot;benchmark.md&quot;).write_text(md)
+278:    (OUTPUT_DIR / &quot;benchmark.json&quot;).write_text(
+287:                    &quot;batch_sha256&quot;: batch_digest(scored),
+300:    n_unresolved = write_unresolved_csv(
+301:        hybrid_report, scored, OUTPUT_DIR / &quot;unresolved_exceptions.csv&quot;
+303:    export_cases(hybrid_report, scored, OUTPUT_DIR / &quot;cases.json&quot;)
+337:    print(f&quot;\nArtifacts written to {OUTPUT_DIR}&quot;)</code></pre>
+<p><strong>Bash:</strong></p>
+<pre><code>sed -n 238,276p ledgerguard/evaluation/benchmark.py; grep -n &quot;def split\|def holdout\|def dev\|class Dataset&quot; -A4 ledgerguard/synthetic/fault_injector.py | head -40</code></pre>
+<p><strong>Result:</strong></p>
+<pre><code>def main(argv: list[str] | None = None) -&gt; int:
+    parser = argparse.ArgumentParser(description=&quot;LedgerGuard benchmark&quot;)
+    parser.add_argument(&quot;--seed&quot;, type=int, default=20260905)
+    parser.add_argument(&quot;--count&quot;, type=int, default=320)
+    parser.add_argument(
+        &quot;--split&quot;, choices=[&quot;holdout&quot;, &quot;dev&quot;, &quot;all&quot;], default=&quot;holdout&quot;,
+        help=&quot;which slice to score (default: the frozen holdout)&quot;,
+    )
+    parser.add_argument(
+        &quot;--provider&quot;,
+        default=None,
+        help=&quot;auto | fallback | groq | gemini | nvidia | omniroute | &quot;
+        &quot;anthropic | cerebras | openai_compatible | stub | none&quot;,
+    )
+    args = parser.parse_args(argv)
+
+    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+
+    full = build_dataset(seed=args.seed, count=args.count)
+    dev, holdout = split(full)
+    manifest = freeze_or_verify_holdout(holdout, args.seed, args.count)
+    scored = {&quot;holdout&quot;: holdout, &quot;dev&quot;: dev, &quot;all&quot;: full}[args.split]
+
+    lbp = scored.lifecycle_by_payment()
+    batch = scored.batch()
+
+    provider = get_provider(args.provider) if args.provider else get_provider()
+
+    baseline_report = run(batch, use_ai=False, lifecycle_by_payment=lbp)
+    hybrid_report = run(batch, use_ai=True, provider=provider, lifecycle_by_payment=lbp)
+
+    base_metrics = compute(baseline_report, scored)
+    hyb_metrics = compute(hybrid_report, scored)
+
+    # Which providers actually answered, and which dropped out mid-run.
+    fallback_report = provider.report() if hasattr(provider, &quot;report&quot;) else None
+    costs = estimate(provider, hyb_metrics.investigations, hyb_metrics.total_cases)
+
+    md = render_markdown(base_metrics, hyb_metrics, manifest)
+267:def split(dataset: Dataset, holdout_fraction: float = 0.25) -&gt; tuple[Dataset, Dataset]:
+268-    &quot;&quot;&quot;Deterministic dev / frozen-holdout split, stratified by fault class.
+269-
+270-    Stratifying matters: an unstratified 25% slice can easily contain zero F6
+271-    cases, which would make the headline safety metric meaningless.</code></pre>
+<p><strong>Agent:</strong> I&#x27;ll write a comparison script outside the repo in <code>../tmp/</code>. It runs the deterministic engine (rules-only, plus the offline stub provider) over the full, dev and holdout sets, and dumps every case. I&#x27;ll run it against the untouched copy and the modified repo, then diff. No artifact files get written.</p>
+<p><strong>Write:</strong></p>
+<pre><code>&lt;attempt&gt;/work/tmp/dump_cases.py</code></pre>
+<p><strong>Result:</strong></p>
+<pre><code>File created successfully at: &lt;attempt&gt;/work/tmp/dump_cases.py (file state is current in your context — no need to Read it back)</code></pre>
+<p><strong>Bash:</strong></p>
+<pre><code>cd &lt;attempt&gt;/work &amp;&amp; ( cd repo &amp;&amp; .venv/bin/python ../../tmp/dump_cases.py &quot;$PWD/ledgerguard/..&quot; &quot;$PWD/../../tmp/after.json&quot; ) 2&gt;&amp;1 | tail -5; ls &lt;attempt&gt;/work/tmp 2&gt;/dev/null; ls &lt;attempt&gt;/tmp 2&gt;/dev/null</code></pre>
+<p><strong>Result (error):</strong></p>
+<pre><code>Exit code 1
+/opt/homebrew/Cellar/python@3.14/3.14.6/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python: can&#x27;t open file &#x27;&lt;attempt&gt;/work/repo/../../tmp/dump_cases.py&#x27;: [Errno 2] No such file or directory
+cc-socks
+claude-501
+dump_cases.py
+orig
+pytest-of-user</code></pre>
+<p><strong>Agent:</strong> The script path was wrong in my command (<code>../../tmp</code> should be <code>../tmp</code> from the repo). Fixing that and re-running with the correct paths.</p>
+<p><strong>Bash:</strong></p>
+<pre><code>.venv/bin/python ../tmp/dump_cases.py &quot;$PWD&quot; ../tmp/after.json 2&gt;&amp;1 | tail -5 &amp;&amp; mkdir -p ../tmp/origrun &amp;&amp; cd ../tmp/orig &amp;&amp; &lt;attempt&gt;/work/repo/.venv/bin/python &lt;attempt&gt;/work/tmp/dump_cases.py &lt;attempt&gt;/work/tmp/orig &lt;attempt&gt;/work/tmp/before.json 2&gt;&amp;1 | tail -5; cmp &lt;attempt&gt;/work/tmp/before.json &lt;attempt&gt;/work/tmp/after.json &amp;&amp; echo IDENTICAL</code></pre>
+<p><strong>Result:</strong></p>
+<pre><code>cases: {&#x27;full:rules&#x27;: 320, &#x27;full:stub&#x27;: 320, &#x27;dev:rules&#x27;: 235, &#x27;dev:stub&#x27;: 235, &#x27;holdout:rules&#x27;: 85, &#x27;holdout:stub&#x27;: 85}
+cases: {&#x27;full:rules&#x27;: 320, &#x27;full:stub&#x27;: 320, &#x27;dev:rules&#x27;: 235, &#x27;dev:stub&#x27;: 235, &#x27;holdout:rules&#x27;: 85, &#x27;holdout:stub&#x27;: 85}
+IDENTICAL
+Shell cwd was reset to &lt;attempt&gt;/work/repo</code></pre>
+<p><strong>Agent:</strong> Before and after case outcomes are byte-identical across full, dev and holdout, for both the rules-only and stub-provider paths. Next, the tests. I&#x27;ll check the lifecycle/dataset helpers so the new tests can reuse a known-good clean lifecycle rather than hand-building arithmetic.</p>
+<p><strong>Bash:</strong></p>
+<pre><code>sed -n 60,125p ledgerguard/synthetic/generator.py; grep -n &quot;def \|class &quot; ledgerguard/synthetic/generator.py | head -40; grep -n &quot;^def \|^class &quot; ledgerguard/synthetic/fault_injector.py ledgerguard/tests/test_p1_compound.py | head -40; sed -n 1,30p ledgerguard/tests/test_p1_extended.py</code></pre>
+<p><strong>Result:</strong></p>
+<pre><code>    exposure_paise: int = 0
+    paired_with: str | None = None
+
+    def as_dict(self) -&gt; dict:
+        return dict(
+            lifecycle_id=self.lifecycle_id,
+            fault_class=self.fault_class,
+            expected_exception=self.expected_exception,
+            expected_disposition=self.expected_disposition,
+            true_cause=self.true_cause,
+            exposure_paise=self.exposure_paise,
+            paired_with=self.paired_with,
+        )
+
+
+@dataclass
+class Lifecycle:
+    lifecycle_id: str
+    order: Order
+    payment: Payment
+    refunds: list[Refund] = field(default_factory=list)
+    settlement: Settlement | None = None
+    bank_entries: list[BankEntry] = field(default_factory=list)
+    extra_payments: list[Payment] = field(default_factory=list)
+
+    def records(self) -&gt; tuple[list, list, list, list, list]:
+        return (
+            [self.order],
+            [self.payment] + self.extra_payments,
+            list(self.refunds),
+            [self.settlement] if self.settlement else [],
+            list(self.bank_entries),
+        )
+
+
+@dataclass
+class Dataset:
+    seed: int
+    generator_version: str
+    lifecycles: list[Lifecycle]
+    ground_truth: dict[str, GroundTruth]
+
+    def batch(self) -&gt; Batch:
+        b = Batch()
+        for lc in self.lifecycles:
+            o, p, r, s, e = lc.records()
+            b.orders += o
+            b.payments += p
+            b.refunds += r
+            b.settlements += s
+            b.bank_entries += e
+        return b
+
+    def lifecycle_by_payment(self) -&gt; dict[str, str]:
+        return {lc.payment.payment_id: lc.lifecycle_id for lc in self.lifecycles}
+
+    def fault_class_by_payment(self) -&gt; dict[str, str]:
+        return {
+            lc.payment.payment_id: self.ground_truth[lc.lifecycle_id].fault_class
+            for lc in self.lifecycles
+        }
+
+    def subset(self, lifecycle_ids: list[str]) -&gt; &quot;Dataset&quot;:
+        keep = set(lifecycle_ids)
+        return Dataset(
+            seed=self.seed,
+41:class FaultClass:
+52:class GroundTruth:
+63:    def as_dict(self) -&gt; dict:
+76:class Lifecycle:
+85:    def records(self) -&gt; tuple[list, list, list, list, list]:
+96:class Dataset:
+102:    def batch(self) -&gt; Batch:
+113:    def lifecycle_by_payment(self) -&gt; dict[str, str]:
+116:    def fault_class_by_payment(self) -&gt; dict[str, str]:
+122:    def subset(self, lifecycle_ids: list[str]) -&gt; &quot;Dataset&quot;:
+132:def _money_amount(rng: random.Random) -&gt; int:
+138:def build_clean_lifecycles(seed: int, count: int) -&gt; tuple[list[Lifecycle], random.Random]:
+ledgerguard/synthetic/fault_injector.py:26:def _noisy_customer_reference(customer: str, rng: random.Random) -&gt; str:
+ledgerguard/synthetic/fault_injector.py:46:def _apply_f1(lc: Lifecycle, rng: random.Random) -&gt; GroundTruth:
+ledgerguard/synthetic/fault_injector.py:61:def _apply_f2(lc: Lifecycle, rng: random.Random) -&gt; GroundTruth:
+ledgerguard/synthetic/fault_injector.py:83:def _apply_f3(lc: Lifecycle, rng: random.Random) -&gt; GroundTruth:
+ledgerguard/synthetic/fault_injector.py:107:def _apply_f4(lc: Lifecycle, rng: random.Random) -&gt; GroundTruth:
+ledgerguard/synthetic/fault_injector.py:132:def _apply_f5(lc: Lifecycle, rng: random.Random) -&gt; GroundTruth:
+ledgerguard/synthetic/fault_injector.py:150:def _apply_f6(victim: Lifecycle, donor: Lifecycle, rng: random.Random) -&gt; tuple[GroundTruth, GroundTruth]:
+ledgerguard/synthetic/fault_injector.py:191:def _clean_truth(lc: Lifecycle) -&gt; GroundTruth:
+ledgerguard/synthetic/fault_injector.py:202:def build_dataset(seed: int = 20260905, count: int = 320) -&gt; Dataset:
+ledgerguard/synthetic/fault_injector.py:267:def split(dataset: Dataset, holdout_fraction: float = 0.25) -&gt; tuple[Dataset, Dataset]:
+ledgerguard/tests/test_p1_compound.py:23:def _run():
+ledgerguard/tests/test_p1_compound.py:29:def test_every_compound_case_reaches_its_designed_disposition():
+ledgerguard/tests/test_p1_compound.py:46:def test_an_unattributed_residual_blocks_closure_on_the_proven_cause():
+ledgerguard/tests/test_p1_compound.py:64:def test_a_f
+... [1113 more characters in transcript.jsonl]</code></pre>
+<p><strong>Agent:</strong> I&#x27;ll reuse <code>build_clean_lifecycles</code> for a known-good baseline. For the controller test I need a spy provider, so I&#x27;ll check the provider interface and the clean-lifecycle builder&#x27;s output.</p>
+<p><strong>Bash:</strong></p>
+<pre><code>grep -n &quot;class InvestigatorProvider&quot; -A25 ledgerguard/ai/provider.py | head -45; grep -n &quot;class UnavailableProvider&quot; -A12 ledgerguard/ai/provider.py; sed -n 138,150p ledgerguard/synthetic/generator.py; grep -n &quot;def should_investigate&quot; -A12 ledgerguard/ai/investigator.py; grep -n &quot;def run\|def investigate_case&quot; ledgerguard/pipeline.py ledgerguard/ai/investigator.py</code></pre>
+<p><strong>Result:</strong></p>
+<pre><code>72:class InvestigatorProvider(Protocol):
+73-    name: str
+74-
+75-    def investigate(self, context: dict) -&gt; InvestigationResult:  # pragma: no cover
+76-        ...
+77-
+78-
+79-def _to_result(out: InvestigatorOutput, source: str, model_name: str | None) -&gt; InvestigationResult:
+80-    return InvestigationResult(
+81-        hypothesis=out.hypothesis,
+82-        reason=out.reason,
+83-        required_evidence=out.required_evidence,
+84-        candidate_evidence_ids=out.candidate_evidence_ids,
+85-        recommended_action=out.recommended_action,
+86-        source=source,
+87-        model_name=model_name,
+88-    )
+89-
+90-
+91-class AnthropicProvider:
+92-    &quot;&quot;&quot;Claude-backed investigator using structured outputs.&quot;&quot;&quot;
+93-
+94-    def __init__(
+95-        self,
+96-        model: str = DEFAULT_MODEL,
+97-        timeout: float = DEFAULT_TIMEOUT_SECONDS,
+211:class UnavailableProvider:
+212-    &quot;&quot;&quot;Stands in for a completely dead provider. Used by the failure-mode test.&quot;&quot;&quot;
+213-
+214-    name = &quot;unavailable&quot;
+215-
+216-    def __init__(self, error: str = &quot;no investigator provider is configured&quot;) -&gt; None:
+217-        self.error = error
+218-
+219-    def investigate(self, context: dict) -&gt; InvestigationResult:
+220-        return InvestigationResult.unavailable(self.error)
+221-
+222-
+223-#: Preference order for the automatic fallback chain, in the order requested.
+def build_clean_lifecycles(seed: int, count: int) -&gt; tuple[list[Lifecycle], random.Random]:
+    &quot;&quot;&quot;Build ``count`` fully consistent lifecycles. No faults yet.&quot;&quot;&quot;
+    rng = random.Random(seed)
+    lifecycles: list[Lifecycle] = []
+
+    for i in range(count):
+        lc_id = f&quot;LC{i:04d}&quot;
+        merchant = MERCHANTS[i % len(MERCHANTS)]
+        customer = f&quot;CUST-{rng.randrange(CUSTOMER_POOL):04d}&quot;
+        order_id = f&quot;ord_{i:04d}{rng.randrange(0x1000, 0xFFFF):04X}&quot;
+        amount = _money_amount(rng)
+
+        created = EPOCH + timedelta(
+32:def should_investigate(case: CaseResult) -&gt; bool:
+33-    &quot;&quot;&quot;Only genuinely ambiguous exceptions are worth a model call.&quot;&quot;&quot;
+34-    if not case.is_exception or case.exception is None:
+35-        return False
+36-    return case.exception.exception_type in NEEDS_INVESTIGATION
+37-
+38-
+39-def build_context(ledger: ShadowLedger, case: CaseResult) -&gt; dict:
+40-    &quot;&quot;&quot;The exact payload the investigator sees. No ground truth, ever.&quot;&quot;&quot;
+41-    exc = case.exception
+42-    payment = ledger.payments_by_id[case.payment_id]
+43-    order = ledger.orders_by_id.get(payment.order_id or &quot;&quot;)
+44-    settlement = case.settlement
+ledgerguard/ai/investigator.py:117:def investigate_case(
+ledgerguard/pipeline.py:96:def run(</code></pre>
+<p><strong>Agent:</strong> I have what I need. The new tests go in a new file, <code>ledgerguard/tests/test_settlement_status.py</code>, and reuse the clean-lifecycle generator and the <code>run</code>/<code>reconcile_batch</code> entry points. Each variant is built from the clean record so the arithmetic is known to be correct.</p>
+<p><strong>Write:</strong></p>
+<pre><code>&lt;attempt&gt;/work/repo/ledgerguard/tests/test_settlement_status.py</code></pre>
+<p><strong>Result:</strong></p>
+<pre><code>File created successfully at: &lt;attempt&gt;/work/repo/ledgerguard/tests/test_settlement_status.py (file state is current in your context — no need to Read it back)</code></pre>
+<p><strong>Agent:</strong> Reviewing the draft before running it, I see three real problems: a fixture bug (the stray bank credit shares the processed settlement&#x27;s reference, so the test would conflate two credits), a no-op assertion, and a leftover placeholder line. Fixing those now.</p>
+<p><strong>Edit:</strong></p>
+<pre><code>&lt;attempt&gt;/work/repo/ledgerguard/tests/test_settlement_status.py</code></pre>
+<p><strong>Result:</strong></p>
+<pre><code>The file &lt;attempt&gt;/work/repo/ledgerguard/tests/test_settlement_status.py has been updated successfully. (file state is current in your context — no need to Read it back)</code></pre>
+<p><strong>Edit:</strong></p>
+<pre><code>&lt;attempt&gt;/work/repo/ledgerguard/tests/test_settlement_status.py</code></pre>
+<p><strong>Result:</strong></p>
+<pre><code>The file &lt;attempt&gt;/work/repo/ledgerguard/tests/test_settlement_status.py has been updated successfully. (file state is current in your context — no need to Read it back)</code></pre>
+<p><strong>Edit:</strong></p>
+<pre><code>&lt;attempt&gt;/work/repo/ledgerguard/tests/test_settlement_status.py</code></pre>
+<p><strong>Result (error):</strong></p>
+<pre><code>&lt;tool_use_error&gt;No changes to make: old_string and new_string are exactly the same.&lt;/tool_use_error&gt;</code></pre>
+<p><strong>Agent:</strong> That edit was a no-op by mistake and changed nothing. The line it targeted is correct as written. Next I&#x27;ll clean up the duplicate-detection test, which has a redundant assignment and a stray import.</p>
+<p><strong>Edit:</strong></p>
+<pre><code>&lt;attempt&gt;/work/repo/ledgerguard/tests/test_settlement_status.py</code></pre>
+<p><strong>Result:</strong></p>
+<pre><code>The file &lt;attempt&gt;/work/repo/ledgerguard/tests/test_settlement_status.py has been updated successfully. (file state is current in your context — no need to Read it back)</code></pre>
+<p><strong>Edit:</strong></p>
+<pre><code>&lt;attempt&gt;/work/repo/ledgerguard/tests/test_settlement_status.py</code></pre>
+<p><strong>Result:</strong></p>
+<pre><code>The file &lt;attempt&gt;/work/repo/ledgerguard/tests/test_settlement_status.py has been updated successfully. (file state is current in your context — no need to Read it back)</code></pre>
+<p><strong>Edit:</strong></p>
+<pre><code>&lt;attempt&gt;/work/repo/ledgerguard/tests/test_settlement_status.py</code></pre>
+<p><strong>Result:</strong></p>
+<pre><code>The file &lt;attempt&gt;/work/repo/ledgerguard/tests/test_settlement_status.py has been updated successfully. (file state is current in your context — no need to Read it back)</code></pre>
+<p><strong>Agent:</strong> Now running the new tests, then the full suite.</p>
+<p><strong>Bash:</strong></p>
+<pre><code>.venv/bin/python -m pytest ledgerguard/tests/test_settlement_status.py -q -p no:cacheprovider 2&gt;&amp;1 | tail -40</code></pre>
+<p><strong>Result:</strong></p>
+<pre><code>_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = ReconciliationException(exception_id=&#x27;EXC-pay_0000B6DE&#x27;, lifecycle_id=&#x27;ord_0000552B&#x27;, transaction_ids=[&#x27;pay_0000B6DE&#x27;,...:30:00&#x27;}, status=&lt;ExceptionStatus.OPEN: &#x27;OPEN&#x27;&gt;, risk=&lt;Risk.HIGH: &#x27;high&#x27;&gt;, resolution=None, human_review_required=True)
+item = &#x27;exception&#x27;
+
+    def __getattr__(self, item: str) -&gt; Any:
+        private_attributes = object.__getattribute__(self, &#x27;__private_attributes__&#x27;)
+        if item in private_attributes:
+            attribute = private_attributes[item]
+            if hasattr(attribute, &#x27;__get__&#x27;):
+                return attribute.__get__(self, type(self))  # type: ignore
+    
+            try:
+                # Note: self.__pydantic_private__ cannot be None if self.__private_attributes__ has items
+                return self.__pydantic_private__[item]  # type: ignore
+            except KeyError as exc:
+                raise AttributeError(f&#x27;{type(self).__name__!r} object has no attribute {item!r}&#x27;) from exc
+        else:
+            # `__pydantic_extra__` can fail to be set if the model is not yet fully initialized.
+            # See `BaseModel.__repr_args__` for more details
+            try:
+                pydantic_extra = object.__getattribute__(self, &#x27;__pydantic_extra__&#x27;)
+            except AttributeError:
+                pydantic_extra = None
+    
+            if pydantic_extra and item in pydantic_extra:
+                return pydantic_extra[item]
+            else:
+                if hasattr(self.__class__, item):
+                    return super().__getattribute__(item)  # Raises AttributeError if appropriate
+                else:
+                    # this is the current error
+&gt;                   raise AttributeError(f&#x27;{type(self).__name__!r} object has no attribute {item!r}&#x27;)
+E                   AttributeError: &#x27;ReconciliationException&#x27; object has no attribute &#x27;exception&#x27;. Did you mean: &#x27;exception_id&#x27;?
+
+.venv/lib/python3.14/site-packages/pydantic/main.py:1110: AttributeError
+=========================== short test summary info ============================
+FAILED ledgerguard/tests/test_settlement_status.py::test_non_processed_only_is_missing_settlement_with_same_values[pending]
+FAILED ledgerguard/tests/test_settlement_status.py::test_non_processed_only_is_missing_settlement_with_same_values[failed]
+2 failed, 17 passed in 0.21s</code></pre>
+<p><strong>Agent:</strong> Two failures, both in my test: <code>ref</code> is already the exception object, so <code>ref.exception.evidence</code> should be <code>ref.evidence</code>. Fixing that and re-running.</p>
+<p><strong>Edit:</strong></p>
+<pre><code>&lt;attempt&gt;/work/repo/ledgerguard/tests/test_settlement_status.py</code></pre>
+<p><strong>Result:</strong></p>
+<pre><code>The file &lt;attempt&gt;/work/repo/ledgerguard/tests/test_settlement_status.py has been updated successfully. (file state is current in your context — no need to Read it back)</code></pre>
+<p><strong>Bash:</strong></p>
+<pre><code>.venv/bin/python -m pytest ledgerguard/tests -q -p no:cacheprovider 2&gt;&amp;1 | tail -4</code></pre>
+<p><strong>Result:</strong></p>
+<pre><code>    from starlette.testclient import TestClient as TestClient  # noqa
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+86 passed, 1 warning in 4.79s</code></pre>
+<p><strong>Agent:</strong> 86 pass: the original 67 plus 19 new. To confirm the new tests really exercise the change, I&#x27;ll run them against the untouched original copy, where most should fail.</p>
+<p><strong>Bash:</strong></p>
+<pre><code>cp repo/ledgerguard/tests/test_settlement_status.py ../tmp/orig/ledgerguard/tests/ &amp;&amp; cd ../tmp/orig &amp;&amp; &lt;attempt&gt;/work/repo/.venv/bin/python -m pytest ledgerguard/tests/test_settlement_status.py -q -p no:cacheprovider 2&gt;&amp;1 | grep -E &quot;passed|failed&quot; | tail -3; cd &lt;attempt&gt;/work/repo</code></pre>
+<p><strong>Result:</strong></p>
+<pre><code>cp: repo/ledgerguard/tests/test_settlement_status.py: No such file or directory</code></pre>
+<p><strong>Bash:</strong></p>
+<pre><code>cp ledgerguard/tests/test_settlement_status.py ../tmp/orig/ledgerguard/tests/ &amp;&amp; cd ../tmp/orig &amp;&amp; &lt;attempt&gt;/work/repo/.venv/bin/python -m pytest ledgerguard/tests/test_settlement_status.py -q -p no:cacheprovider 2&gt;&amp;1 | grep -E &quot;^FAILED|passed|failed&quot; | tail -30; cd &lt;attempt&gt;/work/repo</code></pre>
+<p><strong>Result:</strong></p>
+<pre><code>____ test_non_processed_only_is_missing_settlement_with_same_values[failed] ____
+status = &lt;SettlementStatus.FAILED: &#x27;failed&#x27;&gt;
+_ test_non_processed_only_reaches_the_same_final_state_as_no_settlement[failed] _
+status = &lt;SettlementStatus.FAILED: &#x27;failed&#x27;&gt;
+        failed_other = _variant(
+            settlement_id=&quot;setl_failed_other&quot;,
+            [lc.settlement, pending_wrong, failed_other],
+        failed = _variant(lc.settlement, settlement_id=&quot;setl_idx_f&quot;, status=SettlementStatus.FAILED)
+        ledger = ShadowLedger(_batch(lc, [pending, failed]))
+_ test_controller_never_asks_the_ai_or_closes_a_non_processed_payment[failed] __
+status = &lt;SettlementStatus.FAILED: &#x27;failed&#x27;&gt;
+FAILED ledgerguard/tests/test_settlement_status.py::test_non_processed_only_is_missing_settlement_with_same_values[pending]
+FAILED ledgerguard/tests/test_settlement_status.py::test_non_processed_only_is_missing_settlement_with_same_values[failed]
+FAILED ledgerguard/tests/test_settlement_status.py::test_non_processed_only_reaches_the_same_final_state_as_no_settlement[pending]
+FAILED ledgerguard/tests/test_settlement_status.py::test_non_processed_only_reaches_the_same_final_state_as_no_settlement[failed]
+FAILED ledgerguard/tests/test_settlement_status.py::test_evidence_lists_non_processed_settlements_sorted_by_id
+FAILED ledgerguard/tests/test_settlement_status.py::test_processed_settlement_is_reconciled_as_if_others_were_absent
+FAILED ledgerguard/tests/test_settlement_status.py::test_processed_plus_non_processed_is_not_investigated_or_flagged
+FAILED ledgerguard/tests/test_settlement_status.py::test_pending_row_sharing_a_processed_id_is_not_a_conflict
+FAILED ledgerguard/tests/test_settlement_status.py::test_batch_duplicates_ignore_non_processed_settlements
+FAILED ledgerguard/tests/test_settlement_status.py::test_multiple_processed_settlements_are_still_a_duplicate
+FAILED ledgerguard/tests/test_settlement_status.py::test_bank_credit_for_a_pending_settlement_cannot_match_a_processed_one
+FAILED ledgerguard/tests/test_settlement_status.py::test_pending_settlement_with_a_matching_credit_still_leaves_payment_missing
+FAILED ledgerguard/tests/test_settlement_status.py::test_shadow_ledger_separates_processed_from_non_processed
+FAILED ledgerguard/tests/test_settlement_status.py::test_controller_never_asks_the_ai_or_closes_a_non_processed_payment[pending]
+FAILED ledgerguard/tests/test_settlement_status.py::test_controller_never_asks_the_ai_or_closes_a_non_processed_payment[failed]
+15 failed, 4 passed in 0.25s</code></pre>
+<p><strong>Agent:</strong> The 15 new behavioural tests fail on the original code and pass on the change. The 4 that pass on both are the regression guards (processed matches, no-key cases, payment-duplicate precedence), which is what I intended. Next: verify the frozen and output artifacts are byte-identical, and review the final code diff against the original snapshot.</p>
+<p><strong>Bash:</strong></p>
+<pre><code>cd ledgerguard/evaluation &amp;&amp; shasum -a 256 outputs/* frozen/* &gt; /tmp/after_sums.txt 2&gt;/dev/null || shasum -a 256 outputs/* frozen/* &gt; ../../../tmp/after_sums.txt; cd ../..; diff ../tmp/orig/artifact_sums.txt ../tmp/after_sums.txt &amp;&amp; echo ARTIFACTS_UNCHANGED; echo ----; diff -r ../tmp/orig/ledgerguard ledgerguard -x __pycache__ -x test_settlement_status.py | head -150; echo; cat .gitignore ../.gitignore 2&gt;/dev/null</code></pre>
+<p><strong>Result (error):</strong></p>
+<pre><code>Exit code 1
+(eval):1: operation not permitted: /tmp/after_sums.txt
+ARTIFACTS_UNCHANGED
+----
+diff -r -x _ ../tmp/orig/ledgerguard/ledger/shadow_ledger.py ledgerguard/ledger/shadow_ledger.py
+27a28
+&gt;     SettlementStatus,
+76a78,79
+&gt;     #: Only ``processed`` settlements. A pending or failed settlement has not
+&gt;     #: paid anything out, so it cannot close a payment.
+77a81,85
+&gt;     #: ``pending`` and ``failed`` settlements, kept aside so they can be
+&gt;     #: reported as evidence but never matched against.
+&gt;     non_processed_settlements_by_payment: dict[str, list[Settlement]] = field(
+&gt;         default_factory=dict
+&gt;     )
+95a104,108
+&gt;             index = (
+&gt;                 self.settlements_by_payment
+&gt;                 if s.status == SettlementStatus.PROCESSED
+&gt;                 else self.non_processed_settlements_by_payment
+&gt;             )
+97c110
+&lt;                 self.settlements_by_payment.setdefault(pid, []).append(s)
+---
+&gt;                 index.setdefault(pid, []).append(s)
+162a176
+&gt;         &quot;&quot;&quot;Processed settlements for a payment: the only ones that count.&quot;&quot;&quot;
+163a178,181
+&gt; 
+&gt;     def non_processed_settlements_for(self, payment_id: str) -&gt; list[Settlement]:
+&gt;         &quot;&quot;&quot;Pending or failed settlements for a payment. Reporting only.&quot;&quot;&quot;
+&gt;         return self.non_processed_settlements_by_payment.get(payment_id, [])
+diff -r -x _ ../tmp/orig/ledgerguard/reconciliation/matcher.py ledgerguard/reconciliation/matcher.py
+22a23
+&gt;     SettlementStatus,
+128a130,133
+&gt;     # Only processed settlements take part in settlement matching. A pending or
+&gt;     # failed row with a repeated id must not turn a processed settlement into a
+&gt;     # &quot;conflict&quot; or a &quot;duplicate&quot;.
+&gt;     processed = [s for s in batch.settlements if s.status == SettlementStatus.PROCESSED]
+130c135
+&lt;         batch.settlements, lambda s: s.settlement_id, _settlement_signature
+---
+&gt;         processed, lambda s: s.settlement_id, _settlement_signature
+260c265,266
+&lt;     # 2. No settlement at all.
+---
+&gt;     # 2. No processed settlement. Pending or failed settlements have not paid
+&gt;     # anything out, so they do not count; they are reported as evidence only.
+261a268,278
+&gt;         missing_evidence = {
+&gt;             &quot;reason&quot;: &quot;captured payment has no settlement record&quot;,
+&gt;             &quot;expected_shadow_net&quot;: expected.as_dict(),
+&gt;             &quot;captured_at&quot;: payment.captured_at.isoformat() if payment.captured_at else None,
+&gt;         }
+&gt;         non_processed = ledger.non_processed_settlements_for(payment.payment_id)
+&gt;         if non_processed:
+&gt;             missing_evidence[&quot;non_processed_settlements&quot;] = [
+&gt;                 {&quot;settlement_id&quot;: s.settlement_id, &quot;status&quot;: s.status.value}
+&gt;                 for s in sorted(non_processed, key=lambda s: s.settlement_id)
+&gt;             ]
+266,270c283
+&lt;             {
+&lt;                 &quot;reason&quot;: &quot;captured payment has no settlement record&quot;,
+&lt;                 &quot;expected_shadow_net&quot;: expected.as_dict(),
+&lt;                 &quot;captured_at&quot;: payment.captured_at.isoformat() if payment.captured_at else None,
+&lt;             },
+---
+&gt;             missing_evidence,
+
+.venv/
+__pycache__/
+*.pyc
+.env
+.pytest_cache/
+.DS_Store</code></pre>
+<p><strong>Agent:</strong> Artifacts are unchanged: the checksum comparison passed. The first <code>shasum</code> write hit a sandbox restriction on <code>/tmp</code>, so the fallback wrote the file to <code>../tmp/</code> instead, and the comparison ran against that. The code diff is limited to the intended changes. I&#x27;ll also update the architecture doc&#x27;s matcher description, since it currently says &quot;no settlement&quot; and would otherwise be stale.</p>
+<p><strong>Edit:</strong></p>
+<pre><code>&lt;attempt&gt;/work/repo/docs/architecture.md</code></pre>
+<p><strong>Result:</strong></p>
+<pre><code>The file &lt;attempt&gt;/work/repo/docs/architecture.md has been updated successfully.</code></pre>
+<p><strong>Agent:</strong> Last, the notes file the ground rules require, in <code>../out/NOTES.md</code>. It records the choices I made and what I verified and did not do.</p>
+<p><strong>Write:</strong></p>
+<pre><code>&lt;attempt&gt;/work/out/NOTES.md</code></pre>
+<p><strong>Result:</strong></p>
+<pre><code>File created successfully at: &lt;attempt&gt;/work/out/NOTES.md (file state is current in your context — no need to Read it back)</code></pre>
+<p><strong>Agent:</strong> Settlement status is now respected by every settlement-matching step, and the full suite passes: 86 tests, the original 67 plus 19 new ones.</p>
+<p><strong>What changed</strong></p>
+<ul><li><strong>Ledger</strong> (<code>ledger/shadow_ledger.py</code>): only <code>processed</code> settlements go into the index that <code>settlements_for()</code> reads. Pending and failed rows are kept in a separate index that is used only for evidence. Everything downstream of <code>settlements_for()</code> (invariants, bank matching, ablation) gets processed-only data.</li><li><strong>Matcher</strong> (<code>reconciliation/matcher.py</code>): duplicate and conflict detection across settlements looks at processed rows only. The no-processed-settlement branch emits <code>EXCEPTION_MISSING_SETTLEMENT</code> with the same values as before. When non-processed rows exist, it adds <code>non_processed_settlements</code> to evidence, sorted by <code>settlement_id</code>. The key is absent in every other case.</li><li><strong>Tests</strong> (<code>tests/test_settlement_status.py</code>): 19 new tests covering each numbered requirement, including the controller never calling the investigator and never auto-resolving these cases. No existing test file was touched.</li><li><strong>Docs</strong>: one paragraph in <code>docs/architecture.md</code> describing the rule.</li><li><strong>Notes</strong>: <code>../out/NOTES.md</code> records the choices I made.</li></ul>
+<p><strong>Verification</strong></p>
+<ul><li>Against the original code, 15 of the 19 new tests fail, as they should. The other 4 are regression guards that pass on both versions.</li><li>I dumped every per-case outcome for the full 320-lifecycle set, the dev split and the frozen holdout, under rules-only and the offline stub. The before and after dumps are byte-identical, so existing results do not move.</li><li>SHA-256 checksums of everything under <code>evaluation/outputs/</code> and <code>evaluation/frozen/</code> match the pre-change values.</li></ul>
+<p><strong>Choices you may want to check</strong> (all in <code>../out/NOTES.md</code>)</p>
+<ul><li>Identical non-processed duplicate rows are each listed, not de-duplicated.</li><li>A payment with one processed settlement plus non-processed rows gets no evidence key, per requirement 4.</li><li>A payment with two or more processed settlements is still <code>DUPLICATE_RECORD</code>, and the non-processed rows are not listed there.</li><li><code>totals()</code> and <code>scale.py</code> still count every settlement row. They are inventory counts, not matching steps.</li></ul>
+<p><strong>Not done</strong></p>
+<ul><li>I did not re-run the benchmark, because it writes into <code>evaluation/outputs/</code>. The before and after dump covers the same holdout batch and the deterministic layer. The live-provider hybrid numbers are unaffected because the holdout contains no non-processed rows.</li><li>The repo is not a git repository, so nothing was committed. The original code is snapshotted at <code>../tmp/orig/</code> for comparison.</li></ul>
+</main>
+</body>
+</html>

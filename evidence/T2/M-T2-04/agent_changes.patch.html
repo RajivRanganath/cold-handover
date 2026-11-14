@@ -1,0 +1,531 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>T2/M-T2-04/agent_changes.patch</title>
+<style>
+*{box-sizing:border-box}
+:root{--bg:#f6f7f6;--text:#16191c;--muted:#5b636b;--line:#d9dddb;--accent:#0f6b4f;
+--code:rgba(15,23,28,.06);--add:rgba(46,160,67,.20);--del:rgba(218,54,51,.17);--hunk:rgba(15,107,79,.10)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#111416;--text:#e8ebe9;
+--muted:#9aa3a0;--line:#2b3134;--accent:#4fbf95;--code:rgba(255,255,255,.07);
+--add:rgba(63,185,80,.22);--del:rgba(248,81,73,.22);--hunk:rgba(79,191,149,.12)}}
+body{margin:0;background:var(--bg);color:var(--text);
+font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:900px;margin:0 auto;padding:16px}
+.top{font-size:14px;color:var(--muted);border-bottom:1px solid var(--line);padding-bottom:10px;
+margin-bottom:20px;display:flex;flex-wrap:wrap;gap:6px 16px;align-items:baseline}
+.top .path{color:var(--text);font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;overflow-wrap:anywhere}
+a{color:var(--accent)}
+h1,h2,h3,h4,h5,h6{line-height:1.25;margin:1.4em 0 .5em;overflow-wrap:anywhere}
+p,ul,ol,blockquote{margin:.6em 0}
+ul,ol{padding-left:1.4em}
+li,p{overflow-wrap:anywhere}
+blockquote{margin:.8em 0;padding:.1em 0 .1em 14px;border-left:3px solid var(--accent);color:var(--muted)}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.92em;
+background:var(--code);padding:.1em .3em;border-radius:4px;overflow-wrap:anywhere}
+pre{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px;line-height:1.45;
+background:var(--code);border:1px solid var(--line);border-radius:6px;padding:12px;margin:.8em 0;
+overflow-x:auto;white-space:pre;tab-size:2}
+pre code{background:none;padding:0;border-radius:0;font-size:inherit;overflow-wrap:normal}
+.tw{overflow-x:auto;margin:.8em 0}
+table{border-collapse:collapse;font-size:14px}
+th,td{border:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}
+td{overflow-wrap:anywhere}
+th{background:var(--code)}
+hr{border:0;border-top:1px solid var(--line);margin:1.5em 0}
+.patch span{display:block;width:max-content;min-width:100%}
+.patch .file{font-weight:700}
+.patch .meta{color:var(--muted)}
+.patch .hunk{color:var(--accent);background:var(--hunk)}
+.patch .add{background:var(--add)}
+.patch .del{background:var(--del)}
+</style>
+</head>
+<body>
+<main>
+<div class="top"><span class="path">T2/M-T2-04/agent_changes.patch</span><a href="agent_changes.patch">Raw file</a><a href="../../../index.html#T2">Back to the case study</a></div>
+<pre class="patch"><span class="meta">--- a/ledgerguard/ledger/shadow_ledger.py
+</span><span class="meta">+++ b/ledgerguard/ledger/shadow_ledger.py
+</span><span class="hunk">@@ -25,6 +25,7 @@
+</span><span>     Refund,
+</span><span>     RefundStatus,
+</span><span>     Settlement,
+</span><span class="add">+    SettlementStatus,
+</span><span> )
+</span><span> from .money import gst_on_fee, platform_fee
+</span><span> 
+</span><span class="hunk">@@ -75,6 +76,12 @@
+</span><span>     refunds_by_id: dict[str, Refund] = field(default_factory=dict)
+</span><span>     refunds_by_payment: dict[str, list[Refund]] = field(default_factory=dict)
+</span><span>     settlements_by_payment: dict[str, list[Settlement]] = field(default_factory=dict)
+</span><span class="add">+    #: Pending and failed settlements. They have not paid anything out, so they
+</span><span class="add">+    #: never enter ``settlements_by_payment``; they are kept here only so the
+</span><span class="add">+    #: exception evidence can say that they exist.
+</span><span class="add">+    non_processed_settlements_by_payment: dict[str, list[Settlement]] = field(
+</span><span class="add">+        default_factory=dict
+</span><span class="add">+    )
+</span><span>     bank_by_reference: dict[str, list[BankEntry]] = field(default_factory=dict)
+</span><span>     orphan_refunds: list[Refund] = field(default_factory=list)
+</span><span> 
+</span><span class="hunk">@@ -93,8 +100,13 @@
+</span><span>             else:
+</span><span>                 self.orphan_refunds.append(r)
+</span><span>         for s in self.batch.settlements:
+</span><span class="add">+            index = (
+</span><span class="add">+                self.settlements_by_payment
+</span><span class="add">+                if s.status == SettlementStatus.PROCESSED
+</span><span class="add">+                else self.non_processed_settlements_by_payment
+</span><span class="add">+            )
+</span><span>             for pid in s.payment_ids:
+</span><span class="del">-                self.settlements_by_payment.setdefault(pid, []).append(s)
+</span><span class="add">+                index.setdefault(pid, []).append(s)
+</span><span>         for b in self.batch.bank_entries:
+</span><span>             self.bank_by_reference.setdefault(b.reference, []).append(b)
+</span><span> 
+</span><span class="hunk">@@ -160,7 +172,12 @@
+</span><span>     # ---------------------------------------------------------------- observed
+</span><span> 
+</span><span>     def settlements_for(self, payment_id: str) -&gt; list[Settlement]:
+</span><span class="add">+        &quot;&quot;&quot;Processed settlements only: the ones that actually paid out.&quot;&quot;&quot;
+</span><span>         return self.settlements_by_payment.get(payment_id, [])
+</span><span class="add">+
+</span><span class="add">+    def non_processed_settlements_for(self, payment_id: str) -&gt; list[Settlement]:
+</span><span class="add">+        &quot;&quot;&quot;Pending or failed settlements referencing this payment. Never matched.&quot;&quot;&quot;
+</span><span class="add">+        return self.non_processed_settlements_by_payment.get(payment_id, [])
+</span><span> 
+</span><span>     def bank_entries_for_settlement(self, settlement: Settlement) -&gt; list[BankEntry]:
+</span><span>         return self.bank_by_reference.get(settlement.reference, [])
+</span><span class="meta">--- a/ledgerguard/reconciliation/matcher.py
+</span><span class="meta">+++ b/ledgerguard/reconciliation/matcher.py
+</span><span class="hunk">@@ -20,6 +20,7 @@
+</span><span>     PaymentStatus,
+</span><span>     ReconciliationException,
+</span><span>     Settlement,
+</span><span class="add">+    SettlementStatus,
+</span><span> )
+</span><span> from ..ledger.shadow_ledger import ExpectedSettlement, ShadowLedger
+</span><span> from .exceptions import make_exception
+</span><span class="hunk">@@ -126,8 +127,11 @@
+</span><span>     dup.payment_ids, dup.payment_conflicts = _id_groups(
+</span><span>         batch.payments, lambda p: p.payment_id, _payment_signature
+</span><span>     )
+</span><span class="add">+    # Only processed settlements take part in settlement matching, so only they
+</span><span class="add">+    # can make two settlements duplicates or conflicts.
+</span><span class="add">+    processed = [s for s in batch.settlements if s.status == SettlementStatus.PROCESSED]
+</span><span>     dup.settlement_ids, dup.settlement_conflicts = _id_groups(
+</span><span class="del">-        batch.settlements, lambda s: s.settlement_id, _settlement_signature
+</span><span class="add">+        processed, lambda s: s.settlement_id, _settlement_signature
+</span><span>     )
+</span><span> 
+</span><span>     for e in batch.bank_entries:
+</span><span class="hunk">@@ -257,17 +261,29 @@
+</span><span>             [],
+</span><span>         )
+</span><span> 
+</span><span class="del">-    # 2. No settlement at all.
+</span><span class="add">+    # 2. No processed settlement. Pending and failed settlements have not paid
+</span><span class="add">+    # anything out, so they cannot settle this payment; they are reported as
+</span><span class="add">+    # evidence only.
+</span><span>     if not settlements:
+</span><span class="add">+        evidence = {
+</span><span class="add">+            &quot;reason&quot;: &quot;captured payment has no settlement record&quot;,
+</span><span class="add">+            &quot;expected_shadow_net&quot;: expected.as_dict(),
+</span><span class="add">+            &quot;captured_at&quot;: payment.captured_at.isoformat() if payment.captured_at else None,
+</span><span class="add">+        }
+</span><span class="add">+        non_processed = ledger.non_processed_settlements_for(payment.payment_id)
+</span><span class="add">+        if non_processed:
+</span><span class="add">+            evidence[&quot;non_processed_settlements&quot;] = sorted(
+</span><span class="add">+                (
+</span><span class="add">+                    {&quot;settlement_id&quot;: s.settlement_id, &quot;status&quot;: s.status.value}
+</span><span class="add">+                    for s in non_processed
+</span><span class="add">+                ),
+</span><span class="add">+                key=lambda entry: (entry[&quot;settlement_id&quot;], entry[&quot;status&quot;]),
+</span><span class="add">+            )
+</span><span>         return build(
+</span><span>             ExceptionType.MISSING_SETTLEMENT,
+</span><span>             expected.net_amount,
+</span><span>             0,                       # nothing was settled, so the whole net is exposed
+</span><span class="del">-            {
+</span><span class="del">-                &quot;reason&quot;: &quot;captured payment has no settlement record&quot;,
+</span><span class="del">-                &quot;expected_shadow_net&quot;: expected.as_dict(),
+</span><span class="del">-                &quot;captured_at&quot;: payment.captured_at.isoformat() if payment.captured_at else None,
+</span><span class="del">-            },
+</span><span class="add">+            evidence,
+</span><span>             None,
+</span><span>             [],
+</span><span>         )
+</span><span class="meta">--- a/ledgerguard/tests/test_settlement_status.py
+</span><span class="meta">+++ b/ledgerguard/tests/test_settlement_status.py
+</span><span class="hunk">@@ -0,0 +1,365 @@
+</span><span class="add">+&quot;&quot;&quot;Settlement status is respected by reconciliation.
+</span><span class="add">+
+</span><span class="add">+A pending or failed settlement has not paid anything out. It must never be able
+</span><span class="add">+to close a payment: it is ignored by duplicate detection, by the invariants and
+</span><span class="add">+by bank matching, and a payment left with no processed settlement is reported
+</span><span class="add">+as a missing settlement, with the non-processed records attached as evidence.
+</span><span class="add">+
+</span><span class="add">+Nothing here touches the network. The investigator is a spy that records calls.
+</span><span class="add">+&quot;&quot;&quot;
+</span><span class="add">+
+</span><span class="add">+from __future__ import annotations
+</span><span class="add">+
+</span><span class="add">+from datetime import datetime, timedelta
+</span><span class="add">+
+</span><span class="add">+from ledgerguard.evidence.safety import AUTO_RESOLVED, HUMAN_REVIEW_REQUIRED
+</span><span class="add">+from ledgerguard.ai.schemas import InvestigationResult
+</span><span class="add">+from ledgerguard.ledger.models import (
+</span><span class="add">+    BankEntry,
+</span><span class="add">+    Batch,
+</span><span class="add">+    CreditDebit,
+</span><span class="add">+    ExceptionType,
+</span><span class="add">+    Order,
+</span><span class="add">+    Payment,
+</span><span class="add">+    Settlement,
+</span><span class="add">+    SettlementStatus,
+</span><span class="add">+)
+</span><span class="add">+from ledgerguard.ledger.money import gst_on_fee, platform_fee
+</span><span class="add">+from ledgerguard.ledger.shadow_ledger import ShadowLedger
+</span><span class="add">+from ledgerguard.pipeline import run
+</span><span class="add">+from ledgerguard.reconciliation.matcher import MATCHED, reconcile_batch
+</span><span class="add">+
+</span><span class="add">+T0 = datetime(2026, 6, 10, 10, 0, 0)
+</span><span class="add">+AMOUNT = 500000
+</span><span class="add">+
+</span><span class="add">+
+</span><span class="add">+def _payment(pid: str = &quot;pay_S1&quot;, amount: int = AMOUNT, captured_at=T0) -&gt; Payment:
+</span><span class="add">+    fee = platform_fee(amount)
+</span><span class="add">+    return Payment(
+</span><span class="add">+        payment_id=pid,
+</span><span class="add">+        order_id=f&quot;ord_{pid}&quot;,
+</span><span class="add">+        amount=amount,
+</span><span class="add">+        captured_at=captured_at,
+</span><span class="add">+        fee=fee,
+</span><span class="add">+        tax=gst_on_fee(fee),
+</span><span class="add">+        reference=f&quot;PAY/{pid}&quot;,
+</span><span class="add">+    )
+</span><span class="add">+
+</span><span class="add">+
+</span><span class="add">+def _order(payment: Payment) -&gt; Order:
+</span><span class="add">+    return Order(
+</span><span class="add">+        order_id=payment.order_id,
+</span><span class="add">+        merchant_id=&quot;mch_TEST&quot;,
+</span><span class="add">+        amount=payment.amount,
+</span><span class="add">+        created_at=T0,
+</span><span class="add">+        customer_reference=&quot;cust_TEST&quot;,
+</span><span class="add">+    )
+</span><span class="add">+
+</span><span class="add">+
+</span><span class="add">+def _settlement(
+</span><span class="add">+    sid: str,
+</span><span class="add">+    payment: Payment,
+</span><span class="add">+    status: SettlementStatus = SettlementStatus.PROCESSED,
+</span><span class="add">+    net: int | None = None,
+</span><span class="add">+) -&gt; Settlement:
+</span><span class="add">+    fee = platform_fee(payment.amount)
+</span><span class="add">+    tax = gst_on_fee(fee)
+</span><span class="add">+    consistent_net = payment.amount - fee - tax
+</span><span class="add">+    return Settlement(
+</span><span class="add">+        settlement_id=sid,
+</span><span class="add">+        merchant_id=&quot;mch_TEST&quot;,
+</span><span class="add">+        payment_ids=[payment.payment_id],
+</span><span class="add">+        gross_amount=payment.amount,
+</span><span class="add">+        fees=fee,
+</span><span class="add">+        tax=tax,
+</span><span class="add">+        refund_adjustments=0,
+</span><span class="add">+        other_adjustments=0,
+</span><span class="add">+        net_amount=consistent_net if net is None else net,
+</span><span class="add">+        settlement_date=T0 + timedelta(days=2),
+</span><span class="add">+        status=status,
+</span><span class="add">+        reference=f&quot;STL/{sid}&quot;,
+</span><span class="add">+    )
+</span><span class="add">+
+</span><span class="add">+
+</span><span class="add">+def _bank_for(settlement: Settlement, amount: int | None = None) -&gt; BankEntry:
+</span><span class="add">+    return BankEntry(
+</span><span class="add">+        bank_entry_id=f&quot;bnk_{settlement.settlement_id}&quot;,
+</span><span class="add">+        amount=settlement.net_amount if amount is None else amount,
+</span><span class="add">+        credit_or_debit=CreditDebit.CREDIT,
+</span><span class="add">+        date=settlement.settlement_date,
+</span><span class="add">+        reference=settlement.reference,
+</span><span class="add">+    )
+</span><span class="add">+
+</span><span class="add">+
+</span><span class="add">+def _batch(payments, settlements=(), bank=()) -&gt; Batch:
+</span><span class="add">+    orders = [_order(p) for p in payments]
+</span><span class="add">+    return Batch(
+</span><span class="add">+        orders=orders,
+</span><span class="add">+        payments=list(payments),
+</span><span class="add">+        settlements=list(settlements),
+</span><span class="add">+        bank_entries=list(bank),
+</span><span class="add">+    )
+</span><span class="add">+
+</span><span class="add">+
+</span><span class="add">+def _only_case(batch: Batch):
+</span><span class="add">+    cases, _ = reconcile_batch(batch)
+</span><span class="add">+    assert len(cases) == 1
+</span><span class="add">+    return cases[0]
+</span><span class="add">+
+</span><span class="add">+
+</span><span class="add">+# ------------------------------------------------- req 1-2: never closes a payment
+</span><span class="add">+def test_pending_settlement_does_not_settle_payment():
+</span><span class="add">+    payment = _payment()
+</span><span class="add">+    pending = _settlement(&quot;setl_P1&quot;, payment, SettlementStatus.PENDING)
+</span><span class="add">+    batch = _batch([payment], [pending], [_bank_for(pending)])
+</span><span class="add">+
+</span><span class="add">+    case = _only_case(batch)
+</span><span class="add">+    assert case.status == ExceptionType.MISSING_SETTLEMENT.value
+</span><span class="add">+    assert case.settlement is None
+</span><span class="add">+    assert case.invariants == []
+</span><span class="add">+
+</span><span class="add">+    exc = case.exception
+</span><span class="add">+    ledger = ShadowLedger(batch)
+</span><span class="add">+    assert exc.exception_type is ExceptionType.MISSING_SETTLEMENT
+</span><span class="add">+    assert exc.expected_value == ledger.expected_for_payment(payment).net_amount
+</span><span class="add">+    assert exc.observed_value == 0
+</span><span class="add">+    assert exc.transaction_ids == [payment.payment_id, payment.order_id]
+</span><span class="add">+
+</span><span class="add">+
+</span><span class="add">+def test_failed_settlement_does_not_settle_payment():
+</span><span class="add">+    payment = _payment()
+</span><span class="add">+    failed = _settlement(&quot;setl_F1&quot;, payment, SettlementStatus.FAILED)
+</span><span class="add">+    case = _only_case(_batch([payment], [failed], [_bank_for(failed)]))
+</span><span class="add">+
+</span><span class="add">+    assert case.status == ExceptionType.MISSING_SETTLEMENT.value
+</span><span class="add">+    assert case.settlement is None
+</span><span class="add">+
+</span><span class="add">+
+</span><span class="add">+def test_missing_settlement_without_any_settlement_has_no_new_evidence_key():
+</span><span class="add">+    payment = _payment()
+</span><span class="add">+    case = _only_case(_batch([payment]))
+</span><span class="add">+
+</span><span class="add">+    assert case.status == ExceptionType.MISSING_SETTLEMENT.value
+</span><span class="add">+    assert &quot;non_processed_settlements&quot; not in case.exception.evidence
+</span><span class="add">+
+</span><span class="add">+
+</span><span class="add">+def test_pending_only_missing_settlement_matches_no_settlement_outcome():
+</span><span class="add">+    &quot;&quot;&quot;Same expected_value, observed_value and type as a payment with no settlement.&quot;&quot;&quot;
+</span><span class="add">+    payment = _payment()
+</span><span class="add">+    bare = _only_case(_batch([payment])).exception
+</span><span class="add">+    pending = _only_case(
+</span><span class="add">+        _batch([payment], [_settlement(&quot;setl_P1&quot;, payment, SettlementStatus.PENDING)])
+</span><span class="add">+    ).exception
+</span><span class="add">+
+</span><span class="add">+    assert pending.exception_type is bare.exception_type
+</span><span class="add">+    assert pending.expected_value == bare.expected_value
+</span><span class="add">+    assert pending.observed_value == bare.observed_value
+</span><span class="add">+    assert pending.difference == bare.difference
+</span><span class="add">+    assert pending.risk == bare.risk
+</span><span class="add">+
+</span><span class="add">+
+</span><span class="add">+# ------------------------------------------------------------- req 3: evidence key
+</span><span class="add">+def test_non_processed_evidence_lists_pending_and_failed_sorted_by_id():
+</span><span class="add">+    payment = _payment()
+</span><span class="add">+    settlements = [
+</span><span class="add">+        _settlement(&quot;setl_C&quot;, payment, SettlementStatus.PENDING),
+</span><span class="add">+        _settlement(&quot;setl_A&quot;, payment, SettlementStatus.FAILED),
+</span><span class="add">+        _settlement(&quot;setl_B&quot;, payment, SettlementStatus.PENDING),
+</span><span class="add">+    ]
+</span><span class="add">+    case = _only_case(_batch([payment], settlements))
+</span><span class="add">+
+</span><span class="add">+    assert case.exception.evidence[&quot;non_processed_settlements&quot;] == [
+</span><span class="add">+        {&quot;settlement_id&quot;: &quot;setl_A&quot;, &quot;status&quot;: &quot;failed&quot;},
+</span><span class="add">+        {&quot;settlement_id&quot;: &quot;setl_B&quot;, &quot;status&quot;: &quot;pending&quot;},
+</span><span class="add">+        {&quot;settlement_id&quot;: &quot;setl_C&quot;, &quot;status&quot;: &quot;pending&quot;},
+</span><span class="add">+    ]
+</span><span class="add">+
+</span><span class="add">+
+</span><span class="add">+def test_non_processed_evidence_keeps_only_status_values_pending_or_failed():
+</span><span class="add">+    payment = _payment()
+</span><span class="add">+    settlements = [
+</span><span class="add">+        _settlement(&quot;setl_P&quot;, payment, SettlementStatus.PENDING),
+</span><span class="add">+        _settlement(&quot;setl_F&quot;, payment, SettlementStatus.FAILED),
+</span><span class="add">+    ]
+</span><span class="add">+    entries = _only_case(_batch([payment], settlements)).exception.evidence[
+</span><span class="add">+        &quot;non_processed_settlements&quot;
+</span><span class="add">+    ]
+</span><span class="add">+    assert set(entries[0]) == {&quot;settlement_id&quot;, &quot;status&quot;}
+</span><span class="add">+    assert {e[&quot;status&quot;] for e in entries} &lt;= {&quot;pending&quot;, &quot;failed&quot;}
+</span><span class="add">+
+</span><span class="add">+
+</span><span class="add">+# ----------------------------------------------- req 4: processed one is the match
+</span><span class="add">+def test_processed_settlement_matches_and_ignores_non_processed_ones():
+</span><span class="add">+    payment = _payment()
+</span><span class="add">+    processed = _settlement(&quot;setl_OK&quot;, payment)
+</span><span class="add">+    pending = _settlement(&quot;setl_PEND&quot;, payment, SettlementStatus.PENDING, net=1)
+</span><span class="add">+    failed = _settlement(&quot;setl_FAIL&quot;, payment, SettlementStatus.FAILED, net=2)
+</span><span class="add">+    batch = _batch(
+</span><span class="add">+        [payment],
+</span><span class="add">+        [processed, pending, failed],
+</span><span class="add">+        [_bank_for(processed)],
+</span><span class="add">+    )
+</span><span class="add">+
+</span><span class="add">+    case = _only_case(batch)
+</span><span class="add">+    assert case.status == MATCHED
+</span><span class="add">+    assert case.settlement.settlement_id == &quot;setl_OK&quot;
+</span><span class="add">+    assert all(i.holds for i in case.invariants)
+</span><span class="add">+    assert all(&quot;setl_PEND&quot; not in i.detail and &quot;setl_FAIL&quot; not in i.detail
+</span><span class="add">+               for i in case.invariants)
+</span><span class="add">+
+</span><span class="add">+
+</span><span class="add">+def test_non_processed_settlement_cannot_cause_fee_mismatch_or_duplicate():
+</span><span class="add">+    &quot;&quot;&quot;A conflicting pending copy must not turn a clean case into a duplicate.&quot;&quot;&quot;
+</span><span class="add">+    payment = _payment()
+</span><span class="add">+    processed = _settlement(&quot;setl_X&quot;, payment)
+</span><span class="add">+    # Same id, different content, not processed: contradictory but irrelevant.
+</span><span class="add">+    rival = _settlement(&quot;setl_X&quot;, payment, SettlementStatus.PENDING, net=7)
+</span><span class="add">+    case = _only_case(_batch([payment], [processed, rival], [_bank_for(processed)]))
+</span><span class="add">+
+</span><span class="add">+    assert case.status == MATCHED
+</span><span class="add">+    assert case.exception is None
+</span><span class="add">+
+</span><span class="add">+
+</span><span class="add">+def test_processed_mismatch_still_reported_when_non_processed_present():
+</span><span class="add">+    payment = _payment()
+</span><span class="add">+    # Fee overcharged by 100 paise; net re-derived so only I2 (fee schedule) fails.
+</span><span class="add">+    base = _settlement(&quot;setl_BAD&quot;, payment)
+</span><span class="add">+    fees = base.fees + 100
+</span><span class="add">+    bad_fee = base.model_copy(
+</span><span class="add">+        update={
+</span><span class="add">+            &quot;fees&quot;: fees,
+</span><span class="add">+            &quot;net_amount&quot;: base.gross_amount - fees - base.tax,
+</span><span class="add">+        }
+</span><span class="add">+    )
+</span><span class="add">+    pending = _settlement(&quot;setl_PEND&quot;, payment, SettlementStatus.PENDING)
+</span><span class="add">+    case = _only_case(_batch([payment], [bad_fee, pending]))
+</span><span class="add">+
+</span><span class="add">+    assert case.status == ExceptionType.FEE_MISMATCH.value
+</span><span class="add">+    assert case.settlement.settlement_id == &quot;setl_BAD&quot;
+</span><span class="add">+    assert &quot;non_processed_settlements&quot; not in case.exception.evidence
+</span><span class="add">+
+</span><span class="add">+
+</span><span class="add">+def test_multiple_processed_settlements_still_duplicate_and_ignore_pending():
+</span><span class="add">+    payment = _payment()
+</span><span class="add">+    a = _settlement(&quot;setl_A&quot;, payment)
+</span><span class="add">+    b = _settlement(&quot;setl_B&quot;, payment)
+</span><span class="add">+    pending = _settlement(&quot;setl_Z&quot;, payment, SettlementStatus.PENDING)
+</span><span class="add">+    case = _only_case(_batch([payment], [a, b, pending]))
+</span><span class="add">+
+</span><span class="add">+    assert case.status == ExceptionType.DUPLICATE_RECORD.value
+</span><span class="add">+    assert case.exception.evidence[&quot;settlement_ids&quot;] == [&quot;setl_A&quot;, &quot;setl_B&quot;]
+</span><span class="add">+    assert &quot;non_processed_settlements&quot; not in case.exception.evidence
+</span><span class="add">+
+</span><span class="add">+
+</span><span class="add">+# --------------------------------------------- req 5: payment duplicates unchanged
+</span><span class="add">+def test_duplicate_payment_precedence_unchanged_with_pending_settlement():
+</span><span class="add">+    payment = _payment()
+</span><span class="add">+    pending = _settlement(&quot;setl_P&quot;, payment, SettlementStatus.PENDING)
+</span><span class="add">+    batch = _batch([payment, payment], [pending])
+</span><span class="add">+    case = _only_case(batch)
+</span><span class="add">+
+</span><span class="add">+    assert case.status == ExceptionType.DUPLICATE_RECORD.value
+</span><span class="add">+    assert case.exception.evidence[&quot;reason&quot;] == &quot;payment_id appears more than once in the batch&quot;
+</span><span class="add">+    assert &quot;non_processed_settlements&quot; not in case.exception.evidence
+</span><span class="add">+    assert &quot;setl_P&quot; not in case.exception.transaction_ids
+</span><span class="add">+
+</span><span class="add">+
+</span><span class="add">+def test_conflicting_payment_duplicate_precedence_unchanged_with_pending_settlement():
+</span><span class="add">+    payment = _payment()
+</span><span class="add">+    other = payment.model_copy(update={&quot;amount&quot;: payment.amount + 100})
+</span><span class="add">+    case = _only_case(_batch([payment, other], [_settlement(&quot;setl_P&quot;, payment, SettlementStatus.FAILED)]))
+</span><span class="add">+
+</span><span class="add">+    assert case.status == ExceptionType.DUPLICATE_RECORD.value
+</span><span class="add">+    assert case.exception.evidence[&quot;content_conflict&quot;] == &quot;payment&quot;
+</span><span class="add">+    assert &quot;non_processed_settlements&quot; not in case.exception.evidence
+</span><span class="add">+
+</span><span class="add">+
+</span><span class="add">+# --------------------------------------------- req 1: ignored by bank matching
+</span><span class="add">+def test_bank_credit_for_pending_settlement_does_not_close_payment():
+</span><span class="add">+    payment = _payment()
+</span><span class="add">+    pending = _settlement(&quot;setl_P&quot;, payment, SettlementStatus.PENDING)
+</span><span class="add">+    # A bank credit exists that matches the pending settlement exactly.
+</span><span class="add">+    batch = _batch([payment], [pending], [_bank_for(pending)])
+</span><span class="add">+    ledger = ShadowLedger(batch)
+</span><span class="add">+
+</span><span class="add">+    assert ledger.settlements_for(payment.payment_id) == []
+</span><span class="add">+    case = _only_case(batch)
+</span><span class="add">+    assert case.status == ExceptionType.MISSING_SETTLEMENT.value
+</span><span class="add">+    assert case.exception.evidence[&quot;non_processed_settlements&quot;] == [
+</span><span class="add">+        {&quot;settlement_id&quot;: &quot;setl_P&quot;, &quot;status&quot;: &quot;pending&quot;}
+</span><span class="add">+    ]
+</span><span class="add">+
+</span><span class="add">+
+</span><span class="add">+def test_index_separates_processed_from_non_processed():
+</span><span class="add">+    payment = _payment()
+</span><span class="add">+    processed = _settlement(&quot;setl_OK&quot;, payment)
+</span><span class="add">+    pending = _settlement(&quot;setl_P&quot;, payment, SettlementStatus.PENDING)
+</span><span class="add">+    failed = _settlement(&quot;setl_F&quot;, payment, SettlementStatus.FAILED)
+</span><span class="add">+    ledger = ShadowLedger(_batch([payment], [processed, pending, failed]))
+</span><span class="add">+
+</span><span class="add">+    assert [s.settlement_id for s in ledger.settlements_for(payment.payment_id)] == [&quot;setl_OK&quot;]
+</span><span class="add">+    assert [s.settlement_id for s in ledger.non_processed_settlements_for(payment.payment_id)] == [
+</span><span class="add">+        &quot;setl_P&quot;,
+</span><span class="add">+        &quot;setl_F&quot;,
+</span><span class="add">+    ]
+</span><span class="add">+
+</span><span class="add">+
+</span><span class="add">+def test_non_processed_settlement_sharing_id_with_processed_creates_no_conflict():
+</span><span class="add">+    &quot;&quot;&quot;find_duplicates must only see processed settlements.&quot;&quot;&quot;
+</span><span class="add">+    payment_a = _payment(&quot;pay_A&quot;)
+</span><span class="add">+    payment_b = _payment(&quot;pay_B&quot;)
+</span><span class="add">+    processed_a = _settlement(&quot;setl_SHARED&quot;, payment_a)
+</span><span class="add">+    # Same id as a processed record, different content, not processed.
+</span><span class="add">+    pending_b = _settlement(&quot;setl_SHARED&quot;, payment_b, SettlementStatus.PENDING, net=3)
+</span><span class="add">+    batch = _batch(
+</span><span class="add">+        [payment_a, payment_b],
+</span><span class="add">+        [processed_a, pending_b],
+</span><span class="add">+        [_bank_for(processed_a)],
+</span><span class="add">+    )
+</span><span class="add">+    cases, _ = reconcile_batch(batch)
+</span><span class="add">+    by_pid = {c.payment_id: c for c in cases}
+</span><span class="add">+
+</span><span class="add">+    assert by_pid[&quot;pay_A&quot;].status == MATCHED
+</span><span class="add">+    assert by_pid[&quot;pay_A&quot;].exception is None
+</span><span class="add">+    assert by_pid[&quot;pay_B&quot;].status == ExceptionType.MISSING_SETTLEMENT.value
+</span><span class="add">+    assert &quot;content_conflict&quot; not in by_pid[&quot;pay_B&quot;].exception.evidence
+</span><span class="add">+
+</span><span class="add">+
+</span><span class="add">+# ---------------------------------- req 7: end-to-end controller never investigates
+</span><span class="add">+class _SpyProvider:
+</span><span class="add">+    name = &quot;spy&quot;
+</span><span class="add">+
+</span><span class="add">+    def __init__(self) -&gt; None:
+</span><span class="add">+        self.calls: list[dict] = []
+</span><span class="add">+
+</span><span class="add">+    def investigate(self, context: dict) -&gt; InvestigationResult:
+</span><span class="add">+        self.calls.append(context)
+</span><span class="add">+        return InvestigationResult.unavailable(&quot;spy: should never be called&quot;)
+</span><span class="add">+
+</span><span class="add">+
+</span><span class="add">+def test_end_to_end_never_investigates_or_auto_resolves_non_processed_cases():
+</span><span class="add">+    pending_payment = _payment(&quot;pay_PEND&quot;)
+</span><span class="add">+    failed_payment = _payment(&quot;pay_FAIL&quot;)
+</span><span class="add">+    clean_payment = _payment(&quot;pay_OK&quot;)
+</span><span class="add">+    pending = _settlement(&quot;setl_PEND&quot;, pending_payment, SettlementStatus.PENDING)
+</span><span class="add">+    failed = _settlement(&quot;setl_FAIL&quot;, failed_payment, SettlementStatus.FAILED)
+</span><span class="add">+    clean = _settlement(&quot;setl_OK&quot;, clean_payment)
+</span><span class="add">+    batch = _batch(
+</span><span class="add">+        [pending_payment, failed_payment, clean_payment],
+</span><span class="add">+        [pending, failed, clean],
+</span><span class="add">+        [_bank_for(pending), _bank_for(failed), _bank_for(clean)],
+</span><span class="add">+    )
+</span><span class="add">+
+</span><span class="add">+    spy = _SpyProvider()
+</span><span class="add">+    report = run(batch, use_ai=True, provider=spy)
+</span><span class="add">+
+</span><span class="add">+    assert spy.calls == []
+</span><span class="add">+    by_pid = report.by_case_id()
+</span><span class="add">+    for pid in (&quot;pay_PEND&quot;, &quot;pay_FAIL&quot;):
+</span><span class="add">+        outcome = by_pid[pid]
+</span><span class="add">+        assert outcome.case.exception.exception_type is ExceptionType.MISSING_SETTLEMENT
+</span><span class="add">+        assert outcome.investigation is None
+</span><span class="add">+        assert outcome.state == HUMAN_REVIEW_REQUIRED
+</span><span class="add">+        assert outcome.state != AUTO_RESOLVED
+</span><span class="add">+    assert by_pid[&quot;pay_OK&quot;].state == &quot;MATCHED&quot;
+</span><span class="add">+    assert report.investigations == 0
+</span><span>
+</span></pre>
+</main>
+</body>
+</html>

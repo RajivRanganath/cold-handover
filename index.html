@@ -1,0 +1,247 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cold Handover</title>
+<meta name="description" content="A fresh agent completed four predefined tasks, five times each, using the original repository and documentation.">
+<meta property="og:title" content="Cold Handover">
+<meta property="og:description" content="A fresh agent completed four predefined tasks, five times each, using the original repository and documentation.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://rajivranganath.github.io/cold-handover/">
+<meta property="og:image" content="https://rajivranganath.github.io/cold-handover/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230f6b4f'/%3E%3Cpath d='M9 17l5 5 9-11' fill='none' stroke='white' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<style>
+:root{--bg:#f6f7f6;--fg:#16191c;--muted:#5b636b;--line:#d9dddb;--panel:#eceeed;--accent:#0f6b4f;--code:#1d2226;--codefg:#e4e8e6}
+@media (prefers-color-scheme:dark){:root{--bg:#111416;--fg:#e8ebe9;--muted:#9aa3a0;--line:#2b3134;--panel:#181c1e;--accent:#4fbf95;--code:#0b0d0e;--codefg:#d6dcd9}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:17px/1.6 ui-sans-serif,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:1080px;margin:0 auto;padding:0 16px}
+a{color:var(--accent);text-underline-offset:3px}
+a:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+h1{font-size:clamp(2.4rem,5vw,3.5rem);line-height:1.05;letter-spacing:-.03em;margin:0 0 1rem}
+h2{font-size:clamp(1.6rem,3.5vw,2.2rem);letter-spacing:-.02em;line-height:1.15;margin:0 0 1.25rem}
+h3{font-size:1.25rem;margin:0 0 .5rem} h4{font-size:.9rem;margin:0 0 .4rem;color:var(--muted)}
+p{max-width:65ch} .muted{color:var(--muted);font-size:.95rem}
+code,pre{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.85rem}
+section{padding:72px 0;border-top:1px solid var(--line)}
+.hero{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap:48px;align-items:center;padding:96px 0 72px}
+.hero>*,.task-head>*,.cols>*{min-width:0}
+.who{color:var(--muted);margin:0 0 .75rem}
+.lede{font-size:1.2rem}
+.cta{display:flex;gap:12px;flex-wrap:wrap;margin-top:1.5rem}
+.btn{display:inline-block;padding:.65rem 1.1rem;border-radius:8px;border:1px solid var(--accent);text-decoration:none;font-weight:600;white-space:nowrap}
+.btn.primary{background:var(--accent);color:var(--bg)}
+.btn:active{transform:translateY(1px)}
+figure{margin:0} pre{background:var(--code);color:var(--codefg);padding:20px;border-radius:8px;overflow-x:auto;line-height:1.55;margin:0}
+figcaption{color:var(--muted);font-size:.85rem;margin-top:.6rem}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));justify-content:start;gap:12px 40px;padding:28px 0;border-top:1px solid var(--line)}
+.stats div{display:flex;flex-direction:column} .stats strong{font-size:1.6rem} .stats span{color:var(--muted);font-size:.9rem}
+blockquote{margin:1.5rem 0 2rem;padding-left:20px;border-left:3px solid var(--accent);font-size:1.25rem;max-width:60ch}
+.decisions{list-style:none;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:32px 48px}
+.decisions .dec{font-weight:600;margin:0 0 .4rem} .src{color:var(--muted);font-size:.85rem;margin:.3rem 0 0}
+.why p{margin:.3rem 0}
+.steps{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;padding:0;list-style:none;margin:1.5rem 0 2.5rem}
+.steps li{background:var(--panel);border-radius:8px;padding:16px;font-weight:600}
+.plain{padding-left:1.2rem} .plain li{margin:.4rem 0;max-width:65ch}
+.task{padding:40px 0;border-top:1px solid var(--line)} .task:first-of-type{border-top:0;padding-top:0}
+.task-head{display:grid;grid-template-columns:1fr 240px;gap:32px;margin-bottom:1.25rem}
+.score{display:flex;flex-direction:column;gap:4px} .big{font-size:2.2rem;font-weight:700;line-height:1;color:var(--accent)}
+.note{font-size:.9rem;font-weight:600}
+.attempt{border-top:1px solid var(--line)} .attempt:last-child{border-bottom:1px solid var(--line)}
+.attempt summary{display:grid;grid-template-columns:7rem 1fr auto;gap:16px;padding:12px 4px;cursor:pointer;list-style:none}
+.attempt summary::-webkit-details-marker{display:none}
+.attempt summary:hover{background:var(--panel)}
+.mark{color:var(--accent);font-weight:700} .lbl{font-family:ui-monospace,Menlo,monospace} .dur{color:var(--muted)}
+.body{padding:4px 4px 20px} .sum{font-weight:600}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+.checks,.files{padding-left:0;list-style:none;margin:0;font-size:.92rem} .checks li,.files li{margin:.2rem 0} .files code{overflow-wrap:anywhere}
+.ev{display:flex;flex-wrap:wrap;gap:6px 14px} .ev a{font-size:.92rem}
+footer{border-top:1px solid var(--line);padding:40px 0 64px;display:flex;gap:24px;flex-wrap:wrap;color:var(--muted)}
+@media (max-width:767px){.hero,.task-head,.decisions,.cols{grid-template-columns:1fr}.hero{padding:56px 0 40px;gap:32px}
+.steps{grid-template-columns:1fr 1fr}.stats{grid-template-columns:1fr 1fr}.attempt summary{grid-template-columns:5.5rem 1fr auto;gap:8px}}
+@media (prefers-reduced-motion:no-preference){.btn,.attempt summary{transition:background .2s,transform .1s}}
+</style></head><body><main>
+
+<header class="hero"><div>
+<p class="who">Rajiv Ranganath</p>
+<h1>Cold Handover</h1>
+<p class="lede">A fresh agent completed four predefined tasks, five times each, using the original repository and documentation.</p>
+<div class="cta"><a class="btn primary" href="ledgerguard/">Try LedgerGuard live</a><a class="btn" href="#tasks">See every attempt</a></div>
+</div>
+<figure><pre><code># Only processed settlements take part.
+# A pending or failed record must not make a
+# processed one look duplicated or conflicting.
+processed = [
+    s for s in batch.settlements
+    if s.status == SettlementStatus.PROCESSED
+]
+
+# ...
+# 2. No processed settlement. Pending or failed
+# settlements have paid out nothing, so they are
+# reported as context but never close the payment.</code></pre>
+<figcaption>From attempt M-T2-03: the agent's own change to <code>matcher.py</code>, written with no one to ask (rewrapped to fit; lines between omitted). <a href="evidence/T2/M-T2-03/agent_changes.patch.html">Full diff</a></figcaption></figure>
+</header>
+
+<div class="stats" aria-label="Results">
+<div><strong>20 of 20</strong><span>attempts passed</span></div>
+<div><strong>5 of 5</strong><span>T1: Reproduce the benchmark offline</span></div><div><strong>5 of 5</strong><span>T2: Respect settlement status</span></div><div><strong>5 of 5</strong><span>T3: Let the benchmark write elsewhere</span></div><div><strong>5 of 5</strong><span>T4: Diagnose a short payment that was closed</span></div>
+</div>
+<p class="muted">The agent results above are recorded. The <a href="ledgerguard/">LedgerGuard demo</a> runs live in your browser.</p>
+
+<section id="ledgerguard"><h2>LedgerGuard, and the decisions behind it</h2>
+<p>A self verifying AI finance controller that reconciles payment settlements. It checks that the money from every payment actually arrived, and refuses to close anything it cannot prove.</p>
+<blockquote>LLM reasoning is not financial truth. Financial truth is deterministic accounting state plus verified evidence. The AI may propose, the financial system must prove.</blockquote>
+<ul class="decisions"><li><p class="dec">An independent Shadow Ledger computes what the money should have been, and never reads the provider&#x27;s settlement or bank records to decide that.</p><p class="src">Source: README, What it does (1)</p></li><li><p class="dec">All money is integer paise; no float ever touches it.</p><p class="src">Source: README, What it does (1)</p></li><li><p class="dec">Deterministic code handles everything it can prove; the AI only sees cases that could not be proved.</p><p class="src">Source: README, What it does (2-3)</p></li><li><p class="dec">An Evidence Gate re-proves every AI claim against the records before anything is closed.</p><p class="src">Source: README, What it does (4)</p></li><li><p class="dec">When proof is insufficient it abstains; abstention is a designed outcome, not a failure.</p><p class="src">Source: README, What it does (5)</p></li><li><p class="dec">No model-generated confidence number; a named Verification Score (&quot;5 of 7 evidence checks passed&quot;) instead.</p><p class="src">Source: README, Why this is not just an LLM reconciliation bot</p></li></ul>
+</section>
+
+<section id="method"><h2>Putting my own handover to the test</h2>
+<p>Four tasks, each fixed before its attempts ran (three in round 1, one harder task in round 2); five fresh attempts each (20 total), in an order fixed before running; each checked afterwards by hidden tests and comparisons the agent could not see.</p>
+<ol class="steps"><li>Tasks fixed in advance</li><li>A fresh, sandboxed agent each time, with nobody to ask</li><li>Five attempts per task</li><li>Hidden checks it could not see</li></ol>
+<p class="muted">Each attempt: fresh copy of the repository, empty configuration (no memory, instructions or history), web tools disabled, sandbox limited to its own folder, nobody available to answer questions. Agent: Claude Code 2.1.316, model claude-haiku-5-5.</p>
+<h3>Decisions I made along the way</h3>
+<ul class="decisions"><li><p class="dec">Tested a pinned historical snapshot (5 Sep 2026) rather than the latest code.</p></li><li><p class="dec">Every attempt started cold: fresh copy, empty config, no memory, sandboxed, hidden checks.</p></li><li><p class="dec">Used a small, efficient model (Claude Haiku 5.5) rather than a frontier model.</p></li><li><p class="dec">Fixed the tasks and checks before any measured attempt, and kept one task held out.</p></li><li><p class="dec">When both pilots passed without needing an explanation, ran a baseline audit instead of writing an extra handover just to show an improvement.</p></li></ul>
+</section>
+
+<section id="tasks"><h2>4 tasks, 20 attempts</h2>
+<p class="muted">Open any attempt for what it changed, which checks it passed, and the full transcript.</p>
+<article class="task" id="T1">
+<div class="task-head"><div><h3>Reproduce the benchmark offline</h3><p>Run LedgerGuard&#x27;s evaluation with no API key, report ten specific figures, and leave the repository byte-for-byte unchanged, even though the benchmark command overwrites the committed live-model results.</p>
+<p class="muted">Why it matters: A successor has to run the evaluation without destroying the published results it is checking.</p>
+</div>
+<div class="score"><span class="big">5 of 5</span><span>passed</span>
+<span class="muted">median 1 min 19 s<br>range 1 min 02 s to 1 min 25 s</span>
+<a href="evidence/T1/task_prompt.md.html">Task prompt</a></div></div>
+<details class="attempt"><summary><span class="mark">✓ Passed</span>
+<span class="lbl">M-T1-01</span><span class="dur">1 min 02 s</span></summary>
+<div class="body"><p class="sum">Backed up the committed results before running the benchmark, restored them, and reported all requested figures correctly in 1 min 02 s.</p><p>Backed up committed results before running: <strong>yes</strong></p>
+<div class="cols"><div><h4>Checks</h4><ul class="checks"><li>✓ Repository left byte-for-byte as it started</li><li>✓ Answers file present and readable</li><li>✓ Correct number of scored cases (85)</li><li>✓ Correct fingerprint of the frozen test data</li><li>✓ Correctly named the offline stand-in it ran</li><li>✓ Correctly named the live-model chain behind the committed results</li><li>✓ All five rules-only figures correct</li><li>✓ All five hybrid figures correct</li><li>✓ Correct list of files the benchmark overwrites</li><li>✓ All 67 original tests still pass</li></ul></div>
+<div><h4>Files changed</h4><ul class="files"><li>No files changed (by design)</li></ul></div></div>
+<p class="ev">Evidence: <a href="evidence/T1/M-T1-01/agent_changes.patch.html">agent_changes.patch</a><a href="evidence/T1/M-T1-01/evaluation.json.html">evaluation.json</a><a href="evidence/T1/M-T1-01/out_NOTES.md.html">out_NOTES.md</a><a href="evidence/T1/M-T1-01/out_answers.json.html">out_answers.json</a><a href="evidence/T1/M-T1-01/transcript.md.html">transcript.md</a></p></div></details><details class="attempt"><summary><span class="mark">✓ Passed</span>
+<span class="lbl">M-T1-02</span><span class="dur">1 min 19 s</span></summary>
+<div class="body"><p class="sum">Backed up the committed results before running the benchmark, restored them, and reported all requested figures correctly in 1 min 19 s.</p><p>Backed up committed results before running: <strong>yes</strong></p>
+<div class="cols"><div><h4>Checks</h4><ul class="checks"><li>✓ Repository left byte-for-byte as it started</li><li>✓ Answers file present and readable</li><li>✓ Correct number of scored cases (85)</li><li>✓ Correct fingerprint of the frozen test data</li><li>✓ Correctly named the offline stand-in it ran</li><li>✓ Correctly named the live-model chain behind the committed results</li><li>✓ All five rules-only figures correct</li><li>✓ All five hybrid figures correct</li><li>✓ Correct list of files the benchmark overwrites</li><li>✓ All 67 original tests still pass</li></ul></div>
+<div><h4>Files changed</h4><ul class="files"><li>No files changed (by design)</li></ul></div></div>
+<p class="ev">Evidence: <a href="evidence/T1/M-T1-02/agent_changes.patch.html">agent_changes.patch</a><a href="evidence/T1/M-T1-02/evaluation.json.html">evaluation.json</a><a href="evidence/T1/M-T1-02/out_NOTES.md.html">out_NOTES.md</a><a href="evidence/T1/M-T1-02/out_answers.json.html">out_answers.json</a><a href="evidence/T1/M-T1-02/transcript.md.html">transcript.md</a></p></div></details><details class="attempt"><summary><span class="mark">✓ Passed</span>
+<span class="lbl">M-T1-03</span><span class="dur">1 min 25 s</span></summary>
+<div class="body"><p class="sum">Backed up the committed results before running the benchmark, restored them, and reported all requested figures correctly in 1 min 25 s.</p><p>Backed up committed results before running: <strong>yes</strong></p>
+<div class="cols"><div><h4>Checks</h4><ul class="checks"><li>✓ Repository left byte-for-byte as it started</li><li>✓ Answers file present and readable</li><li>✓ Correct number of scored cases (85)</li><li>✓ Correct fingerprint of the frozen test data</li><li>✓ Correctly named the offline stand-in it ran</li><li>✓ Correctly named the live-model chain behind the committed results</li><li>✓ All five rules-only figures correct</li><li>✓ All five hybrid figures correct</li><li>✓ Correct list of files the benchmark overwrites</li><li>✓ All 67 original tests still pass</li></ul></div>
+<div><h4>Files changed</h4><ul class="files"><li>No files changed (by design)</li></ul></div></div>
+<p class="ev">Evidence: <a href="evidence/T1/M-T1-03/agent_changes.patch.html">agent_changes.patch</a><a href="evidence/T1/M-T1-03/evaluation.json.html">evaluation.json</a><a href="evidence/T1/M-T1-03/out_NOTES.md.html">out_NOTES.md</a><a href="evidence/T1/M-T1-03/out_answers.json.html">out_answers.json</a><a href="evidence/T1/M-T1-03/transcript.md.html">transcript.md</a></p></div></details><details class="attempt"><summary><span class="mark">✓ Passed</span>
+<span class="lbl">M-T1-04</span><span class="dur">1 min 25 s</span></summary>
+<div class="body"><p class="sum">Backed up the committed results before running the benchmark, restored them, and reported all requested figures correctly in 1 min 25 s.</p><p>Backed up committed results before running: <strong>yes</strong></p>
+<div class="cols"><div><h4>Checks</h4><ul class="checks"><li>✓ Repository left byte-for-byte as it started</li><li>✓ Answers file present and readable</li><li>✓ Correct number of scored cases (85)</li><li>✓ Correct fingerprint of the frozen test data</li><li>✓ Correctly named the offline stand-in it ran</li><li>✓ Correctly named the live-model chain behind the committed results</li><li>✓ All five rules-only figures correct</li><li>✓ All five hybrid figures correct</li><li>✓ Correct list of files the benchmark overwrites</li><li>✓ All 67 original tests still pass</li></ul></div>
+<div><h4>Files changed</h4><ul class="files"><li>No files changed (by design)</li></ul></div></div>
+<p class="ev">Evidence: <a href="evidence/T1/M-T1-04/agent_changes.patch.html">agent_changes.patch</a><a href="evidence/T1/M-T1-04/evaluation.json.html">evaluation.json</a><a href="evidence/T1/M-T1-04/out_NOTES.md.html">out_NOTES.md</a><a href="evidence/T1/M-T1-04/out_answers.json.html">out_answers.json</a><a href="evidence/T1/M-T1-04/transcript.md.html">transcript.md</a></p></div></details><details class="attempt"><summary><span class="mark">✓ Passed</span>
+<span class="lbl">M-T1-05</span><span class="dur">1 min 05 s</span></summary>
+<div class="body"><p class="sum">Backed up the committed results before running the benchmark, restored them, and reported all requested figures correctly in 1 min 05 s.</p><p>Backed up committed results before running: <strong>yes</strong></p>
+<div class="cols"><div><h4>Checks</h4><ul class="checks"><li>✓ Repository left byte-for-byte as it started</li><li>✓ Answers file present and readable</li><li>✓ Correct number of scored cases (85)</li><li>✓ Correct fingerprint of the frozen test data</li><li>✓ Correctly named the offline stand-in it ran</li><li>✓ Correctly named the live-model chain behind the committed results</li><li>✓ All five rules-only figures correct</li><li>✓ All five hybrid figures correct</li><li>✓ Correct list of files the benchmark overwrites</li><li>✓ All 67 original tests still pass</li></ul></div>
+<div><h4>Files changed</h4><ul class="files"><li>No files changed (by design)</li></ul></div></div>
+<p class="ev">Evidence: <a href="evidence/T1/M-T1-05/agent_changes.patch.html">agent_changes.patch</a><a href="evidence/T1/M-T1-05/evaluation.json.html">evaluation.json</a><a href="evidence/T1/M-T1-05/out_NOTES.md.html">out_NOTES.md</a><a href="evidence/T1/M-T1-05/out_answers.json.html">out_answers.json</a><a href="evidence/T1/M-T1-05/transcript.md.html">transcript.md</a></p></div></details></article><article class="task" id="T2">
+<div class="task-head"><div><h3>Respect settlement status</h3><p>LedgerGuard ignored whether a settlement was processed, pending or failed, so a settlement that never paid out could still close a payment. Fix it with exact edge-case rules, without changing any existing behaviour or results.</p>
+<p class="muted">Why it matters: It is a real correctness gap in a finance tool, and fixing it means touching the core matching logic safely.</p>
+</div>
+<div class="score"><span class="big">5 of 5</span><span>passed</span>
+<span class="muted">median 3 min 49 s<br>range 2 min 52 s to 7 min 51 s</span>
+<a href="evidence/T2/task_prompt.md.html">Task prompt</a></div></div>
+<details class="attempt"><summary><span class="mark">✓ Passed</span>
+<span class="lbl">M-T2-01</span><span class="dur">7 min 51 s</span></summary>
+<div class="body"><p class="sum">Changed shadow_ledger.py, matcher.py; added 16 tests; updated architecture.md. Passed every check in 7 min 51 s (including waits for 6 retried model-API requests).</p>
+<div class="cols"><div><h4>Checks</h4><ul class="checks"><li>✓ Committed results, frozen data and original tests untouched</li><li>✓ Passed 8 hidden settlement-status scenarios</li><li>✓ Benchmark results identical to before (timing aside)</li><li>✓ All 67 original tests still pass</li></ul></div>
+<div><h4>Files changed</h4><ul class="files"><li><code>docs/architecture.md</code></li><li><code>ledgerguard/ledger/shadow_ledger.py</code></li><li><code>ledgerguard/reconciliation/matcher.py</code></li><li><code>ledgerguard/tests/test_settlement_status.py</code></li></ul></div></div>
+<p class="ev">Evidence: <a href="evidence/T2/M-T2-01/agent_changes.patch.html">agent_changes.patch</a><a href="evidence/T2/M-T2-01/evaluation.json.html">evaluation.json</a><a href="evidence/T2/M-T2-01/out_NOTES.md.html">out_NOTES.md</a><a href="evidence/T2/M-T2-01/transcript.md.html">transcript.md</a></p></div></details><details class="attempt"><summary><span class="mark">✓ Passed</span>
+<span class="lbl">M-T2-02</span><span class="dur">3 min 45 s</span></summary>
+<div class="body"><p class="sum">Changed shadow_ledger.py, matcher.py; added 13 tests. Passed every check in 3 min 45 s.</p>
+<div class="cols"><div><h4>Checks</h4><ul class="checks"><li>✓ Committed results, frozen data and original tests untouched</li><li>✓ Passed 8 hidden settlement-status scenarios</li><li>✓ Benchmark results identical to before (timing aside)</li><li>✓ All 67 original tests still pass</li></ul></div>
+<div><h4>Files changed</h4><ul class="files"><li><code>ledgerguard/ledger/shadow_ledger.py</code></li><li><code>ledgerguard/reconciliation/matcher.py</code></li><li><code>ledgerguard/tests/test_t2_settlement_status.py</code></li></ul></div></div>
+<p class="ev">Evidence: <a href="evidence/T2/M-T2-02/agent_changes.patch.html">agent_changes.patch</a><a href="evidence/T2/M-T2-02/evaluation.json.html">evaluation.json</a><a href="evidence/T2/M-T2-02/out_NOTES.md.html">out_NOTES.md</a><a href="evidence/T2/M-T2-02/transcript.md.html">transcript.md</a></p></div></details><details class="attempt"><summary><span class="mark">✓ Passed</span>
+<span class="lbl">M-T2-03</span><span class="dur">3 min 49 s</span></summary>
+<div class="body"><p class="sum">Changed shadow_ledger.py, matcher.py; added 14 tests. Passed every check in 3 min 49 s.</p>
+<div class="cols"><div><h4>Checks</h4><ul class="checks"><li>✓ Committed results, frozen data and original tests untouched</li><li>✓ Passed 8 hidden settlement-status scenarios</li><li>✓ Benchmark results identical to before (timing aside)</li><li>✓ All 67 original tests still pass</li></ul></div>
+<div><h4>Files changed</h4><ul class="files"><li><code>ledgerguard/ledger/shadow_ledger.py</code></li><li><code>ledgerguard/reconciliation/matcher.py</code></li><li><code>ledgerguard/tests/test_settlement_status.py</code></li></ul></div></div>
+<p class="ev">Evidence: <a href="evidence/T2/M-T2-03/agent_changes.patch.html">agent_changes.patch</a><a href="evidence/T2/M-T2-03/evaluation.json.html">evaluation.json</a><a href="evidence/T2/M-T2-03/out_NOTES.md.html">out_NOTES.md</a><a href="evidence/T2/M-T2-03/transcript.md.html">transcript.md</a></p></div></details><details class="attempt"><summary><span class="mark">✓ Passed</span>
+<span class="lbl">M-T2-04</span><span class="dur">7 min 03 s</span></summary>
+<div class="body"><p class="sum">Changed shadow_ledger.py, matcher.py; added 16 tests. Passed every check in 7 min 03 s (including waits for 2 retried model-API requests).</p>
+<div class="cols"><div><h4>Checks</h4><ul class="checks"><li>✓ Committed results, frozen data and original tests untouched</li><li>✓ Passed 8 hidden settlement-status scenarios</li><li>✓ Benchmark results identical to before (timing aside)</li><li>✓ All 67 original tests still pass</li></ul></div>
+<div><h4>Files changed</h4><ul class="files"><li><code>ledgerguard/ledger/shadow_ledger.py</code></li><li><code>ledgerguard/reconciliation/matcher.py</code></li><li><code>ledgerguard/tests/test_settlement_status.py</code></li></ul></div></div>
+<p class="ev">Evidence: <a href="evidence/T2/M-T2-04/agent_changes.patch.html">agent_changes.patch</a><a href="evidence/T2/M-T2-04/evaluation.json.html">evaluation.json</a><a href="evidence/T2/M-T2-04/out_NOTES.md.html">out_NOTES.md</a><a href="evidence/T2/M-T2-04/transcript.md.html">transcript.md</a></p></div></details><details class="attempt"><summary><span class="mark">✓ Passed</span>
+<span class="lbl">M-T2-05</span><span class="dur">2 min 52 s</span></summary>
+<div class="body"><p class="sum">Changed shadow_ledger.py, matcher.py; added 15 tests; updated architecture.md. Passed every check in 2 min 52 s.</p>
+<div class="cols"><div><h4>Checks</h4><ul class="checks"><li>✓ Committed results, frozen data and original tests untouched</li><li>✓ Passed 8 hidden settlement-status scenarios</li><li>✓ Benchmark results identical to before (timing aside)</li><li>✓ All 67 original tests still pass</li></ul></div>
+<div><h4>Files changed</h4><ul class="files"><li><code>docs/architecture.md</code></li><li><code>ledgerguard/ledger/shadow_ledger.py</code></li><li><code>ledgerguard/reconciliation/matcher.py</code></li><li><code>ledgerguard/tests/test_settlement_status.py</code></li></ul></div></div>
+<p class="ev">Evidence: <a href="evidence/T2/M-T2-05/agent_changes.patch.html">agent_changes.patch</a><a href="evidence/T2/M-T2-05/evaluation.json.html">evaluation.json</a><a href="evidence/T2/M-T2-05/out_NOTES.md.html">out_NOTES.md</a><a href="evidence/T2/M-T2-05/transcript.md.html">transcript.md</a></p></div></details></article><article class="task" id="T3">
+<div class="task-head"><div><h3>Let the benchmark write elsewhere</h3><p>Add an --output-dir option so a benchmark run can write its files somewhere other than the committed results folder.</p>
+<p class="muted">Why it matters: It is a small extension that has to respect the frozen-holdout check and leave committed results alone.</p>
+<p class="note">Held out: never used before measurement.</p></div>
+<div class="score"><span class="big">5 of 5</span><span>passed</span>
+<span class="muted">median 2 min 05 s<br>range 1 min 38 s to 2 min 22 s</span>
+<a href="evidence/T3/task_prompt.md.html">Task prompt</a></div></div>
+<details class="attempt"><summary><span class="mark">✓ Passed</span>
+<span class="lbl">M-T3-01</span><span class="dur">2 min 02 s</span></summary>
+<div class="body"><p class="sum">Changed benchmark.py; added 7 tests; updated evaluation.md. Passed every check in 2 min 02 s.</p>
+<div class="cols"><div><h4>Checks</h4><ul class="checks"><li>✓ Committed results, frozen data and original tests untouched</li><li>✓ Runs with an absolute --output-dir</li><li>✓ Files written there match a normal run</li><li>✓ Writes exactly the four expected files</li><li>✓ Prints where the files went</li><li>✓ Committed results and frozen data untouched</li><li>✓ Relative --output-dir works from another folder</li><li>✓ Without the option, behaves exactly as before</li><li>✓ All 67 original tests still pass</li></ul></div>
+<div><h4>Files changed</h4><ul class="files"><li><code>docs/evaluation.md</code></li><li><code>ledgerguard/evaluation/benchmark.py</code></li><li><code>ledgerguard/tests/test_benchmark_output_dir.py</code></li></ul></div></div>
+<p class="ev">Evidence: <a href="evidence/T3/M-T3-01/agent_changes.patch.html">agent_changes.patch</a><a href="evidence/T3/M-T3-01/evaluation.json.html">evaluation.json</a><a href="evidence/T3/M-T3-01/out_NOTES.md.html">out_NOTES.md</a><a href="evidence/T3/M-T3-01/transcript.md.html">transcript.md</a></p></div></details><details class="attempt"><summary><span class="mark">✓ Passed</span>
+<span class="lbl">M-T3-02</span><span class="dur">1 min 38 s</span></summary>
+<div class="body"><p class="sum">Changed benchmark.py; added 7 tests. Passed every check in 1 min 38 s.</p>
+<div class="cols"><div><h4>Checks</h4><ul class="checks"><li>✓ Committed results, frozen data and original tests untouched</li><li>✓ Runs with an absolute --output-dir</li><li>✓ Files written there match a normal run</li><li>✓ Writes exactly the four expected files</li><li>✓ Prints where the files went</li><li>✓ Committed results and frozen data untouched</li><li>✓ Relative --output-dir works from another folder</li><li>✓ Without the option, behaves exactly as before</li><li>✓ All 67 original tests still pass</li></ul></div>
+<div><h4>Files changed</h4><ul class="files"><li><code>ledgerguard/evaluation/benchmark.py</code></li><li><code>ledgerguard/tests/test_benchmark_output_dir.py</code></li></ul></div></div>
+<p class="ev">Evidence: <a href="evidence/T3/M-T3-02/agent_changes.patch.html">agent_changes.patch</a><a href="evidence/T3/M-T3-02/evaluation.json.html">evaluation.json</a><a href="evidence/T3/M-T3-02/out_NOTES.md.html">out_NOTES.md</a><a href="evidence/T3/M-T3-02/transcript.md.html">transcript.md</a></p></div></details><details class="attempt"><summary><span class="mark">✓ Passed</span>
+<span class="lbl">M-T3-03</span><span class="dur">2 min 05 s</span></summary>
+<div class="body"><p class="sum">Changed benchmark.py; added 10 tests; updated evaluation.md. Passed every check in 2 min 05 s.</p>
+<div class="cols"><div><h4>Checks</h4><ul class="checks"><li>✓ Committed results, frozen data and original tests untouched</li><li>✓ Runs with an absolute --output-dir</li><li>✓ Files written there match a normal run</li><li>✓ Writes exactly the four expected files</li><li>✓ Prints where the files went</li><li>✓ Committed results and frozen data untouched</li><li>✓ Relative --output-dir works from another folder</li><li>✓ Without the option, behaves exactly as before</li><li>✓ All 67 original tests still pass</li></ul></div>
+<div><h4>Files changed</h4><ul class="files"><li><code>docs/evaluation.md</code></li><li><code>ledgerguard/evaluation/benchmark.py</code></li><li><code>ledgerguard/tests/test_benchmark_output_dir.py</code></li></ul></div></div>
+<p class="ev">Evidence: <a href="evidence/T3/M-T3-03/agent_changes.patch.html">agent_changes.patch</a><a href="evidence/T3/M-T3-03/evaluation.json.html">evaluation.json</a><a href="evidence/T3/M-T3-03/out_NOTES.md.html">out_NOTES.md</a><a href="evidence/T3/M-T3-03/transcript.md.html">transcript.md</a></p></div></details><details class="attempt"><summary><span class="mark">✓ Passed</span>
+<span class="lbl">M-T3-04</span><span class="dur">2 min 22 s</span></summary>
+<div class="body"><p class="sum">Changed benchmark.py; added 9 tests; updated evaluation.md. Passed every check in 2 min 22 s.</p>
+<div class="cols"><div><h4>Checks</h4><ul class="checks"><li>✓ Committed results, frozen data and original tests untouched</li><li>✓ Runs with an absolute --output-dir</li><li>✓ Files written there match a normal run</li><li>✓ Writes exactly the four expected files</li><li>✓ Prints where the files went</li><li>✓ Committed results and frozen data untouched</li><li>✓ Relative --output-dir works from another folder</li><li>✓ Without the option, behaves exactly as before</li><li>✓ All 67 original tests still pass</li></ul></div>
+<div><h4>Files changed</h4><ul class="files"><li><code>docs/evaluation.md</code></li><li><code>ledgerguard/evaluation/benchmark.py</code></li><li><code>ledgerguard/tests/test_benchmark_output_dir.py</code></li></ul></div></div>
+<p class="ev">Evidence: <a href="evidence/T3/M-T3-04/agent_changes.patch.html">agent_changes.patch</a><a href="evidence/T3/M-T3-04/evaluation.json.html">evaluation.json</a><a href="evidence/T3/M-T3-04/out_NOTES.md.html">out_NOTES.md</a><a href="evidence/T3/M-T3-04/transcript.md.html">transcript.md</a></p></div></details><details class="attempt"><summary><span class="mark">✓ Passed</span>
+<span class="lbl">M-T3-05</span><span class="dur">2 min 20 s</span></summary>
+<div class="body"><p class="sum">Changed benchmark.py; added 9 tests. Passed every check in 2 min 20 s.</p>
+<div class="cols"><div><h4>Checks</h4><ul class="checks"><li>✓ Committed results, frozen data and original tests untouched</li><li>✓ Runs with an absolute --output-dir</li><li>✓ Files written there match a normal run</li><li>✓ Writes exactly the four expected files</li><li>✓ Prints where the files went</li><li>✓ Committed results and frozen data untouched</li><li>✓ Relative --output-dir works from another folder</li><li>✓ Without the option, behaves exactly as before</li><li>✓ All 67 original tests still pass</li></ul></div>
+<div><h4>Files changed</h4><ul class="files"><li><code>ledgerguard/evaluation/benchmark.py</code></li><li><code>ledgerguard/tests/test_benchmark_output_dir.py</code></li></ul></div></div>
+<p class="ev">Evidence: <a href="evidence/T3/M-T3-05/agent_changes.patch.html">agent_changes.patch</a><a href="evidence/T3/M-T3-05/evaluation.json.html">evaluation.json</a><a href="evidence/T3/M-T3-05/out_NOTES.md.html">out_NOTES.md</a><a href="evidence/T3/M-T3-05/transcript.md.html">transcript.md</a></p></div></details></article><article class="task" id="T4">
+<div class="task-head"><div><h3>Diagnose a short payment that was closed</h3><p>A vague bug report with no rules and no hint where to look: a settlement arrived ₹250 short, its fees matched the schedule, and LedgerGuard still closed it automatically as a fee mismatch. Find the cause and fix it without changing anything LedgerGuard already gets right.</p>
+<p class="muted">Why it matters: It is a real bug in the original code, found after round 1. Fixing it takes diagnosis and judgement from the project&#x27;s documented principles, not a list of rules to follow.</p>
+<p class="note">Round 2: a harder task added after round 1, built on a real bug found in the original code.</p></div>
+<div class="score"><span class="big">5 of 5</span><span>passed</span>
+<span class="muted">median 6 min 01 s<br>range 2 min 25 s to 7 min 51 s</span>
+<a href="evidence/T4/task_prompt.md.html">Task prompt</a></div></div>
+<details class="attempt"><summary><span class="mark">✓ Passed</span>
+<span class="lbl">M-T4-01</span><span class="dur">7 min 51 s</span></summary>
+<div class="body"><p class="sum">Changed safety.py, matcher.py; added 8 tests; updated architecture.md. Passed every check in 7 min 51 s.</p><p>Also handled a harder case the report never mentioned (not scored): <strong>yes</strong></p>
+<div class="cols"><div><h4>Checks</h4><ul class="checks"><li>✓ Committed results, frozen data and original tests untouched</li><li>✓ Passed 25 hidden checks: short payments are no longer closed, and a genuine fee overcharge still closes</li><li>✓ Benchmark results identical to before (timing aside)</li><li>✓ All 67 original tests still pass</li><li>✓ Explained the cause it found in its notes</li></ul></div>
+<div><h4>Files changed</h4><ul class="files"><li><code>docs/architecture.md</code></li><li><code>ledgerguard/evidence/safety.py</code></li><li><code>ledgerguard/reconciliation/matcher.py</code></li><li><code>ledgerguard/tests/test_p1_settlement_arithmetic.py</code></li></ul></div></div>
+<p class="ev">Evidence: <a href="evidence/T4/M-T4-01/agent_changes.patch.html">agent_changes.patch</a><a href="evidence/T4/M-T4-01/evaluation.json.html">evaluation.json</a><a href="evidence/T4/M-T4-01/out_NOTES.md.html">out_NOTES.md</a><a href="evidence/T4/M-T4-01/transcript.md.html">transcript.md</a></p></div></details><details class="attempt"><summary><span class="mark">✓ Passed</span>
+<span class="lbl">M-T4-02</span><span class="dur">6 min 01 s</span></summary>
+<div class="body"><p class="sum">Changed safety.py, matcher.py; added 5 tests; updated architecture.md. Passed every check in 6 min 01 s.</p><p>Also handled a harder case the report never mentioned (not scored): <strong>yes</strong></p>
+<div class="cols"><div><h4>Checks</h4><ul class="checks"><li>✓ Committed results, frozen data and original tests untouched</li><li>✓ Passed 25 hidden checks: short payments are no longer closed, and a genuine fee overcharge still closes</li><li>✓ Benchmark results identical to before (timing aside)</li><li>✓ All 67 original tests still pass</li><li>✓ Explained the cause it found in its notes</li></ul></div>
+<div><h4>Files changed</h4><ul class="files"><li><code>docs/architecture.md</code></li><li><code>ledgerguard/evidence/safety.py</code></li><li><code>ledgerguard/reconciliation/matcher.py</code></li><li><code>ledgerguard/tests/test_t4_unexplained_net.py</code></li></ul></div></div>
+<p class="ev">Evidence: <a href="evidence/T4/M-T4-02/agent_changes.patch.html">agent_changes.patch</a><a href="evidence/T4/M-T4-02/evaluation.json.html">evaluation.json</a><a href="evidence/T4/M-T4-02/out_NOTES.md.html">out_NOTES.md</a><a href="evidence/T4/M-T4-02/transcript.md.html">transcript.md</a></p></div></details><details class="attempt"><summary><span class="mark">✓ Passed</span>
+<span class="lbl">M-T4-03</span><span class="dur">6 min 07 s</span></summary>
+<div class="body"><p class="sum">Changed safety.py, matcher.py; added 5 tests. Passed every check in 6 min 07 s.</p><p>Also handled a harder case the report never mentioned (not scored): <strong>yes</strong></p>
+<div class="cols"><div><h4>Checks</h4><ul class="checks"><li>✓ Committed results, frozen data and original tests untouched</li><li>✓ Passed 25 hidden checks: short payments are no longer closed, and a genuine fee overcharge still closes</li><li>✓ Benchmark results identical to before (timing aside)</li><li>✓ All 67 original tests still pass</li><li>✓ Explained the cause it found in its notes</li></ul></div>
+<div><h4>Files changed</h4><ul class="files"><li><code>ledgerguard/evidence/safety.py</code></li><li><code>ledgerguard/reconciliation/matcher.py</code></li><li><code>ledgerguard/tests/test_fee_residual.py</code></li></ul></div></div>
+<p class="ev">Evidence: <a href="evidence/T4/M-T4-03/agent_changes.patch.html">agent_changes.patch</a><a href="evidence/T4/M-T4-03/evaluation.json.html">evaluation.json</a><a href="evidence/T4/M-T4-03/out_NOTES.md.html">out_NOTES.md</a><a href="evidence/T4/M-T4-03/transcript.md.html">transcript.md</a></p></div></details><details class="attempt"><summary><span class="mark">✓ Passed</span>
+<span class="lbl">M-T4-04</span><span class="dur">5 min 06 s</span></summary>
+<div class="body"><p class="sum">Changed safety.py, matcher.py; added 6 tests. Passed every check in 5 min 06 s.</p><p>Also handled a harder case the report never mentioned (not scored): <strong>yes</strong></p>
+<div class="cols"><div><h4>Checks</h4><ul class="checks"><li>✓ Committed results, frozen data and original tests untouched</li><li>✓ Passed 25 hidden checks: short payments are no longer closed, and a genuine fee overcharge still closes</li><li>✓ Benchmark results identical to before (timing aside)</li><li>✓ All 67 original tests still pass</li><li>✓ Explained the cause it found in its notes</li></ul></div>
+<div><h4>Files changed</h4><ul class="files"><li><code>ledgerguard/evidence/safety.py</code></li><li><code>ledgerguard/reconciliation/matcher.py</code></li><li><code>ledgerguard/tests/test_short_settlement.py</code></li></ul></div></div>
+<p class="ev">Evidence: <a href="evidence/T4/M-T4-04/agent_changes.patch.html">agent_changes.patch</a><a href="evidence/T4/M-T4-04/evaluation.json.html">evaluation.json</a><a href="evidence/T4/M-T4-04/out_NOTES.md.html">out_NOTES.md</a><a href="evidence/T4/M-T4-04/transcript.md.html">transcript.md</a></p></div></details><details class="attempt"><summary><span class="mark">✓ Passed</span>
+<span class="lbl">M-T4-05</span><span class="dur">2 min 25 s</span></summary>
+<div class="body"><p class="sum">Changed matcher.py; added 5 tests. Passed every check in 2 min 25 s.</p><p>Also handled a harder case the report never mentioned (not scored): <strong>yes</strong></p>
+<div class="cols"><div><h4>Checks</h4><ul class="checks"><li>✓ Committed results, frozen data and original tests untouched</li><li>✓ Passed 25 hidden checks: short payments are no longer closed, and a genuine fee overcharge still closes</li><li>✓ Benchmark results identical to before (timing aside)</li><li>✓ All 67 original tests still pass</li><li>✓ Explained the cause it found in its notes</li></ul></div>
+<div><h4>Files changed</h4><ul class="files"><li><code>ledgerguard/reconciliation/matcher.py</code></li><li><code>ledgerguard/tests/test_residual_fee_shortfall.py</code></li></ul></div></div>
+<p class="ev">Evidence: <a href="evidence/T4/M-T4-05/agent_changes.patch.html">agent_changes.patch</a><a href="evidence/T4/M-T4-05/evaluation.json.html">evaluation.json</a><a href="evidence/T4/M-T4-05/out_NOTES.md.html">out_NOTES.md</a><a href="evidence/T4/M-T4-05/transcript.md.html">transcript.md</a></p></div></details></article></section>
+
+
+<section id="limits"><h2>What this does and does not show</h2>
+<p>This is a small experiment with one repository and one agent configuration. It measures agent task completion, not human onboarding.</p>
+<p class="muted">The agent had the whole repository: README, docs and code. The audit does not separate the README&#x27;s contribution from the code&#x27;s.</p>
+<h3>It cannot claim</h3><ul class="plain"><li>that the README alone caused the success: the agent also had the code and the other docs</li><li>that the result generalises to other tasks, agents, models or repositories</li><li>statistical significance (five attempts per task is a small descriptive sample)</li><li>any benefit for human newcomers</li><li>that the documentation has no gaps; harder or vaguer tasks might expose some</li><li>that the model had never seen this public repository in training</li><li>anything new about LedgerGuard&#x27;s own live-model benchmark numbers</li></ul>
+<h3>Disclosures</h3><ul class="plain"><li>The agent&#x27;s shell could reach services on the Mac&#x27;s localhost (the project&#x27;s tests need local sockets). One attempt (M-T1-05) checked port 20128; nothing was listening.</li><li>Outbound internet was not blocked at network level; web search and fetch tools were disabled, and no attempt used the internet beyond the model API.</li><li>The login token was visible to the agent&#x27;s shell; every output was scanned for it after every attempt and it never appeared.</li><li>Two exploratory pilots ran before the protocol was frozen and are excluded from the counts.</li><li>Round 2 (T4) was designed after round 1&#x27;s results were known, to test a harder, vaguer task. It ran on Claude Code 2.1.325 instead of 2.1.316 (the older version was no longer installed); the newer version loads its built-in plugins. Model, snapshot and sandbox were the same.</li><li>For T4, one check (a fee overcharge combined with an unexplained shortfall) was moved from pass/fail to an unscored depth measure before any attempt ran, because the bug report does not mention it. All five attempts handled it anyway.</li><li>T4 had two pilots, both excluded: the first never started (the harness pointed at an uninstalled Claude Code version) and the second passed.</li></ul>
+<p><a href="evidence/results.md.html">Full results table</a></p>
+</section>
+
+<footer><a href="https://github.com/RajivRanganath">GitHub</a><a href="https://github.com/RajivRanganath/ledgerguard">LedgerGuard source</a><span>Last updated 15 November 2026</span></footer>
+</main></body></html>

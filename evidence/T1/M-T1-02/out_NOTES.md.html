@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>T1/M-T1-02/out_NOTES.md</title>
+<style>
+*{box-sizing:border-box}
+:root{--bg:#f6f7f6;--text:#16191c;--muted:#5b636b;--line:#d9dddb;--accent:#0f6b4f;
+--code:rgba(15,23,28,.06);--add:rgba(46,160,67,.20);--del:rgba(218,54,51,.17);--hunk:rgba(15,107,79,.10)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#111416;--text:#e8ebe9;
+--muted:#9aa3a0;--line:#2b3134;--accent:#4fbf95;--code:rgba(255,255,255,.07);
+--add:rgba(63,185,80,.22);--del:rgba(248,81,73,.22);--hunk:rgba(79,191,149,.12)}}
+body{margin:0;background:var(--bg);color:var(--text);
+font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:900px;margin:0 auto;padding:16px}
+.top{font-size:14px;color:var(--muted);border-bottom:1px solid var(--line);padding-bottom:10px;
+margin-bottom:20px;display:flex;flex-wrap:wrap;gap:6px 16px;align-items:baseline}
+.top .path{color:var(--text);font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;overflow-wrap:anywhere}
+a{color:var(--accent)}
+h1,h2,h3,h4,h5,h6{line-height:1.25;margin:1.4em 0 .5em;overflow-wrap:anywhere}
+p,ul,ol,blockquote{margin:.6em 0}
+ul,ol{padding-left:1.4em}
+li,p{overflow-wrap:anywhere}
+blockquote{margin:.8em 0;padding:.1em 0 .1em 14px;border-left:3px solid var(--accent);color:var(--muted)}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.92em;
+background:var(--code);padding:.1em .3em;border-radius:4px;overflow-wrap:anywhere}
+pre{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px;line-height:1.45;
+background:var(--code);border:1px solid var(--line);border-radius:6px;padding:12px;margin:.8em 0;
+overflow-x:auto;white-space:pre;tab-size:2}
+pre code{background:none;padding:0;border-radius:0;font-size:inherit;overflow-wrap:normal}
+.tw{overflow-x:auto;margin:.8em 0}
+table{border-collapse:collapse;font-size:14px}
+th,td{border:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}
+td{overflow-wrap:anywhere}
+th{background:var(--code)}
+hr{border:0;border-top:1px solid var(--line);margin:1.5em 0}
+.patch span{display:block;width:max-content;min-width:100%}
+.patch .file{font-weight:700}
+.patch .meta{color:var(--muted)}
+.patch .hunk{color:var(--accent);background:var(--hunk)}
+.patch .add{background:var(--add)}
+.patch .del{background:var(--del)}
+</style>
+</head>
+<body>
+<main>
+<div class="top"><span class="path">T1/M-T1-02/out_NOTES.md</span><a href="out_NOTES.md">Raw file</a><a href="../../../index.html#T1">Back to the case study</a></div>
+<h1>T1 notes: offline benchmark reproduction</h1>
+<h2>What was run</h2>
+<ul><li><code>.venv/bin/python -m ledgerguard.evaluation.benchmark</code> from <code>repo/</code>, no arguments, no API key.</li><li>Exit 0, no stderr. Holdout frozen manifest <code>ledgerguard/evaluation/frozen/holdout_20260905_320.json</code> verified (not rewritten).</li><li>No <code>.env</code> file exists and no provider key is set in the environment, so <code>get_provider()</code> resolved to the offline <code>heuristic_stub</code>.</li></ul>
+<h2>Results from this run</h2>
+<ul><li>Hybrid investigator: <code>heuristic_stub</code>. This is not a model. The hybrid numbers are the offline stand-in&#x27;s numbers.</li><li>Baseline (rules only): accuracy 0.8941, auto_resolved 12, human_review_required 19, false_auto_resolutions 0, unresolved_value_paise 19178059.</li><li>Hybrid (heuristic_stub): accuracy 1.0, auto_resolved 21, human_review_required 10, false_auto_resolutions 0, unresolved_value_paise 12189954.</li><li><code>investigator_chain</code> in <code>benchmark.json</code> is <code>null</code> for this run, because the stub has no router report.</li></ul>
+<h2>Differences from the README and the committed artifact</h2>
+<ul><li>The README and the committed <code>benchmark.json</code> record the hybrid as <code>fallback(groq-&gt;gemini-&gt;nvidia-&gt;omniroute)</code>, a live model chain, with 97.7% accuracy and 19 exceptions correctly resolved. This offline run does not reproduce those numbers, and the README&#x27;s &quot;19 correctly resolved&quot; is not what this run produced. The hybrid row here should not be compared with the README&#x27;s hybrid row.</li><li>The rules-only baseline matches the README (89.4%, 12 correct resolutions, INR 191,780.59 unresolved).</li></ul>
+<h2>Files</h2>
+<ul><li><code>artifacts_written</code> lists the four files the benchmark overwrites under <code>ledgerguard/evaluation/outputs/</code>: <code>benchmark.json</code>, <code>benchmark.md</code>, <code>cases.json</code>, <code>unresolved_exceptions.csv</code>. The frozen manifest is only written when missing, and it already existed, so it is not listed.</li><li>Python bytecode caches (<code>__pycache__/*.pyc</code>) were created by the run and are excluded from <code>artifacts_written</code>, as Python cache files. They were removed afterwards.</li></ul>
+<h2>Restoring the repo</h2>
+<ul><li>Before running, I backed up <code>outputs/</code> and <code>frozen/</code> to <code>../tmp/backup/</code> and recorded SHA-256s (<code>../tmp/backup/sha_before.txt</code>).</li><li>After the run I restored the four overwritten files from the backup. The run&#x27;s own output is kept at <code>../tmp/new_run/</code>.</li><li>Verified: every file that existed under <code>repo/</code> at the start matches its original SHA-256 (the manifest in <code>../tmp/tmp_manifest_before.txt</code>). Only <code>.venv/</code> is excluded from the check. No <code>.pytest_cache</code> was created, because the test suite was not run.</li></ul>
+<h2>Not done</h2>
+<ul><li>The test suite (<code>pytest</code>) was not run. It is not required for T1, and running it would write <code>.pytest_cache</code> into <code>repo/</code>.</li><li>No live-model run was attempted, per the no-key constraint.</li></ul>
+</main>
+</body>
+</html>

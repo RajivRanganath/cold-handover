@@ -1,0 +1,229 @@
+--- a/ledgerguard/evaluation/benchmark.py
++++ b/ledgerguard/evaluation/benchmark.py
+@@ -249,9 +249,28 @@
+         help="auto | fallback | groq | gemini | nvidia | omniroute | "
+         "anthropic | cerebras | openai_compatible | stub | none",
+     )
++    parser.add_argument(
++        "--output-dir",
++        metavar="PATH",
++        default=None,
++        help="write the artifacts to PATH instead of evaluation/outputs/ "
++        "(created if missing; relative paths resolve against the current directory)",
++    )
+     args = parser.parse_args(argv)
+ 
+-    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
++    if args.output_dir is None:
++        out_dir = OUTPUT_DIR
++    else:
++        out_dir = Path(args.output_dir).resolve()
++        default_dir = OUTPUT_DIR.resolve()
++        if out_dir == default_dir or default_dir in out_dir.parents:
++            parser.error(
++                f"--output-dir must not be {default_dir} or inside it; "
++                "use the default run to write there"
++            )
++        if out_dir.exists() and not out_dir.is_dir():
++            parser.error(f"--output-dir {out_dir} exists and is not a directory")
++    out_dir.mkdir(parents=True, exist_ok=True)
+ 
+     full = build_dataset(seed=args.seed, count=args.count)
+     dev, holdout = split(full)
+@@ -274,8 +293,8 @@
+     costs = estimate(provider, hyb_metrics.investigations, hyb_metrics.total_cases)
+ 
+     md = render_markdown(base_metrics, hyb_metrics, manifest)
+-    (OUTPUT_DIR / "benchmark.md").write_text(md)
+-    (OUTPUT_DIR / "benchmark.json").write_text(
++    (out_dir / "benchmark.md").write_text(md)
++    (out_dir / "benchmark.json").write_text(
+         json.dumps(
+             {
+                 "dataset": {
+@@ -298,9 +317,9 @@
+         + "\n"
+     )
+     n_unresolved = write_unresolved_csv(
+-        hybrid_report, scored, OUTPUT_DIR / "unresolved_exceptions.csv"
+-    )
+-    export_cases(hybrid_report, scored, OUTPUT_DIR / "cases.json")
++        hybrid_report, scored, out_dir / "unresolved_exceptions.csv"
++    )
++    export_cases(hybrid_report, scored, out_dir / "cases.json")
+ 
+     print(md)
+     if fallback_report:
+@@ -334,7 +353,7 @@
+                 f"${d['estimated_usd']} total, "
+                 f"${d['estimated_usd_per_100_records']} per 100 records"
+             )
+-    print(f"\nArtifacts written to {OUTPUT_DIR}")
++    print(f"\nArtifacts written to {out_dir}")
+     print(f"  benchmark.md, benchmark.json, cases.json")
+     print(f"  unresolved_exceptions.csv ({n_unresolved} rows)")
+     if hyb_metrics.provider == "heuristic_stub":
+--- a/ledgerguard/tests/test_benchmark_output_dir.py
++++ b/ledgerguard/tests/test_benchmark_output_dir.py
+@@ -0,0 +1,161 @@
++"""The benchmark's --output-dir option.
++
++Every test points OUTPUT_DIR and MANIFEST_DIR at temporary directories, so the
++committed evaluation/outputs/ and evaluation/frozen/ are never read for writing
++or modified by the suite. Providers are the offline stub; nothing hits the
++network.
++"""
++
++from __future__ import annotations
++
++import json
++import shutil
++from pathlib import Path
++
++import pytest
++
++from ledgerguard.evaluation import benchmark as bm
++
++REAL_FROZEN = Path(bm.__file__).parent / "frozen"
++ARTIFACTS = ["benchmark.md", "benchmark.json", "cases.json", "unresolved_exceptions.csv"]
++
++# Wall-clock fields. Everything else must match a default run exactly.
++TIMING_KEYS = {"wall_seconds", "throughput_per_second", "latency_p50_ms", "latency_p95_ms", "latency_ms"}
++
++
++def _strip_timing(obj):
++    if isinstance(obj, dict):
++        return {k: _strip_timing(v) for k, v in obj.items() if k not in TIMING_KEYS}
++    if isinstance(obj, list):
++        return [_strip_timing(v) for v in obj]
++    return obj
++
++
++def _strip_timing_md(text: str) -> list[str]:
++    return [
++        line
++        for line in text.splitlines()
++        if not any(k in line for k in ("Wall time", "Throughput (cases/s)", "latency"))
++    ]
++
++
++def _snapshot(root: Path) -> dict[str, bytes]:
++    return {
++        str(p.relative_to(root)): p.read_bytes()
++        for p in sorted(root.rglob("*"))
++        if p.is_file()
++    }
++
++
++@pytest.fixture
++def sandbox(tmp_path, monkeypatch):
++    """A fake outputs/ holding a sentinel, and a copy of the real frozen manifest."""
++    fake_outputs = tmp_path / "fake_outputs"
++    fake_outputs.mkdir()
++    (fake_outputs / "sentinel.txt").write_text("untouched\n")
++    frozen_copy = tmp_path / "frozen"
++    shutil.copytree(REAL_FROZEN, frozen_copy)
++    monkeypatch.setattr(bm, "OUTPUT_DIR", fake_outputs)
++    monkeypatch.setattr(bm, "MANIFEST_DIR", frozen_copy)
++    return tmp_path, fake_outputs, frozen_copy
++
++
++def test_output_dir_receives_all_artifacts_and_outputs_is_untouched(sandbox, capsys):
++    tmp_path, fake_outputs, frozen_copy = sandbox
++    before_outputs = _snapshot(fake_outputs)
++    before_frozen = _snapshot(frozen_copy)
++    target = tmp_path / "deep" / "nested" / "run"  # parents do not exist yet
++
++    assert bm.main(["--provider", "stub", "--output-dir", str(target)]) == 0
++
++    for name in ARTIFACTS:
++        assert (target / name).is_file(), name
++    # The holdout manifest is read from frozen/, never written to the output dir.
++    assert not any(p.name.startswith("holdout_") for p in target.iterdir())
++    assert _snapshot(fake_outputs) == before_outputs
++    assert _snapshot(frozen_copy) == before_frozen
++    out = capsys.readouterr().out
++    assert f"Artifacts written to {target.resolve()}" in out
++
++
++def test_relative_path_resolves_against_current_directory(sandbox, monkeypatch):
++    tmp_path, fake_outputs, _ = sandbox
++    workdir = tmp_path / "cwd"
++    workdir.mkdir()
++    monkeypatch.chdir(workdir)
++
++    assert bm.main(["--provider", "stub", "--output-dir", "rel/out"]) == 0
++
++    for name in ARTIFACTS:
++        assert (workdir / "rel" / "out" / name).is_file(), name
++    assert _snapshot(fake_outputs) == {"sentinel.txt": b"untouched\n"}
++
++
++def test_contents_match_a_default_run_apart_from_timing(sandbox):
++    tmp_path, fake_outputs, _ = sandbox
++    custom = tmp_path / "custom"
++
++    assert bm.main(["--provider", "stub"]) == 0  # default -> fake_outputs
++    assert bm.main(["--provider", "stub", "--output-dir", str(custom)]) == 0
++
++    default_json = json.loads((fake_outputs / "benchmark.json").read_text())
++    custom_json = json.loads((custom / "benchmark.json").read_text())
++    assert _strip_timing(default_json) == _strip_timing(custom_json)
++
++    default_cases = json.loads((fake_outputs / "cases.json").read_text())
++    custom_cases = json.loads((custom / "cases.json").read_text())
++    assert _strip_timing(default_cases) == _strip_timing(custom_cases)
++
++    assert _strip_timing_md((fake_outputs / "benchmark.md").read_text()) == _strip_timing_md(
++        (custom / "benchmark.md").read_text()
++    )
++    assert (fake_outputs / "unresolved_exceptions.csv").read_bytes() == (
++        custom / "unresolved_exceptions.csv"
++    ).read_bytes()
++
++
++def test_default_run_without_option_still_writes_to_outputs(sandbox, capsys):
++    _, fake_outputs, _ = sandbox
++    assert bm.main(["--provider", "stub"]) == 0
++    for name in ARTIFACTS:
++        assert (fake_outputs / name).is_file(), name
++    assert f"Artifacts written to {fake_outputs}" in capsys.readouterr().out
++
++
++def test_frozen_manifest_is_still_verified_when_output_dir_is_given(sandbox):
++    tmp_path, _, frozen_copy = sandbox
++    manifest_file = frozen_copy / "holdout_20260905_320.json"
++    tampered = json.loads(manifest_file.read_text())
++    tampered["holdout_batch_sha256"] = "0" * 64
++    manifest_file.write_text(json.dumps(tampered, indent=2) + "\n")
++    target = tmp_path / "refused"
++
++    with pytest.raises(SystemExit) as excinfo:
++        bm.main(["--provider", "stub", "--output-dir", str(target)])
++    assert "FROZEN HOLDOUT MISMATCH" in str(excinfo.value)
++    assert not any((target / name).exists() for name in ARTIFACTS)
++
++
++def test_output_dir_inside_default_outputs_is_refused(sandbox, capsys):
++    _, fake_outputs, _ = sandbox
++    before = _snapshot(fake_outputs)
++
++    for bad in (fake_outputs, fake_outputs / "sub"):
++        with pytest.raises(SystemExit) as excinfo:
++            bm.main(["--provider", "stub", "--output-dir", str(bad)])
++        assert excinfo.value.code == 2
++
++    assert _snapshot(fake_outputs) == before
++    assert not (fake_outputs / "sub").exists()
++
++
++def test_output_dir_that_is_a_file_is_refused(sandbox, tmp_path):
++    _, fake_outputs, _ = sandbox
++    not_a_dir = tmp_path / "file.txt"
++    not_a_dir.write_text("x")
++
++    with pytest.raises(SystemExit) as excinfo:
++        bm.main(["--provider", "stub", "--output-dir", str(not_a_dir)])
++    assert excinfo.value.code == 2
++    assert not_a_dir.read_text() == "x"
++    assert _snapshot(fake_outputs) == {"sentinel.txt": b"untouched\n"}

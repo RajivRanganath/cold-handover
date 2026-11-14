@@ -1,0 +1,30 @@
+{
+  "checks": {
+    "protected_files_unchanged": true,
+    "hidden_behaviour_tests": true,
+    "benchmark_unchanged": true,
+    "regression_67": true
+  },
+  "hidden_tests": [
+    "PASSED ledgerguard/hidden_test_t2.py::test_pending_settlement_does_not_close",
+    "PASSED ledgerguard/hidden_test_t2.py::test_failed_settlement_does_not_close",
+    "PASSED ledgerguard/hidden_test_t2.py::test_multiple_non_processed_sorted",
+    "PASSED ledgerguard/hidden_test_t2.py::test_no_settlement_has_no_new_key",
+    "PASSED ledgerguard/hidden_test_t2.py::test_processed_plus_failed_reconciles_against_processed",
+    "PASSED ledgerguard/hidden_test_t2.py::test_processed_only_still_matches",
+    "PASSED ledgerguard/hidden_test_t2.py::test_two_processed_still_duplicate",
+    "PASSED ledgerguard/hidden_test_t2.py::test_payment_duplicate_precedence_kept"
+  ],
+  "integrity": {
+    "modified": [
+      "ledgerguard/ledger/shadow_ledger.py",
+      "ledgerguard/reconciliation/matcher.py"
+    ],
+    "deleted": [],
+    "added": [
+      "ledgerguard/tests/test_settlement_status.py"
+    ]
+  },
+  "task": "T2",
+  "pass": true
+}

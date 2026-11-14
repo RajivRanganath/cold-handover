@@ -1,0 +1,769 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>LedgerGuard live demo</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230f6b4f'/%3E%3Cpath d='M9 17l5 5 9-11' fill='none' stroke='white' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<script src="demo.js"></script>
+<style>
+  /* LedgerGuard dashboard.
+     Light fintech surface in Razorpay's palette: white cards on a cool grey
+     ground, deep navy type, signature blue (#3395FF) as the single accent.
+     Status colour is never the accent -- "verified", "needs a human" and
+     "rejected" must be separable without reading the label.
+     No webfonts, no CDN: the demo has to render with the network down. */
+  :root {
+    --bg:        #F5F7FB;
+    --bg-2:      #FAFBFD;
+    --card:      #FFFFFF;
+    --tint:      #EBF3FF;
+    --line:      #E4E9F2;
+    --line-2:    #D3DBE8;
+    --navy:      #0D2366;
+    --text:      #16204A;
+    --muted:     #6B7793;
+    --muted-2:   #8A94AC;
+    --accent:    #3395FF;
+    --accent-dk: #1668D8;
+    --ok:        #0E9F6E;
+    --ok-bg:     #E6F6F0;
+    --warn:      #B76E00;
+    --warn-bg:   #FDF3E2;
+    --bad:       #D92D20;
+    --bad-bg:    #FEF0EF;
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --num: tabular-nums lining-nums;
+    --sh:   0 1px 2px rgba(16,32,74,.05);
+    --sh-2: 0 3px 10px rgba(16,32,74,.07);
+    --r: 10px;
+    --ease: cubic-bezier(.22,.61,.36,1);
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+         font: 14px/1.6 var(--sans); -webkit-font-smoothing: antialiased; }
+  .wrap { max-width: 1220px; margin: 0 auto; padding: 0 22px 90px; }
+
+  /* ---- motion ------------------------------------------------------------ */
+  /* Opacity and transform only, so every animation stays on the compositor
+     and nothing triggers layout mid-scroll. */
+  @keyframes rise   { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+  @keyframes fade   { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes shimmer{ 100% { transform: translateX(100%); } }
+  section { margin-bottom: 42px; animation: rise .42s var(--ease) both; }
+  section:nth-of-type(1) { animation-delay: .02s; }
+  section:nth-of-type(2) { animation-delay: .08s; }
+  section:nth-of-type(3) { animation-delay: .14s; }
+  section:nth-of-type(4) { animation-delay: .20s; }
+  section:nth-of-type(5) { animation-delay: .26s; }
+  /* Re-runs on every selection because renderDetail replaces these children. */
+  .detail > * { animation: fade .2s var(--ease) both; }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: .001ms !important; animation-iteration-count: 1 !important;
+      transition-duration: .001ms !important; scroll-behavior: auto !important;
+    }
+  }
+
+  /* ---- masthead ---------------------------------------------------------- */
+  .masthead { display: flex; align-items: center; justify-content: space-between;
+              gap: 20px; flex-wrap: wrap; padding: 26px 0 20px; }
+  .brand { display: flex; align-items: center; gap: 13px; }
+  .logo { width: 38px; height: 38px; border-radius: 9px; flex: 0 0 auto;
+          background: linear-gradient(150deg, var(--accent), var(--accent-dk));
+          color: #fff; font: 700 14px/38px var(--sans); text-align: center;
+          letter-spacing: .01em; box-shadow: 0 2px 8px rgba(51,149,255,.35); }
+  .brandname { font-size: 20px; font-weight: 650; letter-spacing: -.02em;
+               line-height: 1.25; color: var(--navy); margin: 0; }
+  .brandsub { color: var(--muted); font-size: 12.5px; }
+  .meta { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .pill { display: inline-flex; align-items: center; gap: 7px; background: var(--card);
+          border: 1px solid var(--line); border-radius: 100px; padding: 5px 12px;
+          font-size: 11.5px; color: var(--muted); box-shadow: var(--sh); }
+  .pill b { color: var(--navy); font-weight: 650; font-variant-numeric: var(--num); }
+  .pill.mono { font-family: var(--mono); font-size: 11px; }
+  .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--ok);
+         box-shadow: 0 0 0 3px rgba(14,159,110,.15); flex: 0 0 auto; }
+
+  h1 { font-size: 20px; margin: 0; letter-spacing: -.02em; color: var(--navy); }
+  h2 { font-size: 12px; margin: 0 0 13px; text-transform: uppercase;
+       letter-spacing: .11em; color: var(--muted); font-weight: 700;
+       display: flex; align-items: center; gap: 10px; }
+  h2::before { content: ""; width: 3px; height: 13px; border-radius: 2px;
+               background: var(--accent); flex: 0 0 auto; }
+
+  /* ---- status chips ------------------------------------------------------ */
+  .tag { font: 650 10.5px/1 var(--mono); padding: 5px 8px; border-radius: 100px;
+         display: inline-block; white-space: nowrap; letter-spacing: .02em; }
+  .MATCHED, .VERIFIED { background: var(--ok-bg); color: var(--ok); }
+  .AUTO_RESOLVED { background: var(--tint); color: var(--accent-dk); }
+  .RECOMMEND_REVIEW, .HUMAN_REVIEW_REQUIRED, .UNRESOLVED, .UNVERIFIED {
+         background: var(--warn-bg); color: var(--warn); }
+  .REJECTED { background: var(--bad-bg); color: var(--bad); }
+
+  /* ---- cards / KPI strip ------------------------------------------------- */
+  .card { background: var(--card); border: 1px solid var(--line);
+          border-radius: var(--r); box-shadow: var(--sh); }
+  .strip { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+  @media (max-width: 1000px) { .strip { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (max-width: 540px)  { .strip { grid-template-columns: 1fr; } }
+  .stat { padding: 15px 16px; position: relative; overflow: hidden;
+          transition: box-shadow .18s var(--ease), transform .18s var(--ease); }
+  .stat:hover { box-shadow: var(--sh-2); transform: translateY(-1px); }
+  .stat::after { content: ""; position: absolute; inset: 0 0 auto 0; height: 3px;
+                 background: var(--line-2); }
+  .stat:has(.v.good)::after { background: var(--ok); }
+  .stat:has(.v.warn)::after { background: var(--warn); }
+  .stat .k { color: var(--muted); font-size: 10.5px; text-transform: uppercase;
+             letter-spacing: .085em; margin-bottom: 7px; font-weight: 700;
+             min-height: 2.1em; }
+  .stat .v { font: 650 22px/1.25 var(--sans); letter-spacing: -.022em; color: var(--navy);
+             font-variant-numeric: var(--num); white-space: nowrap;
+             overflow: hidden; text-overflow: ellipsis; }
+  .stat .v.good { color: var(--ok); } .stat .v.warn { color: var(--warn); }
+  .stat .statnote { color: var(--muted); font-size: 10.5px; line-height: 1.35;
+                    margin-top: 5px; }
+
+  /* ---- tables ------------------------------------------------------------ */
+  table { border-collapse: collapse; width: 100%; font-size: 13px; }
+  th, td { text-align: left; padding: 11px 14px; border-bottom: 1px solid var(--line);
+           vertical-align: top; }
+  th { color: var(--muted); font-weight: 700; font-size: 10.5px;
+       text-transform: uppercase; letter-spacing: .085em; background: var(--bg-2); }
+  tbody tr { transition: background .14s var(--ease); }
+  tbody tr:hover { background: var(--bg-2); }
+  tbody tr:last-child td { border-bottom: 0; }
+  .num { font-family: var(--mono); text-align: right; font-variant-numeric: var(--num); }
+  .scroll { overflow-x: auto; }
+
+  /* ---- case explorer ----------------------------------------------------- */
+  .explorer { display: grid; grid-template-columns: 300px 1fr; gap: 14px; align-items: start; }
+  @media (max-width: 900px) { .explorer { grid-template-columns: 1fr; } }
+  .caselist { max-height: 600px; overflow-y: auto; overscroll-behavior: contain;
+              scrollbar-width: thin; scrollbar-color: var(--line-2) transparent; }
+  .caselist::-webkit-scrollbar { width: 10px; }
+  .caselist::-webkit-scrollbar-thumb { background: var(--line-2); border-radius: 6px;
+              border: 3px solid var(--card); }
+  .caseitem { padding: 11px 15px; border-bottom: 1px solid var(--line); cursor: pointer;
+              display: flex; justify-content: space-between; gap: 9px; align-items: center;
+              position: relative; transition: background .14s var(--ease); }
+  .caseitem::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+                      background: transparent; transition: background .14s var(--ease); }
+  .caseitem:hover { background: var(--bg-2); }
+  .caseitem.sel { background: var(--tint); }
+  .caseitem.sel::before { background: var(--accent); }
+  .caseitem .id { font: 12px/1.35 var(--mono); color: var(--navy); font-weight: 600; }
+  .caseitem .tag { flex: 0 0 auto; }
+  .caseitem .fc { color: var(--muted-2); font-size: 10.5px; }
+  .detail { padding: 20px 22px; }
+
+  /* ---- detail panels ----------------------------------------------------- */
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  @media (max-width: 760px) { .grid2 { grid-template-columns: 1fr; } }
+  .box { background: var(--card); border: 1px solid var(--line);
+         border-radius: 9px; padding: 14px 16px; }
+  .box h3 { margin: 0 0 11px; font-size: 10.5px; text-transform: uppercase;
+            letter-spacing: .09em; color: var(--muted); font-weight: 700; }
+  /* Expected and observed sit side by side rather than in one arrowed list:
+     they come from two independent sources and the layout should say so. */
+  .sbs { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  @media (max-width: 620px) { .sbs { grid-template-columns: 1fr; } }
+  .sbs .pane { border: 1px solid var(--line); border-radius: 8px; padding: 11px 13px;
+               background: var(--bg-2); }
+  /* Fixed two-line box so both pane headings share a baseline and the figures
+     beneath them line up across the two columns for comparison. */
+  .sbs .pane h4 { margin: 0 0 9px; font-size: 10px; text-transform: uppercase;
+                  letter-spacing: .09em; color: var(--muted); font-weight: 700;
+                  padding-bottom: 7px; border-bottom: 1px solid var(--line);
+                  min-height: 2.9em; display: flex; align-items: flex-end; }
+  .kv { display: flex; justify-content: space-between; gap: 14px;
+        font: 12px/1.85 var(--mono); font-variant-numeric: var(--num); }
+  .kv span:first-child { color: var(--muted); }
+  .kv span:last-child { color: var(--text); }
+  .kv.diff span:last-child { color: var(--bad); font-weight: 650; }
+
+  /* ---- evidence checks --------------------------------------------------- */
+  /* Grid, not flex: the icon holds column one and the check name stacks above
+     its detail in column two. A fixed-width name column gets crushed inside the
+     half-width detail panel and wraps the detail into a ribbon. */
+  .check { display: grid; grid-template-columns: 16px minmax(0, 1fr); gap: 4px 10px;
+           align-items: start; padding: 9px 12px;
+           border: 1px solid var(--line); border-top: 0; font-size: 12.5px;
+           background: var(--card); }
+  .check:first-of-type { border-top: 1px solid var(--line);
+                         border-radius: 8px 8px 0 0; }
+  .check:last-of-type { border-radius: 0 0 8px 8px; }
+  .check.fail { background: var(--bad-bg); border-color: #F7D2CE; }
+  .check .mark { flex: 0 0 16px; width: 16px; height: 16px; border-radius: 50%;
+                 margin-top: 2px; font: 700 10px/16px var(--sans); text-align: center;
+                 color: #fff; }
+  .check.pass .mark { background: var(--ok); }
+  .check.fail .mark { background: var(--bad); }
+  .check .name { font: 12px/1.45 var(--mono); color: var(--text);
+                 grid-column: 2; word-break: break-word; }
+  .check.fail .name { color: var(--bad); }
+  .check .why { color: var(--muted); font-size: 11.5px; line-height: 1.5;
+                grid-column: 2; }
+  .check .mark { grid-column: 1; grid-row: 1; }
+  .quote { border-left: 2px solid var(--accent); padding: 3px 0 3px 13px;
+           color: var(--muted); font-style: italic; }
+
+  .banner { padding: 13px 16px; border-radius: 9px; font-size: 13px;
+            background: var(--warn-bg); color: #8A5300; border: 1px solid #F3DCB4; }
+  .banner code { background: rgba(183,110,0,.1); color: #8A5300; }
+
+  /* ---- adversarial / benchmark ------------------------------------------- */
+  .adv { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  @media (max-width: 900px) { .adv { grid-template-columns: 1fr; } }
+  .lede { color: var(--muted); max-width: 78ch; margin: 0 0 18px; font-size: 13.5px; }
+  .lede strong, .lede em { color: var(--navy); }
+  .lede em { font-style: normal; font-weight: 650; font-variant-numeric: var(--num); }
+  .win { color: var(--ok); font-weight: 650; }
+  .bars { display: grid; grid-template-columns: 210px 1fr 1fr; gap: 8px 14px; align-items: center; }
+  @media (max-width: 760px) { .bars { grid-template-columns: 126px 1fr 1fr; } }
+  .bars .hdr { color: var(--muted); font-size: 10px; text-transform: uppercase;
+               letter-spacing: .085em; font-weight: 700; }
+  .bars .lbl { font: 11.5px/1.4 var(--mono); color: var(--muted); }
+  .bar { position: relative; height: 22px; background: var(--bg); border: 1px solid var(--line);
+         border-radius: 5px; overflow: hidden; }
+  .bar > i { position: absolute; inset: 0 auto 0 0; display: block; border-radius: 0 4px 4px 0;
+             transform-origin: left center; animation: grow .6s var(--ease) both .12s; }
+  @keyframes grow { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+  .bar.base > i { background: #9FB0CE; }
+  .bar.hyb  > i { background: linear-gradient(90deg, var(--accent-dk), var(--accent)); }
+  .bar.bad  > i { background: var(--bad); }
+  .bar > b { position: absolute; right: 8px; top: 0; font: 650 10.5px/22px var(--mono);
+             color: var(--navy); font-variant-numeric: var(--num); }
+
+  .neutral { color: var(--muted); }
+  footer { color: var(--muted); font-size: 12px; border-top: 1px solid var(--line);
+           padding-top: 18px; line-height: 1.75; }
+  code { font-family: var(--mono); font-size: 12px; color: var(--accent-dk);
+         background: var(--tint); padding: 1px 5px; border-radius: 4px; }
+  footer code, .lede code { background: transparent; padding: 0; }
+  ::selection { background: rgba(51,149,255,.22); }
+
+  /* ---- loading skeleton -------------------------------------------------- */
+  .sk { position: relative; overflow: hidden; background: #E9EDF5; border-radius: 7px; }
+  .sk::after { content: ""; position: absolute; inset: 0; transform: translateX(-100%);
+               background: linear-gradient(90deg, transparent, rgba(255,255,255,.75), transparent);
+               animation: shimmer 1.25s infinite; }
+  .sk-strip { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 12px; }
+  @media (max-width: 1000px) { .sk-strip { grid-template-columns: repeat(2, minmax(0,1fr)); } }
+  .sk-card { height: 92px; }
+  .sk-line { height: 12px; margin-bottom: 9px; }
+  .sk-big { height: 340px; }
+  /* Presentation layer only: no remote assets or changes to financial state. */
+  html { scroll-behavior: smooth; scroll-padding-top: 88px; }
+  :root { --bg:#f2f5fa; --muted:#596782; --muted-2:#65728b; --r:16px; }
+  .wrap { max-width:1360px; padding:0 32px 64px; }
+  .masthead { padding:24px 0; }
+  .logo { border-radius:12px; width:44px; height:44px; line-height:44px; }
+  .nav { position:sticky; top:0; z-index:10; display:flex; gap:6px; padding:10px;
+    background:rgba(255,255,255,.95); backdrop-filter:blur(16px); border:1px solid var(--line);
+    border-radius:14px; margin:0 0 24px; box-shadow:0 8px 28px #10204a08; overflow:auto; }
+  .nav a { padding:7px 15px; border-radius:8px; white-space:nowrap; text-decoration:none; color:var(--muted); font-size:12px; font-weight:650; }
+  .nav a:hover,.nav a:focus-visible { background:var(--tint); color:var(--accent-dk); }
+  :focus-visible { outline:3px solid #3395ff; outline-offset:4px; }
+  .hero { position:relative; overflow:hidden; display:grid; grid-template-columns:1.1fr 1fr; gap:40px;
+    padding:44px; margin-bottom:24px; border-radius:22px; color:#fff;
+    background:radial-gradient(ellipse at 95% 0%,#244d8b,transparent 65%),#101f40; }
+  .eyebrow { font:650 10px/1.5 var(--mono); letter-spacing:.16em; text-transform:uppercase; color:#99bcff; }
+  .hero h2 { display:block; color:white; font-size:clamp(30px,3.4vw,48px); text-transform:none; letter-spacing:-.045em; line-height:1.12; margin:16px 0; font-weight:650; }
+  .hero h2::before { display:none; }
+  .hero p { color:#bdcbe3; max-width:48ch; font-size:14px; }
+  .actions { display:flex; gap:10px; flex-wrap:wrap; margin-top:24px; }
+  .btn { cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:11px 17px; border:1px solid var(--line); border-radius:9px;
+    background:white; color:var(--navy); font:650 12px var(--sans); text-decoration:none; transition:transform .2s,box-shadow .2s,background .2s; }
+  .btn:hover { transform:translateY(-2px); box-shadow:0 6px 20px #0002; }
+  .btn.primary { background:#458fff; border-color:#458fff; color:white; }
+  .hero .btn.secondary { background:#ffffff0a; color:#e2ecff; border-color:#ffffff30; }
+  .proof { background:#07142b70; border:1px solid #ffffff20; border-radius:16px; padding:22px; align-self:center; }
+  .proof-head { display:flex; justify-content:space-between; gap:12px; color:#cbd9ee; font:11px var(--mono); }
+  .proof-row { display:flex; align-items:center; justify-content:space-between; gap:20px; padding:18px 0; border-bottom:1px solid #ffffff15; }
+  .proof-row small { color:#9eb1cf; display:block; font-size:11px; }
+  .proof-row strong { font-size:14px; font-weight:550; }
+  .proof-row b { font:13px var(--mono); color:#a9caff; }
+  .proof-foot { color:#a9caff; font-size:12px; padding-top:16px; }
+  .proof-row { animation:rise .55s var(--ease) both; }
+  .proof-row:nth-child(2) { animation-delay:.12s; }
+  .proof-row:nth-child(3) { animation-delay:.24s; }
+  .proof-row:nth-child(4) { animation-delay:.36s; }
+  .stat { padding:21px; box-shadow:0 4px 18px #10204a04; }
+  .stat .v { font-size:26px; }
+  .stat::after { top:auto; bottom:0; height:2px; }
+  section { margin-bottom:36px; }
+  .tour { margin-bottom:32px; padding:26px; }
+  .tour-top { display:flex; justify-content:space-between; gap:20px; align-items:center; flex-wrap:wrap; }
+  .tour-top p { margin:4px 0 0; font-size:12px; color:var(--muted); }
+  .steps { display:flex; gap:8px; margin:22px 0; }
+  .step { flex:1; border:1px solid var(--line); background:var(--bg-2); border-radius:10px; text-align:left; padding:12px; cursor:pointer; color:var(--muted); font:600 12px var(--sans); }
+  .step[aria-current="step"] { color:var(--accent-dk); border-color:var(--accent); background:var(--tint); }
+  .tour-result { min-height:145px; }
+  .tour-result > div { animation:rise .35s var(--ease) both; }
+  .tour-result .check { border:1px solid var(--line); border-radius:9px; }
+  .tour-result .check.fail { border-color:#f7d2ce; }
+  .tour-result h3 { margin:0 0 8px; font-size:19px; letter-spacing:-.025em; }
+  .tour-result p { color:var(--muted); margin:8px 0; max-width:85ch; }
+  .caseitem { width:100%; text-align:left; font:inherit; background:transparent; border:0; border-bottom:1px solid var(--line); }
+  .detail,.box,.explorer { min-width:0; }
+  .case-tools { display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin-bottom:14px; }
+  .case-tools input { padding:11px 14px; border:1px solid var(--line-2); border-radius:9px; font:inherit; min-width:0; width:min(100%,360px); }
+  .case-tools span { color:var(--muted); font-size:12px; }
+  .caseitem[hidden] { display:none; }
+  .kv span { overflow-wrap:anywhere; min-width:0; }
+  @media(max-width:900px) { .hero { grid-template-columns:1fr; gap:24px; padding:28px; } }
+  @media(max-width:540px) { .wrap { padding:0 14px 40px; } .hero { padding:24px; } .steps { flex-wrap:wrap; } .step { flex-basis:40%; } .tour { padding:18px; } .stat .v { font-size:24px; } .detail { padding:16px; } }
+</style>
+</head>
+<body>
+<div class="wrap" id="app">
+  <div style="padding:26px 0 20px"><div class="sk sk-line" style="width:210px;height:22px"></div>
+    <div class="sk sk-line" style="width:300px"></div></div>
+  <div class="sk-strip">
+    <div class="sk sk-card"></div><div class="sk sk-card"></div>
+    <div class="sk sk-card"></div><div class="sk sk-card"></div>
+  </div>
+  <div class="sk sk-big" style="margin-top:26px"></div>
+</div>
+
+<script>
+const $ = (h) => { const d = document.createElement('div'); d.innerHTML = h.trim(); return d.firstChild; };
+// Display-only grouping. The value is never re-derived here -- the string comes
+// from the server's integer-paise formatter and is only regrouped for reading.
+// Indian convention (lakh/crore) because this reconciles INR settlements.
+const inr = (v) => {
+  const n = Number(String(v ?? '').replace(/,/g, ''));
+  if (!isFinite(n)) return 'INR ' + String(v ?? '');
+  return 'INR ' + n.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+};
+const esc = (s) => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+let STATE = null, SELECTED = null;
+const SHORT = { MATCHED: 'matched', AUTO_RESOLVED: 'auto', RECOMMEND_REVIEW: 'confirm',
+                HUMAN_REVIEW_REQUIRED: 'review', UNRESOLVED: 'open' };
+
+function stat(k, v, cls, note) {
+  return `<div class="card stat"><div class="k">${esc(k)}</div><div class="v ${cls||''}">${esc(v)}</div>${
+    note ? `<div class="statnote">${esc(note)}</div>` : ''}</div>`;
+}
+
+// End-to-end wall clock for this run. It is dominated by whichever side is
+// slower, and those differ by four orders of magnitude: with no model the
+// deterministic engine runs at tens of thousands of cases a second, and with a
+// live investigator the number is sequential model calls on a free tier.
+// Neither is a production throughput figure, so the tile says which one it is
+// rather than leaving a bare number to be misread.
+function throughputNote(s) {
+  return s.overview.investigations && s.provider_is_model
+    ? `${s.overview.investigations} sequential model calls, free tier`
+    : 'deterministic path; no model calls in this run';
+}
+
+function overview(s) {
+  const o = s.overview;
+  return `<section>
+    <header class="masthead">
+      <div class="brand">
+        <div class="logo">LG</div>
+        <div>
+          <h1 class="brandname">LedgerGuard</h1>
+          <div class="brandsub">Self-verifying AI finance controller</div>
+        </div>
+      </div>
+      <div class="meta">
+        <span class="pill"><i class="dot"></i> <b>${esc(o.records_processed)}</b>&nbsp;records reconciled</span>
+        <span class="pill mono">seed ${esc(s.dataset.seed)}</span>
+        <span class="pill mono">${esc(s.provider)}</span>
+      </div>
+    </header>
+    <div class="hero">
+      <div><div class="eyebrow">Finance operations / evidence-first reconciliation</div>
+        <h2>Every rupee accounted for.<br>Every decision explained.</h2>
+        <p>AI investigates the ambiguity. Independent checks decide what can close. Your team gets the exceptions that still need a human.</p>
+        <div class="actions"><a class="btn primary" href="#walkthrough">Explore the evidence <span aria-hidden="true">↗</span></a><a class="btn secondary" href="#exceptions">View exception queue</a></div>
+      </div>
+      <div class="proof"><div class="proof-head"><span>CONTROLLER / THIS RUN</span><span>Synthetic holdout</span></div>
+        <div class="proof-row"><div><small>01 / RECONCILE</small><strong>Expected vs. observed</strong></div><b>${esc(o.records_processed)} records</b></div>
+        <div class="proof-row"><div><small>02 / VERIFY</small><strong>Evidence before closure</strong></div><b>${esc(o.auto_resolved)} auto resolved</b></div>
+        <div class="proof-row"><div><small>03 / HAND OFF</small><strong>Keep uncertainty visible</strong></div><b>${esc(o.unresolved)} for review</b></div>
+        <div class="proof-foot">Reconciliation decisions only. No money is moved.</div>
+      </div>
+    </div>
+    ${s.provider_is_model ? '' : `<div class="banner" style="margin-bottom:16px">
+      Investigator: <code>${esc(s.provider)}</code> — the offline stand-in, not a model.
+      It is deliberately naive (it matches on amount and asks to resolve), so the Evidence Gate
+      is being shown against the worst plausible investigator. Set any provider key
+      (<code>GROQ_API_KEY</code>, <code>GEMINI_API_KEY</code>, <code>NVIDIA_API_KEY</code> or
+      <code>OMNIROUTE_API_KEY</code>) and restart to run a real investigator.</div>`}
+    <div class="strip">
+      ${stat('Records processed', o.records_processed)}
+      ${stat('Value reconciled', inr(o.value_inr))}
+      ${stat('Match rate', (o.match_rate * 100).toFixed(1) + '%')}
+      ${stat('Auto resolved', o.auto_resolved, 'good')}
+      ${stat('Sent to human', o.unresolved, 'warn')}
+      ${stat('Unresolved value', inr(o.unresolved_value_inr), 'warn')}
+      ${stat('False auto resolutions', o.false_auto_resolutions, o.false_auto_resolutions === 0 ? 'good' : 'warn')}
+      ${stat('Throughput', o.throughput_per_second + '/s', '', throughputNote(s))}
+    </div>
+  </section>`;
+}
+
+function recordsBox(c) {
+  const r = c.records;
+  const row = (k, v) => `<div class="kv"><span>${esc(k)}</span><span>${esc(v)}</span></div>`;
+  let h = '<div class="box"><h3>Source records</h3>';
+  if (r.order) h += row('order', r.order.order_id) + row('customer', r.order.customer_reference)
+                 + row('amount', 'INR ' + r.order.amount_inr);
+  h += row('payment', r.payment.payment_id) + row('captured', (r.payment.captured_at||'').slice(0,16));
+  if (r.settlement) {
+    h += row('settlement', r.settlement.settlement_id)
+       + row('settled on', r.settlement.settlement_date.slice(0,10))
+       + row('refund adj', 'INR ' + r.settlement.refund_adjustments_inr);
+  } else h += row('settlement', 'ABSENT');
+  if (r.candidate_refunds && r.candidate_refunds.length) {
+    h += '<div style="margin-top:9px"><h3>Candidate evidence (unproven)</h3>';
+    r.candidate_refunds.forEach(cr => {
+      h += row(cr.refund_id, 'INR ' + (cr.amount/100).toFixed(2)) + row('reference', cr.reference);
+    });
+    h += '</div>';
+  }
+  return h + '</div>';
+}
+
+function expectedBox(c) {
+  const e = c.expected, s = c.records.settlement;
+  // Two panes, not one arrowed list. The Shadow Ledger reconstructs the left
+  // column without ever reading the right one, and the layout should make that
+  // independence visible. A differing figure is marked on the observed side.
+  const line = (k, val, differs) =>
+    `<div class="kv ${differs ? 'diff' : ''}"><span>${esc(k)}</span><span>${esc(val)}</span></div>`;
+  const pair = (k, a, b) => [line(k, a, false), line(k, b === undefined ? '—' : b, b !== undefined && String(a) !== String(b))];
+  const rows = [
+    pair('gross',   e.gross_inr,              s ? s.gross_inr : undefined),
+    pair('fees',    e.fees_inr,               s ? s.fees_inr : undefined),
+    pair('tax',     e.tax_inr,                s ? s.tax_inr : undefined),
+    pair('refunds', e.refund_adjustments_inr, s ? s.refund_adjustments_inr : undefined),
+    pair('NET',     e.net_inr,                s ? s.net_inr : undefined),
+  ];
+  let h = '<div class="box"><h3>Ledger comparison</h3><div class="sbs">' +
+    `<div class="pane"><h4>Shadow ledger · expected</h4>${rows.map(r => r[0]).join('')}</div>` +
+    `<div class="pane"><h4>${s ? 'Observed settlement' : 'Observed · none received'}</h4>` +
+    `${rows.map(r => r[1]).join('')}</div></div>`;
+  h += '<h3 style="margin-top:14px">Shadow ledger invariants</h3>';
+  c.invariants.forEach(i => {
+    h += `<div class="check ${i.holds ? 'pass' : 'fail'}"><span class="mark">${i.holds ? '\u2713' : '\u2715'}</span>` +
+         `<span class="name">${esc(i.name)}</span></div>`;
+  });
+  return h + '</div>';
+}
+
+function investigationBox(c) {
+  if (!c.investigation) {
+    return `<div class="box"><h3>AI investigation</h3><div class="neutral">Not invoked.
+      The deterministic engine proved this case on its own, so no model call was made.</div></div>`;
+  }
+  const i = c.investigation;
+  return `<div class="box"><h3>AI investigation <span class="neutral">(${esc(i.source)})</span></h3>
+    <div class="kv"><span>hypothesis</span><span>${esc(i.hypothesis)}</span></div>
+    <div class="kv"><span>asks to</span><span>${esc(i.recommended_action)}</span></div>
+    <div class="quote" style="margin-top:9px">${esc(i.reason)}</div>
+    ${i.controller_note ? `<div style="margin-top:9px;font-size:12px;color:var(--bad)">
+      Controller flagged this response: ${esc(i.controller_note)}</div>` : ""}
+    <div class="neutral" style="margin-top:9px;font-size:12px">The investigator proposes. It cannot
+      supply trusted arithmetic, edit a record, or close a case.</div></div>`;
+}
+
+function gateBox(c) {
+  if (!c.verification) {
+    return `<div class="box"><h3>Evidence Gate</h3><div class="neutral">Not required.</div></div>`;
+  }
+  const v = c.verification;
+  let h = `<div class="box"><h3>Evidence Gate</h3>
+    <div style="margin-bottom:9px"><span class="tag ${esc(v.verdict)}">${esc(v.verdict)}</span>
+    <span class="neutral" style="margin-left:8px">${esc(v.verification_score)}</span></div>`;
+  if (!v.checks.length) h += `<div class="neutral">${esc(v.note || 'no checks were possible')}</div>`;
+  v.checks.forEach(ch => {
+    h += `<div class="check ${ch.passed ? 'pass' : 'fail'}"><span class="mark">${ch.passed ? '\u2713' : '\u2715'}</span>` +
+         `<span class="name">${esc(ch.name)}</span><span class="why">${esc(ch.detail)}</span></div>`;
+  });
+  if (v.note) h += `<div class="neutral" style="margin-top:9px">${esc(v.note)}</div>`;
+  return h + '</div>';
+}
+
+function decisionBox(c) {
+  if (!c.decision) {
+    return `<div class="box"><h3>Decision</h3><span class="tag MATCHED">MATCHED</span>
+      <div class="neutral" style="margin-top:8px">Reconciled exactly. No exception, no AI, no human.</div></div>`;
+  }
+  const d = c.decision;
+  return `<div class="box"><h3>Decision</h3>
+    <span class="tag ${esc(d.state)}">${esc(d.state)}</span>
+    <div style="margin-top:9px">${esc(d.reason)}</div>
+    ${d.missing_evidence && d.missing_evidence.length
+      ? `<div class="neutral" style="margin-top:8px">Missing: ${esc(d.missing_evidence.join(', '))}</div>` : ''}
+    <div class="neutral" style="margin-top:8px">Next: ${esc(d.suggested_action)}</div></div>`;
+}
+
+function renderDetail() {
+  const c = STATE.cases.find(x => x.case_id === SELECTED);
+  const el = document.getElementById('detail');
+  if (!c) { el.innerHTML = '<div class="neutral">Select a case.</div>'; return; }
+  el.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:14px;flex-wrap:wrap">
+      <div><code>${esc(c.case_id)}</code>
+        <span class="neutral" style="margin-left:8px">${esc(c.exception_type || 'reconciled')}</span></div>
+      <div><span class="tag ${esc(c.state)}">${esc(c.state)}</span></div>
+    </div>
+    <div class="grid2">${recordsBox(c)}${expectedBox(c)}</div>
+    <div class="grid2" style="margin-top:14px">${investigationBox(c)}${gateBox(c)}</div>
+    <div style="margin-top:14px">${decisionBox(c)}</div>`;
+}
+
+function explorer(s) {
+  const demo = new Set(s.demo_cases);
+  const rank = (id) => { const i = s.demo_cases.indexOf(id); return i === -1 ? 999 : i; };
+  const ordered = [...s.cases].sort((a, b) => {
+    const ra = rank(a.case_id), rb = rank(b.case_id);
+    if (ra !== rb) return ra - rb;
+    return a.case_id.localeCompare(b.case_id);
+  });
+  const items = ordered.map(c => `<button type="button" class="caseitem" data-id="${esc(c.case_id)}">
+      <div><div class="id">${esc(c.case_id)}</div>
+           <div class="fc">${demo.has(c.case_id) ? '★ ' : ''}${esc(c.fault_class)}</div></div>
+      <span class="tag ${esc(c.state)}">${esc(SHORT[c.state] || c.state)}</span></button>`).join('');
+  return `<section><h2>Case explorer</h2>
+    <p class="lede">Starred cases are the prepared demo path: a clean reconciliation, a fee
+      mismatch the arithmetic proves outright, an ambiguous refund the Evidence Gate verifies,
+      the wrong-linkage case it rejects, and a missing settlement nobody can close.</p>
+    <div class="case-tools"><label for="case-search">Find a case</label><input id="case-search" type="search" placeholder="Payment ID, fault or status…" aria-controls="caselist"><span id="case-count" role="status">${s.cases.length} of ${s.cases.length} cases</span></div>
+    <div class="explorer">
+      <div class="card caselist" id="caselist">${items}</div>
+      <div class="card detail" id="detail"></div>
+    </div></section>`;
+}
+
+function f6line(s) {
+  const f6 = s.cases.filter(c => (c.fault_class || '').startsWith('F6'));
+  if (!f6.length) return '';
+  const asked = f6.filter(c => c.investigation && c.investigation.recommended_action === 'resolve').length;
+  const rejected = f6.filter(c => c.verification && c.verification.verdict === 'REJECTED').length;
+  const closed = f6.filter(c => c.state === 'AUTO_RESOLVED').length;
+  return `On the ${f6.length} generated wrong-linkage cases in this run, the investigator asked to
+    resolve <em>${asked}</em>, the gate rejected <em>${rejected}</em>, and
+    <strong>${closed === 0 ? 'none were closed' : closed + ' were closed'}</strong>.`;
+}
+
+function adversarial(s) {
+  const a = s.adversarial;
+  const panel = (k, t, sub) => {
+    const d = a[k];
+    return `<div class="card" style="padding:16px 18px">
+      <h3 style="margin:0 0 4px;font-size:13px">${esc(t)}</h3>
+      <div class="neutral" style="font-size:12px;margin-bottom:11px">${esc(sub)}</div>
+      <div class="kv"><span>customer</span><span>${esc(d.customer)}</span></div>
+      <div class="kv"><span>shortfall</span><span>INR ${esc(d.shortfall_inr)}</span></div>
+      <div style="margin:11px 0 4px"><span class="neutral" style="font-size:11px;text-transform:uppercase;letter-spacing:.08em">AI says</span></div>
+      <div><code>${esc(d.hypothesis)}</code> → asks to <code>${esc(d.recommended_action)}</code></div>
+      <div class="quote" style="margin:8px 0 12px">${esc(d.ai_reason)}</div>
+      <div><span class="tag ${esc(d.verdict)}">${esc(d.verdict)}</span>
+           <span class="neutral" style="margin-left:8px">${esc(d.verification_score)}</span></div>
+      <div style="margin-top:10px">${d.checks.map(c =>
+        `<div class="check ${c.passed ? 'pass' : 'fail'}"><span class="mark">${c.passed ? '\u2713' : '\u2715'}</span>
+         <span class="name">${esc(c.name)}</span></div>`).join('')}</div>
+      <div style="margin-top:12px"><span class="tag ${esc(d.state)}">${esc(d.state)}</span></div>
+      <div class="neutral" style="margin-top:8px;font-size:12px">${esc(d.decision_reason)}</div>
+    </div>`;
+  };
+  const n = s.provider_is_model && a.naive && a.naive.victim;
+  const naivePanel = !n ? '' : `<div class="card" style="padding:16px 18px;margin-top:14px">
+      <h3 style="margin:0 0 4px;font-size:13px">Payment A again, with a naive investigator
+        <span class="neutral">(heuristic_stub)</span></h3>
+      <div class="neutral" style="font-size:12px;margin-bottom:11px">
+        The live investigator is <code>${esc(a.investigator)}</code>. A capable model sometimes
+        declines this case on its own — a good outcome, and exactly the outcome the gate exists
+        so the system does not have to depend on. Here is the same case handed to an
+        investigator that reliably gets it wrong.</div>
+      <div><code>${esc(n.hypothesis)}</code> → asks to <code>${esc(n.recommended_action)}</code></div>
+      <div style="margin:10px 0"><span class="tag ${esc(n.verdict)}">${esc(n.verdict)}</span>
+        <span class="neutral" style="margin-left:8px">${esc(n.verification_score)}</span></div>
+      <div>${n.checks.map(c => `<div class="check ${c.passed ? 'pass' : 'fail'}">
+        <span class="mark">${c.passed ? '\u2713' : '\u2715'}</span>
+        <span class="name">${esc(c.name)}</span>
+        <span class="why">${esc(c.detail)}</span></div>`).join('')}</div>
+      <div style="margin-top:12px"><span class="tag ${esc(n.state)}">${esc(n.state)}</span></div>
+    </div>`;
+  return `<section><h2>The adversarial case</h2>
+    <p class="lede">Two payments are short by exactly the same amount. One refund exists that
+      could explain either of them, and applying it makes the shadow ledger balance in
+      <em>both</em> cases. Arithmetic cannot separate them. Only the customer linkage can.</p>
+    <div class="adv">
+      ${panel('donor', 'Payment B — genuinely explained', 'Its own refund lost its linkage during ingestion.')}
+      ${panel('victim', 'Payment A — plausible but wrong', 'Nothing in the system actually explains this deduction.')}
+    </div>
+    ${naivePanel}
+    <p class="lede" style="margin-top:14px">For Payment A the amount matches exactly and the
+      ledger balances — both checks pass — and the case is still refused, because the refund
+      belongs to a different customer. <strong>The gate rejects on linkage, not on amount.</strong>
+      ${f6line(s)}</p>
+  </section>`;
+}
+
+function perFaultChart(s) {
+  const rows = (s.benchmark.per_fault_class || []).filter(r => r.n > 0);
+  if (!rows.length) return '';
+  // Each row is scaled to its own class size, not to the largest class: the
+  // question is "what fraction of THIS fault class did each system get right",
+  // and scaling to the 54 clean cases would flatten every row that matters.
+  const bar = (cls, value, n) => {
+    const pct = n ? (value / n) * 100 : 0;
+    return `<div class="bar ${cls}"><i style="width:${pct.toFixed(1)}%"></i>` +
+           `<b>${value}/${n}</b></div>`;
+  };
+  return `<div class="card" style="padding:16px 18px;margin-top:14px">
+    <h3 style="margin:0 0 4px;font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)">
+      Correct dispositions by fault class</h3>
+    <div class="neutral" style="font-size:12px;margin-bottom:12px">
+      Each bar is the share of that fault class the system disposed of correctly. Every
+      point of difference between the two systems sits in one row — that row is the entire
+      contribution of the AI layer.</div>
+    <div class="bars">
+      <div class="hdr">fault class</div><div class="hdr">rules only</div><div class="hdr">LedgerGuard</div>
+      ${rows.map(r => {
+        const cls = r.hybrid_false_auto > 0 ? 'bad' : 'hyb';
+        return `<div class="lbl">${esc(r.fault_class.replace('_', ' '))}</div>` +
+               bar('base', r.baseline_correct, r.n) + bar(cls, r.hybrid_correct, r.n);
+      }).join('')}
+    </div>
+    <div class="neutral" style="margin-top:11px;font-size:12px">
+      A red bar would mean a fault class where LedgerGuard closed cases it should not have.
+      There are none.</div>
+  </div>`;
+}
+
+function benchmark(s) {
+  const b = s.benchmark.baseline, h = s.benchmark.hybrid;
+  const rows = [
+    ['Total cases', b.total_cases, h.total_cases],
+    ['Match rate', (b.match_rate*100).toFixed(1)+'%', (h.match_rate*100).toFixed(1)+'%'],
+    ['Exceptions raised', b.exceptions, h.exceptions],
+    ['False exceptions', b.false_exceptions, h.false_exceptions],
+    ['Disposition accuracy', (b.accuracy*100).toFixed(1)+'%', (h.accuracy*100).toFixed(1)+'%', 'win'],
+    ['Exceptions correctly resolved', b.exceptions_correctly_resolved, h.exceptions_correctly_resolved, 'win'],
+    ['Exceptions incorrectly resolved', b.exceptions_incorrectly_resolved, h.exceptions_incorrectly_resolved],
+    ['Correct abstentions', b.correct_abstentions, h.correct_abstentions],
+    ['Unnecessary abstentions', b.unnecessary_abstentions, h.unnecessary_abstentions, 'win'],
+    ['Value left unresolved', inr(b.unresolved_value_inr), inr(h.unresolved_value_inr)],
+    ['False auto resolutions', b.false_auto_resolutions, h.false_auto_resolutions],
+    ['Value falsely auto resolved', inr(b.false_auto_resolved_value_inr), inr(h.false_auto_resolved_value_inr)],
+    ['Investigations run', b.investigations, h.investigations],
+  ];
+  return `<section><h2>Benchmark — rules only vs LedgerGuard</h2>
+    <p class="lede">Same frozen holdout (${s.dataset.lifecycles} lifecycles, seed
+      <code>${esc(s.dataset.seed)}</code>, batch <code>${esc(s.dataset.batch_sha256)}</code>), same
+      deterministic engine, same safety gate. The only difference is whether the investigation step
+      runs. Every figure is computed by <code>python -m ledgerguard.evaluation.benchmark</code>.</p>
+    <div class="card scroll"><table>
+      <thead><tr><th>Metric</th><th class="num">Rules only</th><th class="num">LedgerGuard</th></tr></thead>
+      <tbody>${rows.map(r => `<tr><td>${esc(r[0])}</td><td class="num">${esc(r[1])}</td>
+        <td class="num ${r[3]==='win'?'win':''}">${esc(r[2])}</td></tr>`).join('')}</tbody>
+    </table></div>
+    ${perFaultChart(s)}
+    <p class="lede" style="margin-top:12px">This run records ${esc(s.benchmark.hybrid.false_auto_resolutions)} false automatic closures.
+      The table shows where investigation changed the final disposition compared with rules alone.
+      These synthetic results do not establish production safety or model uplift over a heuristic.</p>
+    ${s.provider_is_model ? `<p class="lede">These figures come from <em>this server's own run</em>
+      at startup. Model output is not reproducible — repeated runs on the identical frozen holdout
+      resolve different numbers of ambiguous cases, so this table will not match
+      <code>evaluation/outputs/benchmark.md</code> figure for figure. The checks are deterministic,
+      but their correctness and coverage still need validation. Inspect false closures and
+      unresolved cases in each run; a past zero is not a guarantee.</p>` : ''}
+  </section>`;
+}
+
+function unresolved(s) {
+  return `<section><h2>What LedgerGuard could not close</h2>
+    <div class="case-tools"><a class="btn primary" href="/api/evidence-download" download>Download this run's evidence ↓</a><span>JSON · all cases, named checks, metrics, provider and unresolved actions. No new model call.</span></div>
+    <p class="lede">${s.unresolved.length} of ${s.overview.records_processed} cases, INR
+      ${esc(s.overview.unresolved_value_inr)} of exposure. Abstention is a designed outcome, not
+      a failure — every row says exactly what evidence was missing.</p>
+    <div class="card scroll"><table>
+      <thead><tr><th>Case</th><th>Exception</th><th class="num">Exposure</th>
+        <th>Blocked because</th><th>Suggested action</th></tr></thead>
+      <tbody>${s.unresolved.map(u => `<tr>
+        <td><code>${esc(u.case_id)}</code></td>
+        <td>${esc((u.exception_type||'').replace('EXCEPTION_',''))}</td>
+        <td class="num">${esc(inr(u.exposure_inr))}</td>
+        <td class="why">${esc(u.blocked_because)}</td>
+        <td class="why">${esc(u.suggested_action)}</td></tr>`).join('')}</tbody>
+    </table></div></section>`;
+}
+
+function walkthrough(s) {
+  return `<section class="card tour" id="walkthrough"><div class="tour-top"><div>
+    <h2 style="margin-bottom:0">The evidence walkthrough</h2>
+    <p>A guided reading of the computed adversarial case. No new model call or financial action.</p>
+    </div><span class="pill mono">${esc(s.adversarial.investigator || s.provider)}</span></div>
+    <div class="steps" aria-label="Evidence walkthrough steps">${['The shortfall','The hypothesis','The checks','The decision'].map((t,i)=>
+      `<button type="button" class="step" data-step="${i}" aria-current="${i===0?'step':'false'}">0${i+1} / ${t}</button>`).join('')}</div>
+    <div class="tour-result" id="tour-result" aria-live="polite" aria-atomic="true"></div>
+    <button type="button" class="btn" id="tour-next">Next: the hypothesis →</button></section>`;
+}
+
+function showStep(index) {
+  const d = STATE.adversarial.victim;
+  const content = [
+    `<h3>A shortfall is not an explanation.</h3><p>Payment A belongs to <strong>${esc(d.customer)}</strong> and has a shortfall of <strong>${esc(inr(d.shortfall_inr))}</strong>. A candidate refund must be linked to the right payment—not just the right amount.</p>`,
+    `<h3>The investigator proposes. It does not close.</h3><p><code>${esc(d.hypothesis)}</code> → requests <code>${esc(d.recommended_action)}</code></p><p>${esc(d.ai_reason)}</p>`,
+    `<h3>Inspect what the evidence actually proves.</h3><div class="grid2">${d.checks.map(c=>`<div class="check ${c.passed?'pass':'fail'}"><span class="mark">${c.passed?'✓':'✕'}</span><span class="name">${esc(c.name)}</span><span class="why">${esc(c.detail)}</span></div>`).join('') || '<p>No checks were possible for this response.</p>'}</div>`,
+    `<h3>Uncertainty stays visible.</h3><span class="tag ${esc(d.state)}">${esc(d.state)}</span><p>${esc(d.decision_reason)}</p><p>This is the actual result for the displayed investigator, not a staged success.</p>`
+  ];
+  document.getElementById('tour-result').innerHTML = `<div>${content[index]}</div>`;
+  document.querySelectorAll('.step').forEach((b,i)=>b.setAttribute('aria-current',i===index?'step':'false'));
+  const next=document.getElementById('tour-next');
+  next.textContent=['Next: the hypothesis →','Next: inspect the checks →','Next: the decision →','Restart walkthrough ↺'][index];
+  next.onclick=()=>showStep((index+1)%4);
+}
+
+(window.lgRender = () => fetch('/api/state').then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); }).then(s => {
+  STATE = s;
+  SELECTED = s.demo_cases[0] || (s.cases[0] && s.cases[0].case_id);
+  document.getElementById('app').innerHTML =
+    overview(s) + `<nav class="nav" aria-label="Dashboard sections"><a href="#walkthrough">Evidence walkthrough</a><a href="#cases">Case explorer</a><a href="#adversarial">Adversarial test</a><a href="#benchmark">Benchmark</a><a href="#exceptions">Exception queue</a></nav>` + walkthrough(s) + explorer(s) + adversarial(s) + benchmark(s) + unresolved(s) +
+    `<footer>Dataset: seed <code>${esc(s.dataset.seed)}</code>, generator
+      <code>${esc(s.dataset.generator_version)}</code>, ${esc(s.dataset.split)},
+      ${esc(s.dataset.lifecycles)} lifecycles, batch SHA-256 <code>${esc(s.dataset.batch_sha256)}</code>.
+      Investigator: <code>${esc(s.provider)}</code>. Ground truth is hidden from the controller and
+      used only for scoring. Auto resolved means a reconciliation exception was classified and
+      closed inside LedgerGuard; no money is ever moved.</footer>`;
+  const sections = document.querySelectorAll('#app > section');
+  ['overview','walkthrough','cases','adversarial','benchmark','exceptions'].forEach((id,i)=>{ if(sections[i]) sections[i].id=id; });
+  document.querySelectorAll('.step').forEach(b=>b.addEventListener('click',()=>showStep(Number(b.dataset.step))));
+  showStep(0);
+  document.getElementById('case-search').addEventListener('input', e => {
+    const query = e.target.value.trim().toLowerCase();
+    let count = 0;
+    document.querySelectorAll('.caseitem').forEach(item => {
+      item.hidden = !item.textContent.toLowerCase().includes(query);
+      if (!item.hidden) count++;
+    });
+    document.getElementById('case-count').textContent = `${count} of ${STATE.cases.length} cases${count ? '' : ' — try a different search'}`;
+  });
+  document.getElementById('caselist').addEventListener('click', e => {
+    const item = e.target.closest('.caseitem');
+    if (!item) return;
+    SELECTED = item.dataset.id;
+    document.querySelectorAll('.caseitem').forEach(n => n.classList.toggle('sel', n.dataset.id === SELECTED));
+    renderDetail();
+  });
+  document.querySelectorAll('.caseitem').forEach(n => n.classList.toggle('sel', n.dataset.id === SELECTED));
+  renderDetail();
+  window.lgAfterRender && window.lgAfterRender(s);
+}).catch(e => {
+  document.getElementById('app').innerHTML =
+    '<div class="banner">Could not load /api/state: ' + esc(e.message) + '</div>';
+}))();
+</script>
+</body>
+</html>

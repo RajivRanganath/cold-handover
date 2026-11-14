@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>T4/M-T4-02/out_NOTES.md</title>
+<style>
+*{box-sizing:border-box}
+:root{--bg:#f6f7f6;--text:#16191c;--muted:#5b636b;--line:#d9dddb;--accent:#0f6b4f;
+--code:rgba(15,23,28,.06);--add:rgba(46,160,67,.20);--del:rgba(218,54,51,.17);--hunk:rgba(15,107,79,.10)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#111416;--text:#e8ebe9;
+--muted:#9aa3a0;--line:#2b3134;--accent:#4fbf95;--code:rgba(255,255,255,.07);
+--add:rgba(63,185,80,.22);--del:rgba(248,81,73,.22);--hunk:rgba(79,191,149,.12)}}
+body{margin:0;background:var(--bg);color:var(--text);
+font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:900px;margin:0 auto;padding:16px}
+.top{font-size:14px;color:var(--muted);border-bottom:1px solid var(--line);padding-bottom:10px;
+margin-bottom:20px;display:flex;flex-wrap:wrap;gap:6px 16px;align-items:baseline}
+.top .path{color:var(--text);font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;overflow-wrap:anywhere}
+a{color:var(--accent)}
+h1,h2,h3,h4,h5,h6{line-height:1.25;margin:1.4em 0 .5em;overflow-wrap:anywhere}
+p,ul,ol,blockquote{margin:.6em 0}
+ul,ol{padding-left:1.4em}
+li,p{overflow-wrap:anywhere}
+blockquote{margin:.8em 0;padding:.1em 0 .1em 14px;border-left:3px solid var(--accent);color:var(--muted)}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.92em;
+background:var(--code);padding:.1em .3em;border-radius:4px;overflow-wrap:anywhere}
+pre{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px;line-height:1.45;
+background:var(--code);border:1px solid var(--line);border-radius:6px;padding:12px;margin:.8em 0;
+overflow-x:auto;white-space:pre;tab-size:2}
+pre code{background:none;padding:0;border-radius:0;font-size:inherit;overflow-wrap:normal}
+.tw{overflow-x:auto;margin:.8em 0}
+table{border-collapse:collapse;font-size:14px}
+th,td{border:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}
+td{overflow-wrap:anywhere}
+th{background:var(--code)}
+hr{border:0;border-top:1px solid var(--line);margin:1.5em 0}
+.patch span{display:block;width:max-content;min-width:100%}
+.patch .file{font-weight:700}
+.patch .meta{color:var(--muted)}
+.patch .hunk{color:var(--accent);background:var(--hunk)}
+.patch .add{background:var(--add)}
+.patch .del{background:var(--del)}
+</style>
+</head>
+<body>
+<main>
+<div class="top"><span class="path">T4/M-T4-02/out_NOTES.md</span><a href="out_NOTES.md">Raw file</a><a href="../../../index.html#T4">Back to the case study</a></div>
+<h1>T4 — a short payment was closed automatically</h1>
+<h2>Summary</h2>
+<p>A settlement arrived INR 250.00 short of what its own gross, fees, tax and refunds add up to. Its fees and tax were exactly per schedule. LedgerGuard closed the case <code>AUTO_RESOLVED</code> as <code>EXCEPTION_FEE_MISMATCH</code>, and nothing in the output mentioned the missing INR 250.00. The cause was a gap in the residual check: it never compared against the amount the provider actually reported. The fix adds a second guard that compares the settlement&#x27;s reported net against its own figures, and it blocks closure on either guard.</p>
+<h2>Cause</h2>
+<p>The matcher runs the six invariants. Here I1 (settlement arithmetic: <code>gross − fees − tax − refunds + adj == net</code>) fails by 250.00. I2 (fees and tax against schedule) holds. I3 (reported net against the Shadow Ledger) also fails. <code>_classify</code> takes I2, then I1, so the case is <code>FEE_MISMATCH</code>. I3 is listed under <code>FEE_MISMATCH</code>&#x27;s explained invariants, so it is not a secondary finding either.</p>
+<p>The only check that could have caught the missing money was <code>residual_paise</code> (<code>reconciliation/matcher.py</code>, <code>FEE_MISMATCH</code> branch). It was computed as:</p>
+<pre><code>corrected_net = gross − expected_fees − expected_tax − settlement.refund_adjustments + settlement.other_adjustments
+residual      = expected.net − corrected_net</code></pre>
+<p><code>corrected_net</code> is rebuilt from the settlement&#x27;s <strong>components</strong>. The reported <code>net_amount</code> is never read. When the fees and tax are on schedule and the reported net is 250.00 short of its components, <code>corrected_net</code> equals the Shadow Ledger&#x27;s expected net, the residual is 0, and the safety gate (<code>evidence/safety.py</code>) closed the case as a proven fee variance with nothing left over.</p>
+<p>Reproduced on the untouched code: a gross of INR 10,000.00, fees per schedule, and a reported net 250.00 short gives <code>AUTO_RESOLVED</code> (see the new tests below).</p>
+<h2>Fix</h2>
+<p>**<code>reconciliation/matcher.py</code>**</p>
+<ul><li><code>residual_paise</code> is now measured against the net the provider actually paid, with the fee variance added back: <code>residual = expected.net − (settlement.net + (fees+tax observed − fees+tax expected))</code>.</li><li>New evidence field <code>arithmetic_gap_paise</code> = the settlement&#x27;s own components (corrected for fee variance) minus its reported net. This is the I1 gap. Positive means the reported net is below what its components add up to.</li></ul>
+<p>**<code>evidence/safety.py</code>**</p>
+<ul><li>A deterministic close (<code>DUPLICATE_RECORD</code>, <code>FEE_MISMATCH</code>, <code>DELAYED_SETTLEMENT</code>) is blocked when either <code>residual_paise</code> or <code>arithmetic_gap_paise</code> is non-zero. This is a new helper, <code>_unexplained_money_decision</code>, which states the direction and size of the gap. The residual wording is kept, so C2&#x27;s messages are unchanged.</li><li>Escalation reasons no longer say &quot;fee and tax reconciled&quot; when the fee variance was zero, which was false for this case.</li></ul>
+<p>**<code>docs/architecture.md</code>**: the guard table lists <code>arithmetic_gap_paise</code>.</p>
+<p><strong>Tests</strong>: <code>ledgerguard/tests/test_t4_unexplained_net.py</code> (5 tests, new file; no existing test was modified).</p>
+<h2>Why this is the right behaviour</h2>
+<p>The documented principles point the same way:</p>
+<ul><li>&quot;Financial truth is deterministic accounting state plus verified evidence.&quot; Money that is short of the settlement&#x27;s own arithmetic is not proven to be a fee.</li><li>&quot;A proven cause is not the same as a fully explained case&quot; (<code>architecture.md</code>, the residual guard). A fee variance licenses closure only when it accounts for all of the money.</li><li>&quot;Abstention is a designed outcome.&quot; When proof is incomplete the case goes to a human, with the exposure attached.</li></ul>
+<p>So the case should escalate as <code>HUMAN_REVIEW_REQUIRED</code> with INR 250.00 shown as unexplained. It now does.</p>
+<p>I also considered the simpler fix of measuring the residual against the reported net alone. That is wrong on its own. Take a settlement whose deduction is 250.00 more than its net implies, while the reported net happens to equal the ledger&#x27;s expectation. The net-only residual is 0, and the case would close as a fee mismatch. The reported case, and this one, are both settlements that contradict their own figures, so the arithmetic guard is needed as well. The test <code>test_offsetting_components_do_not_close_even_when_the_net_matches_the_ledger</code> pins this. The old code escalated it, and the fixed code still escalates it.</p>
+<h2>Behaviour that must not change: evidence</h2>
+<ul><li><strong>Test suite</strong>: 67 existing tests pass unchanged, and the 5 new tests pass. Run with <code>.venv/bin/python -m pytest ledgerguard/tests -q</code>: 72 passed.</li><li><strong>New tests against the original code</strong>: 4 of 5 fail (the 5th passes because it checks a clean settlement). The reported case comes out <code>AUTO_RESOLVED</code>.</li><li><strong>Identity by construction</strong>: when the reported net is internally consistent (I1 holds), <code>residual_paise</code> is the same as the old formula. The new <code>arithmetic_gap_paise</code> is 0. So every case that does not contradict its own arithmetic gets the same answer as before. The only cases that change are those where I1 fails, and those are the cases that were wrongly closed.</li><li><strong>Frozen holdout</strong>: benchmark run on an untouched copy and on the fixed copy, both with <code>--provider none</code> (deterministic, no model calls). <code>benchmark.json</code> and <code>unresolved_exceptions.csv</code> are identical except for wall-clock timing fields. Holdout rules-only: 12 auto resolved, 0 false, INR 0.00 falsely resolved, both before and after.</li><li><strong>Wider sweep</strong>: every decision compared before and after, on 8 seeds of the full 320-lifecycle generator and on the compound batch, with and without the investigator path (heuristic provider). 8 × 320 × 2 = 5,120 decisions, plus 10 for the compound batch. <strong>Zero changed.</strong> The generator never emits an internally inconsistent settlement, so the sweep cannot show the new guard firing. The new tests cover that gap.</li><li><strong>Compound cases</strong>: C2 and C5 still escalate with the same residuals (650.00, 900.00). C1 and C3 still close.</li></ul>
+<h2>Artifacts</h2>
+<p>Checked by SHA-256 before and after: all 21 files under <code>ledgerguard/evaluation/outputs/</code> and <code>ledgerguard/evaluation/frozen/</code> are unchanged. The benchmark was run only in scratch copies under <code>../tmp/</code> (<code>before/</code>, <code>after/</code>), never in <code>repo/</code>.</p>
+<h2>What I could not do, and limitations</h2>
+<ul><li><strong>I did not regenerate the committed live-model benchmark.</strong> The committed <code>benchmark.md</code> and <code>cases.json</code> come from live Groq runs. There are no API keys here, so model output cannot be reproduced. The model-dependent figures (accuracy, closed counts from the investigator) therefore cannot be re-verified. The change does not touch the investigator, the Evidence Gate or the disposition of any AI-investigated case. I checked the deterministic arms only, which is what the change affects. For the holdout F3 and F6 rows the investigator path was checked with the heuristic provider only.</li><li><strong>The fault taxonomy has no internally inconsistent settlement.</strong> The F4 injector recomputes <code>net_amount</code> after changing fees, and the other injectors keep the arithmetic consistent. So the holdout never exercised this path, and the frozen numbers are unchanged for that reason. This is also why the bug went unnoticed. Adding an &quot;I1-breaking&quot; fault class would change the frozen holdout and invalidate published numbers, so I did not add one.</li><li><strong>Wording</strong>: the new escalation text for the arithmetic gap is my own. The residual wording is the old one. Both are checked by tests.</li><li><strong>Repository</strong>: <code>repo/</code> is not a git repository, so there is no commit. No commit or PR was requested.</li></ul>
+</main>
+</body>
+</html>

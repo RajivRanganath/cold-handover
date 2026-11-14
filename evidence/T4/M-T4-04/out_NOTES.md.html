@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>T4/M-T4-04/out_NOTES.md</title>
+<style>
+*{box-sizing:border-box}
+:root{--bg:#f6f7f6;--text:#16191c;--muted:#5b636b;--line:#d9dddb;--accent:#0f6b4f;
+--code:rgba(15,23,28,.06);--add:rgba(46,160,67,.20);--del:rgba(218,54,51,.17);--hunk:rgba(15,107,79,.10)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#111416;--text:#e8ebe9;
+--muted:#9aa3a0;--line:#2b3134;--accent:#4fbf95;--code:rgba(255,255,255,.07);
+--add:rgba(63,185,80,.22);--del:rgba(248,81,73,.22);--hunk:rgba(79,191,149,.12)}}
+body{margin:0;background:var(--bg);color:var(--text);
+font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:900px;margin:0 auto;padding:16px}
+.top{font-size:14px;color:var(--muted);border-bottom:1px solid var(--line);padding-bottom:10px;
+margin-bottom:20px;display:flex;flex-wrap:wrap;gap:6px 16px;align-items:baseline}
+.top .path{color:var(--text);font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;overflow-wrap:anywhere}
+a{color:var(--accent)}
+h1,h2,h3,h4,h5,h6{line-height:1.25;margin:1.4em 0 .5em;overflow-wrap:anywhere}
+p,ul,ol,blockquote{margin:.6em 0}
+ul,ol{padding-left:1.4em}
+li,p{overflow-wrap:anywhere}
+blockquote{margin:.8em 0;padding:.1em 0 .1em 14px;border-left:3px solid var(--accent);color:var(--muted)}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.92em;
+background:var(--code);padding:.1em .3em;border-radius:4px;overflow-wrap:anywhere}
+pre{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px;line-height:1.45;
+background:var(--code);border:1px solid var(--line);border-radius:6px;padding:12px;margin:.8em 0;
+overflow-x:auto;white-space:pre;tab-size:2}
+pre code{background:none;padding:0;border-radius:0;font-size:inherit;overflow-wrap:normal}
+.tw{overflow-x:auto;margin:.8em 0}
+table{border-collapse:collapse;font-size:14px}
+th,td{border:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}
+td{overflow-wrap:anywhere}
+th{background:var(--code)}
+hr{border:0;border-top:1px solid var(--line);margin:1.5em 0}
+.patch span{display:block;width:max-content;min-width:100%}
+.patch .file{font-weight:700}
+.patch .meta{color:var(--muted)}
+.patch .hunk{color:var(--accent);background:var(--hunk)}
+.patch .add{background:var(--add)}
+.patch .del{background:var(--del)}
+</style>
+</head>
+<body>
+<main>
+<div class="top"><span class="path">T4/M-T4-04/out_NOTES.md</span><a href="out_NOTES.md">Raw file</a><a href="../../../index.html#T4">Back to the case study</a></div>
+<h1>Task T4: a short payment was closed automatically</h1>
+<h2>What happened</h2>
+<p>A settlement arrived INR 250.00 short of what its own gross, fees, tax and refunds add up to. Its fee and tax were exactly per the fee schedule. LedgerGuard closed the case <code>AUTO_RESOLVED</code> as <code>EXCEPTION_FEE_MISMATCH</code>, and nothing in the case explained the missing INR 250.00.</p>
+<h2>Cause</h2>
+<p>The auto-close gate for a fee mismatch is the <code>residual_paise</code> guard. It asks: after correcting the proven fee variance, does any money remain unexplained? If so, the case must escalate.</p>
+<p><code>reconciliation/matcher.py</code> computed that residual by rebuilding a net from the settlement&#x27;s <strong>components</strong> (gross, refunds, adjustments, fees on schedule):</p>
+<pre><code>corrected_net = gross - expected_fees - expected_tax - refund_adjustments + other_adjustments
+residual      = expected.net - corrected_net</code></pre>
+<p>It never read the settlement&#x27;s reported <code>net_amount</code>. In the reported case the components agree with the Shadow Ledger, so <code>residual = 0</code>, and the INR 250.00 was in the reported net only. The settlement breaks invariant <strong>I1</strong> (components do not sum to the reported net). The classifier maps an I1 failure to <code>FEE_MISMATCH</code> (<code>_classify</code>), so the case reached the deterministic auto-close branch with a residual of zero and closed.</p>
+<p>The gap was never tested. The compound fixtures (C2, C5) always keep net consistent with components, so the guard was only ever exercised with I1 holding.</p>
+<p>I reproduced it on the original code: fee and tax per schedule, net short by INR 250.00, result <code>AUTO_RESOLVED</code>, <code>residual=0</code>.</p>
+<h2>Fix</h2>
+<p>Two changes, both in the deterministic layer:</p>
+<ol><li>**<code>reconciliation/matcher.py</code>**: alongside the existing component residual (<code>residual_paise</code>, unchanged), compute a <strong>net residual</strong> from what the provider actually paid:</li></ol>
+<pre><code>   fee_variance = observed(fees + tax) - expected(fees + tax)
+   net_residual = expected.net - (settlement.net + fee_variance)</code></pre>
+<p>Also record <code>fee_variance_paise</code>.</p>
+<ol><li>**<code>evidence/safety.py</code>**: block auto-close if *either* residual is non-zero. The escalation reason now says the fee variance is zero when it is, instead of describing a fee reconciliation that did not happen.</li></ol>
+<p>Reported case, after the fix: <code>HUMAN_REVIEW_REQUIRED</code>, with the reason &quot;Fee and tax match the independent fee schedule, so the fee variance is zero. Correcting it still leaves 250.00 INR unattributed, with no record explaining it.&quot;</p>
+<h2>Why this is the right fix</h2>
+<p>The project&#x27;s own principles require it:</p>
+<ul><li><strong>&quot;The AI may propose, the financial system must prove&quot;</strong> and **&quot;when proof is insufficient, it abstains&quot;** (README). A close needs the cause to account for all the money, not only the part that was proved.</li><li>**&quot;A proven cause licenses closing a case only if it accounts for all of the money; any unattributed residual blocks closure&quot;** (<code>synthetic/compound.py</code>, <code>tests/test_p1_compound.py</code>). The residual guard is that rule. The bug was that it measured the wrong quantity.</li><li>The money that is actually missing is the shortfall in the <strong>reported net</strong> against the Shadow Ledger. Measuring the residual from the components instead let an arithmetic break in the settlement pass as a clean reconciliation.</li></ul>
+<p>Why the two views together, and why this is a guarantee and not a patch: if either residual is zero, then the reported net equals the components with fees on schedule. In that case I1 holds. Contrapositive: <strong>whenever I1 fails, at least one residual is non-zero and closure is blocked.</strong> So no <code>FEE_MISMATCH</code> with a broken settlement can auto-close.</p>
+<p>It changes nothing that closes correctly today. When I1 holds, the two residuals are algebraically identical (<code>observed_net + fee_variance</code> equals <code>gross - expected_fees - expected_tax - refunds + adjustments</code>), so every consistent settlement behaves exactly as before. This is pinned by a test over the full 320-lifecycle dataset.</p>
+<h2>Verification</h2>
+<ul><li><strong>Reproduction</strong>: the reported case returned <code>AUTO_RESOLVED</code>, <code>residual=0</code> on the original code, and <code>HUMAN_REVIEW_REQUIRED</code> after the fix.</li><li><strong>Tests</strong>: <code>ledgerguard/tests/test_short_settlement.py</code>, six new tests:<ul><li>the reported case is not auto-closed, and the reason names INR 250.00;</li><li>the missing money is measured from the reported net (net residual 25000 paise, component residual 0);</li><li>a proven fee overcharge with a consistent net still closes;</li><li>a fee overcharge plus a separate INR 250 net shortfall is blocked;</li><li>components that disagree with the shadow ledger, with the net matching it, still block (the component view is needed here);</li><li>on all 320 generated lifecycles, consistent fee mismatches have identical residual views.</li></ul> Against the original code, the bug and fee-variance tests fail (the bug test returns <code>AUTO_RESOLVED</code>).</li><li><strong>Full suite</strong>: 73 passed (67 before, plus 6 new). No existing test was modified.</li><li><strong>Holdout behaviour unchanged</strong>: I ran the deterministic pipeline, rules-only and with the offline heuristic provider, over the frozen holdout (85 cases) and over all 320 lifecycles, with the original and fixed code. Per-case state, exception type and exposure are byte-identical in both runs. The frozen holdout digest verified as before.</li><li><strong>Artifacts untouched</strong>: SHA-256 of all 21 files under <code>ledgerguard/evaluation/outputs/</code> and <code>ledgerguard/evaluation/frozen/</code> matches the snapshot taken before any edit. I did not run the benchmark, because it overwrites <code>outputs/</code> and the committed numbers come from a live Groq run that I cannot repeat without an API key.</li><li>The generator never produces a settlement with a broken net (0 of 320 lifecycles break I1), so the published benchmark numbers are not affected by this fix.</li></ul>
+<h2>Judgement calls and limits</h2>
+<ul><li>**I left the classification as <code>FEE_MISMATCH</code>.** An I1-only break is not really a fee mismatch, since the fee variance is zero. I considered reclassifying it as <code>UNEXPLAINED_SHORTFALL</code>, but that would send the case to the AI investigator, where a coincidental refund of the same amount could be verified and closed. That is a new closure path and a larger behaviour change than the bug needs. The outcome is now safe, and the reason text is accurate. Reclassifying I1 breaks is a reasonable follow-up, but it should be a separate change with its own holdout analysis.</li><li><strong>I did not regenerate benchmark artifacts</strong>, per the instruction. The holdout equivalence above is measured with the deterministic engine and the offline stub, not the committed Groq run. For the AI path, identical dispositions were observed under the stub. A live run would need the API key, which I did not have.</li><li>Docs: <code>docs/architecture.md</code> still describes the <code>residual_paise</code> guard correctly. I did not add a line about the net view there.</li><li>Cache directories created by my test runs were removed. Nothing else in the repo was changed except <code>evidence/safety.py</code>, <code>reconciliation/matcher.py</code> and the new test file.</li></ul>
+</main>
+</body>
+</html>

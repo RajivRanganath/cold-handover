@@ -1,0 +1,1178 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>T4/M-T4-04/transcript.md</title>
+<style>
+*{box-sizing:border-box}
+:root{--bg:#f6f7f6;--text:#16191c;--muted:#5b636b;--line:#d9dddb;--accent:#0f6b4f;
+--code:rgba(15,23,28,.06);--add:rgba(46,160,67,.20);--del:rgba(218,54,51,.17);--hunk:rgba(15,107,79,.10)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#111416;--text:#e8ebe9;
+--muted:#9aa3a0;--line:#2b3134;--accent:#4fbf95;--code:rgba(255,255,255,.07);
+--add:rgba(63,185,80,.22);--del:rgba(248,81,73,.22);--hunk:rgba(79,191,149,.12)}}
+body{margin:0;background:var(--bg);color:var(--text);
+font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:900px;margin:0 auto;padding:16px}
+.top{font-size:14px;color:var(--muted);border-bottom:1px solid var(--line);padding-bottom:10px;
+margin-bottom:20px;display:flex;flex-wrap:wrap;gap:6px 16px;align-items:baseline}
+.top .path{color:var(--text);font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;overflow-wrap:anywhere}
+a{color:var(--accent)}
+h1,h2,h3,h4,h5,h6{line-height:1.25;margin:1.4em 0 .5em;overflow-wrap:anywhere}
+p,ul,ol,blockquote{margin:.6em 0}
+ul,ol{padding-left:1.4em}
+li,p{overflow-wrap:anywhere}
+blockquote{margin:.8em 0;padding:.1em 0 .1em 14px;border-left:3px solid var(--accent);color:var(--muted)}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.92em;
+background:var(--code);padding:.1em .3em;border-radius:4px;overflow-wrap:anywhere}
+pre{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px;line-height:1.45;
+background:var(--code);border:1px solid var(--line);border-radius:6px;padding:12px;margin:.8em 0;
+overflow-x:auto;white-space:pre;tab-size:2}
+pre code{background:none;padding:0;border-radius:0;font-size:inherit;overflow-wrap:normal}
+.tw{overflow-x:auto;margin:.8em 0}
+table{border-collapse:collapse;font-size:14px}
+th,td{border:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}
+td{overflow-wrap:anywhere}
+th{background:var(--code)}
+hr{border:0;border-top:1px solid var(--line);margin:1.5em 0}
+.patch span{display:block;width:max-content;min-width:100%}
+.patch .file{font-weight:700}
+.patch .meta{color:var(--muted)}
+.patch .hunk{color:var(--accent);background:var(--hunk)}
+.patch .add{background:var(--add)}
+.patch .del{background:var(--del)}
+</style>
+</head>
+<body>
+<main>
+<div class="top"><span class="path">T4/M-T4-04/transcript.md</span><a href="transcript.md">Raw file</a><a href="../../../index.html#T4">Back to the case study</a></div>
+<h1>M-T4-04 transcript (PASS)</h1>
+<p><strong>Agent:</strong> I&#x27;ll start with the handover docs at the repository root, as the ground rules require.</p>
+<p><strong>Bash:</strong></p>
+<pre><code>ls -la &amp;&amp; ls -la .. &amp;&amp; find . -path ./.venv -prune -o -type f -print | grep -v __pycache__ | head -200</code></pre>
+<p><strong>Result:</strong></p>
+<pre><code>total 88
+drwxr-xr-x@ 10 user  staff    320 Nov 15 00:39 .
+drwxr-xr-x@  5 user  staff    160 Nov 15 00:39 ..
+-rw-r--r--@  1 user  staff   1992 Nov 15 00:39 .env.example
+-rw-r--r--@  1 user  staff     56 Nov 15 00:39 .gitignore
+drwxr-xr-x@  7 user  staff    224 Nov 15 00:39 .venv
+drwxr-xr-x@  7 user  staff    224 Nov 15 00:39 docs
+drwxr-xr-x@ 14 user  staff    448 Nov 15 00:39 ledgerguard
+-rw-r--r--@  1 user  staff  26848 Nov 15 00:39 README.md
+-rw-r--r--@  1 user  staff    466 Nov 15 00:39 requirements.txt
+-rwxr-xr-x@  1 user  staff   1447 Nov 15 00:39 run_demo.sh
+total 0
+drwxr-xr-x@  5 user  staff  160 Nov 15 00:39 .
+drwxr-xr-x@ 10 user  staff  320 Nov 15 00:40 ..
+drwxr-xr-x@  2 user  staff   64 Nov 15 00:39 out
+drwxr-xr-x@ 10 user  staff  320 Nov 15 00:39 repo
+drwxr-xr-x@  4 user  staff  128 Nov 15 00:40 tmp
+./requirements.txt
+./README.md
+./run_demo.sh
+./.gitignore
+./.env.example
+./docs/architecture.md
+./docs/limitations.md
+./docs/model_comparison.md
+./docs/analyses.md
+./docs/evaluation.md
+./ledgerguard/__init__.py
+./ledgerguard/pipeline.py
+./ledgerguard/qa.py
+./ledgerguard/reconciliation/matcher.py
+./ledgerguard/reconciliation/__init__.py
+./ledgerguard/reconciliation/exceptions.py
+./ledgerguard/ledger/shadow_ledger.py
+./ledgerguard/ledger/models.py
+./ledgerguard/ledger/__init__.py
+./ledgerguard/ledger/money.py
+./ledgerguard/ledger/invariants.py
+./ledgerguard/evidence/__init__.py
+./ledgerguard/evidence/safety.py
+./ledgerguard/evidence/verifier.py
+./ledgerguard/frontend/index.html
+./ledgerguard/tests/test_p0_core.py
+./ledgerguard/tests/test_p2_evaluation.py
+./ledgerguard/tests/test_p1_compound.py
+./ledgerguard/tests/__init__.py
+./ledgerguard/tests/test_p1_extended.py
+./ledgerguard/tests/test_fallback.py
+./ledgerguard/tests/test_evidence_download.py
+./ledgerguard/tests/rehearsal_check.py
+./ledgerguard/tests/test_dashboard_startup.py
+./ledgerguard/backend/__init__.py
+./ledgerguard/backend/app.py
+./ledgerguard/ai/provider.py
+./ledgerguard/ai/openai_compatible.py
+./ledgerguard/ai/__init__.py
+./ledgerguard/ai/schemas.py
+./ledgerguard/ai/errors.py
+./ledgerguard/ai/investigator.py
+./ledgerguard/ai/fallback.py
+./ledgerguard/synthetic/fault_injector.py
+./ledgerguard/synthetic/adversarial.py
+./ledgerguard/synthetic/__init__.py
+./ledgerguard/synthetic/generator.py
+./ledgerguard/synthetic/compound.py
+./ledgerguard/evaluation/metrics.py
+./ledgerguard/evaluation/benchmark.py
+./ledgerguard/evaluation/baseline.py
+./ledgerguard/evaluation/ablation.py
+./ledgerguard/evaluation/drift.py
+./ledgerguard/evaluation/__init__.py
+./ledgerguard/evaluation/no_gate_ablation.py
+./ledgerguard/evaluation/replay.py
+./ledgerguard/evaluation/model_comparison.py
+./ledgerguard/evaluation/cost.py
+./ledgerguard/evaluation/scale.py
+./ledgerguard/evaluation/report.py
+./ledgerguard/evaluation/calibration.py
+./ledgerguard/evaluation/frozen/holdout_20260905_320.json
+./ledgerguard/evaluation/outputs/reconciliation_report.csv
+./ledgerguard/evaluation/outputs/scale.json
+./ledgerguard/evaluation/outputs/calibration.json
+./ledgerguard/evaluation/outputs/no_gate_ablation.json
+./ledgerguard/evaluation/outputs/scale.md
+./ledgerguard/evaluation/outputs/reconciliation_report.md
+./ledgerguard/evaluation/outputs/ablation.json
+./ledgerguard/evaluation/outputs/calibration.md
+./ledgerguard/evaluation/outputs/benchmark.json
+./ledgerguard/evaluation/outputs/model_comparison.md
+./ledgerguard/evaluation/outputs/drift.json
+./ledgerguard/evaluation/outputs/benchmark.md
+./ledgerguard/evaluation/outputs/model_comparison.json
+./ledgerguard/evaluation/outputs/cases.json
+./ledgerguard/evaluation/outputs/unresolved_exceptions.csv
+./ledgerguard/evaluation/outputs/evidence_ledger.csv
+./ledgerguard/evaluation/outputs/drift.md
+./ledgerguard/evaluation/outputs/decision_log.json
+./ledgerguard/evaluation/outputs/no_gate_ablation.md
+./ledgerguard/evaluation/outputs/ablation.md</code></pre>
+<p><strong>Bash:</strong></p>
+<pre><code>cat README.md</code></pre>
+<p><strong>Result:</strong></p>
+<pre><code># LedgerGuard
+
+**A self verifying AI finance controller.** Razorpay AI Buildathon, Track 04.
+
+The workflow is settlement reconciliation: inspect the source records, verify an
+ambiguous refund, and export the exceptions that still need a human.
+
+I built LedgerGuard to answer a question that a reconciliation chatbot does not
+answer: an LLM can generate a plausible explanation for a financial discrepancy
+in about two seconds — but how do you know whether that explanation is
+*financially true*?
+
+**The core claim: LLM reasoning is not financial truth. Financial truth is
+deterministic accounting state plus verified evidence. The AI may propose, the
+financial system must prove.**
+
+## Quick start
+</code></pre>
+<p>git clone https://github.com/RajivRanganath/ledgerguard.git &amp;&amp; cd ledgerguard python3 -m venv .venv &amp;&amp; .venv/bin/pip install -r requirements.txt ./run_demo.sh          # tests, then benchmark, then http://127.0.0.1:8137</p>
+<pre><code>
+**No API key is needed.** Without one the AI investigation step degrades to an
+offline stand-in and says so on the page; the deterministic engine, Shadow
+Ledger, Evidence Gate, benchmark and dashboard all run unchanged.
+
+---
+
+## Where to verify each published requirement
+
+Track 04, AI Finance Controller, checked against the official Buildathon page.
+The official description does not mandate multiple agents, a particular frontend
+framework, or a Razorpay payment API integration. Synthetic settlement
+reconciliation is the chosen workflow, and no payment is ever initiated.
+
+| Published requirement | Where to verify it |
+|---|---|
+| One finance-operations loop | Dashboard: records → investigation → checks → disposition → exception report |
+| At least 50 synthetic records | 320 generated lifecycles; 85 held out and frozen for the benchmark |
+| Match rate | `evaluation/outputs/benchmark.json` — `baseline.match_rate`, `hybrid.match_rate` |
+| Throughput and measured accuracy | Same artifact; wall-clock figures include provider latency |
+| Exceptions that could not be resolved | Dashboard exception queue, and `evaluation/outputs/unresolved_exceptions.csv` |
+| Architecture | [`docs/architecture.md`](docs/architecture.md) |
+
+---
+
+## What it does
+
+LedgerGuard reconciles orders, payments, refunds, settlements and bank records.
+
+1. **The Shadow Ledger** independently reconstructs what the money movement
+   *should* have been, from first principles:
+   `expected_net = captured − refunds − fees − tax ± valid adjustments`.
+   It never reads settlement or bank records to decide what to expect. Six named
+   invariants (`I1`–`I6`) compare that reconstruction against what the provider
+   actually reported. All money is integer paise; no float ever touches it.
+
+2. **A deterministic engine reconciles everything it can prove** — exact
+   identifier matching, settlement arithmetic against the fee schedule,
+   duplicate detection, timing windows, bank matching. On the frozen holdout it
+   resolves 54 of 85 cases with zero AI involvement, and never sends a case to
+   the model that it could prove on its own.
+
+3. **The AI investigator only sees what could not be proved.** It gets the
+   records, the Shadow Ledger&#x27;s expected value, the discrepancy, the permitted
+   hypothesis taxonomy, and candidate related records. It returns structured
+   JSON only. It is instructed not to calculate money; its prose is not used for
+   monetary computation. It has no record-editing or case-closing tools.
+
+4. **The Evidence Gate re-proves every claim.** If the model says a shortfall is
+   a partial refund, the gate checks whether that refund exists, whether it is
+   already owned by another payment, whether its reference identifies *this*
+   order&#x27;s customer, whether the amount matches, whether the timing is possible,
+   and whether re-running the Shadow Ledger with that refund applied restores the
+   invariant exactly. Verdict: `VERIFIED`, `UNVERIFIED`, or `REJECTED`.
+
+5. **When proof is insufficient, it abstains.** Four states —
+   `AUTO_RESOLVED`, `RECOMM
+... [22708 more characters in transcript.jsonl]</code></pre>
+<p><strong>Bash:</strong></p>
+<pre><code>cat docs/architecture.md docs/limitations.md docs/evaluation.md</code></pre>
+<p><strong>Result:</strong></p>
+<pre><code>&lt;persisted-output&gt;
+Output too large (36.5KB). Full output saved to: &lt;attempt&gt;/claude-config/projects/-Users-user-Desktop-tms-work-runs-M-T4-04-work-repo/fe0f4e26-7fad-408d-bc24-8fe1a0a62628/tool-results/b0ykfb5zo.txt
+
+Preview (first 2KB):
+# Architecture
+
+## The one-sentence version
+
+Deterministic accounting decides what is true; the AI only proposes candidate
+explanations for what the accounting could not decide; an independent gate
+re-derives every proposal from records before it can change any state.
+
+## Data flow
+</code></pre>
+<p>Batch (orders, payments, refunds, settlements, bank)</p>
+<p>| +-------------+-------------+</p>
+<p>|                           | ShadowLedger                   deterministic (expected movement)                  matcher</p>
+<p>|                           | +------------+--------------+</p>
+<p>| 6 invariants I1..I6</p>
+<p>| +-------------+--------------+</p>
+<p>|                            | provable outcome              genuinely ambiguous (MATCHED / typed exception)       (UNEXPLAINED_SHORTFALL,</p>
+<p>|                     BANK_MISMATCH, ...)</p>
+<p>|                            |</p>
+<p>|                    AI investigator</p>
+<p>|                  (structured JSON only)</p>
+<p>|                            |</p>
+<p>|                     Evidence Gate</p>
+<p>|               (7 deterministic checks)</p>
+<p>|                            |</p>
+<p>|                  uniqueness pass +-------------+--------------+</p>
+<p>| safety / action gate AUTO_RESOLVED | RECOMMEND_REVIEW ... &lt;/persisted-output&gt;</p>
+<pre><code>
+**Bash:**</code></pre>
+<p>cat docs/architecture.md | sed -n 40,400p</p>
+<pre><code>
+**Result:**</code></pre>
+<p>HUMAN_REVIEW_REQUIRED | UNRESOLVED</p>
+<pre><code>
+## Components
+
+### `ledger/money.py`
+Every monetary value is an `int` count of paise. `Decimal` appears only inside
+rate application, and the result is quantised back to an integer with
+`ROUND_HALF_UP` at the paise boundary — the single place a derived money value
+is allowed to round. `apply_rate` raises on a non-`int` input, so a float can
+never enter the money path by accident.
+
+Fee model: 2% platform fee on the captured amount, 18% GST on that fee.
+
+### `ledger/shadow_ledger.py`
+Indexes a batch and reconstructs, per captured payment:
+</code></pre>
+<p>expected_net = gross − fees − tax − valid_refunds + valid_adjustments</p>
+<pre><code>
+A refund counts as *valid* only if it is `PROCESSED` **and** carries an explicit
+`payment_id` linking it to this payment. Refunds with no linkage are held
+separately as `orphan_refunds` and are never silently absorbed.
+
+`expected_for_payment(payment, extra_refunds=[...])` is the hypothetical form:
+&quot;if this refund really did belong to this payment, would the ledger balance?&quot;
+It mutates nothing. This is the mechanism the Evidence Gate uses for its
+decisive check, and the reason the AI can influence *which* record is tested
+without influencing *how* the test is computed.
+
+### `ledger/invariants.py`
+Six named predicates, each independently testable:
+
+| | Invariant | Catches |
+|---|---|---|
+| I1 | settlement arithmetic is internally consistent | corrupted settlement rows |
+| I2 | fees and tax match the independent fee schedule | fee/tax overcharge (F4) |
+| I3 | observed net equals the Shadow Ledger&#x27;s net | any unexplained shortfall (F3, F6) |
+| I4 | settlement gross equals the captured amount | capture/settlement mismatch |
+| I5 | settlement date falls inside T+2 ±1d | delayed settlement (F5) |
+| I6 | one bank credit equals the settlement net | missing/duplicated bank credit (F2) |
+
+I2 is what catches a settlement that is internally consistent but wrong — a fee
+overcharge keeps I1 holding, so only an independently computed fee schedule
+finds it.
+
+### `reconciliation/matcher.py`
+Runs before the model, always. Duplicate pre-pass over the whole batch, then one
+case per captured payment: no settlement → `MISSING_SETTLEMENT`; more than one →
+`DUPLICATE_RECORD`; otherwise run all six invariants and map the failures to a
+specific exception type, most severe first.
+
+The duplicate pre-pass compares **content, not just identifiers**. Two rows
+sharing a `payment_id` are only a duplicate when every other field agrees; if
+they disagree they are two contradictory versions of one payment, which the
+batch cannot adjudicate, and the case is escalated rather than collapsed. The
+same rule applies to settlements. Bank entries carry no identifier that survives
+the trip between systems, so they are matched on content alone. The distinction
+matters because `DUPLICATE_RECORD` is one of only three exception types the
+safety gate closes without a human — it closes on the strength of the copies
+being the same record, so &quot;the same record&quot; has to be something that was
+actually checked.
+
+`exceptions.py` splits the taxonomy into `DETERMINISTICALLY_PROVEN` (never
+reaches the model) and `NEEDS_INVESTIGATION`. On the frozen holdout, 16 of the
+31 exceptions are proven outright and never cost a model call.
+
+### `ai/`
+`InvestigatorProvider.investigate(context) -&gt; InvestigationResult`
+(`ai/provider.py`) is the entire surface the rest of the system depends on, so
+the controller is model independent. `investigate_case(ledger, case, provider)`
+in `ai/investigator.py` is the only caller: it builds the context, enforces the
+timeout, type-checks whatever comes back, and strips any evidence id the model
+did not receive as a candidate. A provider that raises, and a provider that
+returns the wrong type, both become `unavailable` rather than an exception the
+batch has to survive.
+
+`ai/errors.py` carries one distinction the chain builder depends on:
+`ProviderNotConfigured` means &quot;no key, or the endpoint is 
+... [6411 more characters in transcript.jsonl]</code></pre>
+<p><strong>Bash:</strong></p>
+<pre><code>cat docs/limitations.md; ls -la ../out ../tmp; cat ../out/NOTES.md 2&gt;/dev/null | head -50</code></pre>
+<p><strong>Result:</strong></p>
+<pre><code># Limitations
+
+Stated plainly, because a controller that cannot describe its own boundaries is
+not a controller.
+
+## What the model results do and do not establish
+
+The hybrid column is now a real measurement — `groq:openai/gpt-oss-120b`, 15
+live investigations, 15 of 15 completed. Four separate limitations apply to it.
+
+**Model output is not reproducible.** Five runs on the identical frozen holdout
+gave 95.3%–97.7% disposition accuracy at `temperature: 0`. Any single
+accuracy figure from a model run is a sample, not a measurement, and I report the
+range rather than the best one. The deterministic layer *is* reproducible, and
+the safety figures (0 false auto resolutions, INR 0.00 falsely closed, 6/6 F6
+escalated) held across all five runs.
+
+**Four vendors measured, not one.** `docs/model_comparison.md` runs
+`gemini-2.5-flash`, `gpt-oss-20b` via Groq, `mistral-medium-3-5` via OmniRoute
+and `gpt-oss-120b` via NVIDIA over the same frozen holdout, uncached, plus the
+offline stub and the rules-only baseline — every provider in the automatic
+chain, each on its own free tier. Not one of them falsely auto-resolved
+anything: INR 0.00 in every row. That is a far better-supported claim than any
+single accuracy figure. Deliberately out of scope: any paid API. Cerebras was in the
+chain early on and was removed when its key began returning HTTP 402
+`payment required`; it has not been in the automatic order since, and none
+of the numbers published here were ever produced by it. NVIDIA was unmeasurable for most of this
+build and is not any more -- see below.
+
+**What the safety result does and does not prove.** Two separate claims live
+here and I do not merge them. That the investigator *cannot* close a case is
+architectural: `decide()` reaches `AUTO_RESOLVED` only from a deterministic
+proven cause or a `VERIFIED` gate verdict, and the model&#x27;s recommended action
+can only downgrade a close, never create one. That holds for any model, and I
+stress-tested it rather than assuming it — an investigator fabricating a record
+id on every case closed nothing on the invented evidence, and an invalid key
+degraded its cases to human review without stopping the batch. That *no
+investigator falsely closed anything* is empirical, and its denominator is
+small: 6 wrong-linkage cases on one 85-lifecycle holdout, 5 investigators, 30
+attempts. Six adversarial cases in one fault taxonomy is evidence, not a
+guarantee, and the limiting factor is the taxonomy rather than the gate.
+
+**The offline stub ties for highest, and that is a caution about the dataset.**
+It reaches 100% -- level with Gemini -- because this fixture&#x27;s ambiguity is
+exactly the shape its single heuristic assumes. It is well-matched, not competent. If a naive amount-matcher
+tops the table, headline accuracy on this data is close to meaningless — which is
+why false auto resolutions and rupee exposure are the reported headline instead.
+
+**Cost was not measured.** All providers used here were free tiers, which is
+also why the latency figures (p50 10.8s, p95 12.8s in the committed benchmark,
+with rate-limit retries included) are not representative of a paid tier. No cost-per-100-records figure
+is claimed.
+
+**Free tiers only, by design — so no paid frontier model is measured here.**
+Every investigator in this repository runs on a free tier: Groq, Gemini, NVIDIA
+NIM, and the local OmniRoute router. No paid API key is used, and none is
+required to reproduce any number in this repository. That is a deliberate
+constraint, not a missing piece: the architectural claim is that the Evidence
+Gate holds *regardless* of how good the investigator is, and a claim of that
+shape is better supported by four ordinary free-tier models than by one
+expensive one.
+
+`AnthropicProvider` remains implemented because the provider interface is meant
+to be model-independent and it is the reference implementation of that
+interface. It is not in the chain and no Claude column is published. The one
+data point that exists is an anecdote
+... [9067 more characters in transcript.jsonl]</code></pre>
+<p><strong>Agent:</strong> The docs point at the key guard: <code>residual_paise</code> in <code>evidence/safety.py</code>. Next I&#x27;ll read the safety, matcher, invariant and exception code.</p>
+<p><strong>Bash:</strong></p>
+<pre><code>cd repo &amp;&amp; cat ledgerguard/evidence/safety.py &amp;&amp; cat ledgerguard/reconciliation/matcher.py</code></pre>
+<p><strong>Result (error):</strong></p>
+<pre><code>Exit code 1
+(eval):cd:1: no such file or directory: repo</code></pre>
+<p><strong>Bash:</strong></p>
+<pre><code>cd repo &amp;&amp; cat ledgerguard/ledger/invariants.py ledgerguard/reconciliation/exceptions.py</code></pre>
+<p><strong>Result (error):</strong></p>
+<pre><code>Exit code 1
+(eval):cd:1: no such file or directory: repo</code></pre>
+<p><strong>Bash:</strong></p>
+<pre><code>pwd; cd &lt;attempt&gt;/work/repo &amp;&amp; cat ledgerguard/evidence/safety.py ledgerguard/reconciliation/matcher.py</code></pre>
+<p><strong>Result:</strong></p>
+<pre><code>&lt;attempt&gt;/work/repo
+&quot;&quot;&quot;Safety and action gate.
+
+Turns a verification outcome into one of four states. The bias is deliberate:
+abstention is a correct answer, and the gate is not scored on how many
+exceptions it closes.
+
+&quot;Auto resolved&quot; here means the reconciliation exception is classified and
+closed inside LedgerGuard. It never means money moves.
+&quot;&quot;&quot;
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+
+from ..ai.schemas import InvestigationResult
+from ..ledger.models import ExceptionStatus, ExceptionType
+from ..ledger.money import to_rupees_str
+from ..reconciliation.matcher import CaseResult
+from .verifier import REJECTED, UNVERIFIED, VERIFIED, VerificationOutcome
+
+AUTO_RESOLVED = ExceptionStatus.AUTO_RESOLVED.value
+RECOMMEND_REVIEW = ExceptionStatus.RECOMMEND_REVIEW.value
+HUMAN_REVIEW_REQUIRED = ExceptionStatus.HUMAN_REVIEW_REQUIRED.value
+UNRESOLVED = ExceptionStatus.UNRESOLVED.value
+
+#: Exception types the deterministic layer proves outright: the cause is known
+#: exactly, so the exception can be classified and closed without a human.
+_DETERMINISTIC_AUTO_CLOSE = {
+    ExceptionType.DUPLICATE_RECORD: &quot;Duplicate ingestion proven by identifier and content match; the duplicate is suppressed, not paid.&quot;,
+    ExceptionType.FEE_MISMATCH: &quot;Fee and tax reconciled against the independent fee schedule; the exact variance is quantified.&quot;,
+    ExceptionType.DELAYED_SETTLEMENT: &quot;All amounts reconcile exactly; the only discrepancy is timing against the expected settlement window.&quot;,
+}
+
+#: Proven, but the resolution is outside the system&#x27;s authority to close.
+_DETERMINISTIC_ESCALATE = {
+    ExceptionType.MISSING_SETTLEMENT: &quot;Captured funds have no settlement record. The money is outstanding; LedgerGuard cannot close this, it can only report it.&quot;,
+}
+
+
+@dataclass
+class Decision:
+    case_id: str
+    state: str
+    reason: str
+    resolution: str | None = None
+    missing_evidence: list[str] = None            # type: ignore[assignment]
+    suggested_action: str = &quot;&quot;
+
+    def __post_init__(self) -&gt; None:
+        if self.missing_evidence is None:
+            self.missing_evidence = []
+
+    @property
+    def is_auto_resolved(self) -&gt; bool:
+        return self.state == AUTO_RESOLVED
+
+    @property
+    def needs_human(self) -&gt; bool:
+        return self.state in (HUMAN_REVIEW_REQUIRED, RECOMMEND_REVIEW, UNRESOLVED)
+
+
+def decide(
+    case: CaseResult,
+    investigation: InvestigationResult | None = None,
+    verification: VerificationOutcome | None = None,
+) -&gt; Decision:
+    exc = case.exception
+    assert exc is not None, &quot;decide() is only called for exceptions&quot;
+    exc_type = exc.exception_type
+
+    if (
+        exc_type is ExceptionType.DELAYED_SETTLEMENT
+        and exc.evidence.get(&quot;window_undecidable&quot;)
+    ):
+        # Amounts reconcile, but the expected settlement window could not be
+        # computed at all, so the timing check never ran. Closing this as a
+        # routine delay would assert a verification that did not happen.
+        return Decision(
+            case_id=case.case_id,
+            state=HUMAN_REVIEW_REQUIRED,
+            reason=(
+                &quot;Amounts reconcile exactly, but the payment has no capture &quot;
+                &quot;timestamp, so the expected settlement window is undecidable. &quot;
+                &quot;The timing check could not be run, and is not assumed to pass.&quot;
+            ),
+            missing_evidence=[&quot;payment.captured_at&quot;],
+            suggested_action=(
+                &quot;Recover the capture timestamp from the provider, then re-run &quot;
+                &quot;reconciliation for this payment.&quot;
+            ),
+        )
+
+    conflict = exc.evidence.get(&quot;content_conflict&quot;)
+    if conflict:
+        # Two records share an identifier and disagree on content. &quot;Duplicate&quot;
+        # is the one classification that closes on the strength of the copies
+        # being the same record -- and here they demonstrably are not. Which
+        # version is real is not derivable from the batch.
+    
+... [22507 more characters in transcript.jsonl]</code></pre>
+<p><strong>Bash:</strong></p>
+<pre><code>cat ledgerguard/ledger/invariants.py ledgerguard/reconciliation/exceptions.py</code></pre>
+<p><strong>Result:</strong></p>
+<pre><code>&quot;&quot;&quot;Explicit Shadow Ledger invariants.
+
+Each invariant is a named, independently testable predicate over a
+(payment, expected settlement, observed settlement) triple. Nothing here is
+heuristic and nothing here consults the AI.
+&quot;&quot;&quot;
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+from datetime import timedelta
+
+from .models import BankEntry, CreditDebit, Payment, Settlement
+from .money import gst_on_fee, platform_fee
+from .shadow_ledger import BANK_CREDIT_TOLERANCE_DAYS, ExpectedSettlement
+
+
+@dataclass(frozen=True)
+class InvariantResult:
+    name: str
+    holds: bool
+    expected: int | str | None
+    observed: int | str | None
+    detail: str
+
+    @property
+    def difference(self) -&gt; int | None:
+        if isinstance(self.expected, int) and isinstance(self.observed, int):
+            return self.expected - self.observed
+        return None
+
+    def as_dict(self) -&gt; dict:
+        return {
+            &quot;name&quot;: self.name,
+            &quot;holds&quot;: self.holds,
+            &quot;expected&quot;: self.expected,
+            &quot;observed&quot;: self.observed,
+            &quot;difference&quot;: self.difference,
+            &quot;detail&quot;: self.detail,
+        }
+
+
+# I1 -------------------------------------------------------------------------
+def settlement_arithmetic_consistent(s: Settlement) -&gt; InvariantResult:
+    &quot;&quot;&quot;gross - fees - tax - refund_adjustments + other_adjustments == net.&quot;&quot;&quot;
+    derived = (
+        s.gross_amount - s.fees - s.tax - s.refund_adjustments + s.other_adjustments
+    )
+    return InvariantResult(
+        name=&quot;I1_settlement_arithmetic_consistent&quot;,
+        holds=derived == s.net_amount,
+        expected=derived,
+        observed=s.net_amount,
+        detail=(
+            f&quot;{s.settlement_id}: gross {s.gross_amount} - fees {s.fees} - tax {s.tax} &quot;
+            f&quot;- refunds {s.refund_adjustments} + adj {s.other_adjustments} &quot;
+            f&quot;= {derived}, reported net {s.net_amount}&quot;
+        ),
+    )
+
+
+# I2 -------------------------------------------------------------------------
+def fees_and_tax_match_schedule(s: Settlement) -&gt; InvariantResult:
+    &quot;&quot;&quot;Reported fees and tax equal the independently computed fee schedule.&quot;&quot;&quot;
+    exp_fee = platform_fee(s.gross_amount)
+    exp_tax = gst_on_fee(exp_fee)
+    holds = s.fees == exp_fee and s.tax == exp_tax
+    return InvariantResult(
+        name=&quot;I2_fees_and_tax_match_schedule&quot;,
+        holds=holds,
+        expected=exp_fee + exp_tax,
+        observed=s.fees + s.tax,
+        detail=(
+            f&quot;{s.settlement_id}: expected fee {exp_fee} + tax {exp_tax}, &quot;
+            f&quot;observed fee {s.fees} + tax {s.tax}&quot;
+        ),
+    )
+
+
+# I3 -------------------------------------------------------------------------
+def net_matches_shadow_ledger(
+    expected: ExpectedSettlement, s: Settlement
+) -&gt; InvariantResult:
+    &quot;&quot;&quot;Observed settlement net equals the Shadow Ledger&#x27;s reconstructed net.&quot;&quot;&quot;
+    return InvariantResult(
+        name=&quot;I3_net_matches_shadow_ledger&quot;,
+        holds=expected.net_amount == s.net_amount,
+        expected=expected.net_amount,
+        observed=s.net_amount,
+        detail=(
+            f&quot;{s.settlement_id}: shadow ledger expects net {expected.net_amount} &quot;
+            f&quot;for payment {expected.payment_id}, provider reported {s.net_amount}&quot;
+        ),
+    )
+
+
+# I4 -------------------------------------------------------------------------
+def gross_matches_capture(expected: ExpectedSettlement, s: Settlement) -&gt; InvariantResult:
+    &quot;&quot;&quot;Settlement gross equals the captured payment amount.&quot;&quot;&quot;
+    return InvariantResult(
+        name=&quot;I4_gross_matches_capture&quot;,
+        holds=expected.gross_amount == s.gross_amount,
+        expected=expected.gross_amount,
+        observed=s.gross_amount,
+        detail=(
+            f&quot;{s.settlement_id}: captured {expected.gross_amount}, &quot;
+            f&quot;settlement gross {s.gross_amount}&quot;
+        ),
+    )
+
+
+# I5 -------------------------------------------------------------------------
+def settlement_within_window(
+    expected: ExpectedSettlement, s: Settlement
+
+... [6421 more characters in transcript.jsonl]</code></pre>
+<p><strong>Agent:</strong> I think I see the cause. <code>reconcile_payment</code> computes <code>residual_paise</code> from the settlement&#x27;s own gross and components, not from its reported net, so an arithmetic shortfall in net leaves the residual at zero. Before deciding, I&#x27;ll check where else this logic appears and what the tests and generators depend on.</p>
+<p><strong>Bash:</strong></p>
+<pre><code>grep -rn &quot;residual\|FEE_MISMATCH\|I1_&quot; --include=*.py --include=*.html . | grep -v .venv; echo ---; grep -n &quot;def \|outputs\|frozen&quot; ledgerguard/evaluation/benchmark.py | head -80</code></pre>
+<p><strong>Result:</strong></p>
+<pre><code>(eval):1: no matches found: --include=*.py
+---
+7:same frozen holdout, and writes every artifact under evaluation/outputs/.
+36:OUTPUT_DIR = Path(__file__).parent / &quot;outputs&quot;
+37:MANIFEST_DIR = Path(__file__).parent / &quot;frozen&quot;
+40:def manifest_path(seed: int, count: int) -&gt; Path:
+41:    &quot;&quot;&quot;One frozen manifest per dataset configuration.
+49:def batch_digest(dataset: Dataset) -&gt; str:
+53:def freeze_or_verify_holdout(holdout: Dataset, seed: int, count: int) -&gt; dict:
+68:                &quot;The holdout for this seed was frozen earlier and the regenerated &quot;
+72:                f&quot;  frozen sha256:      {existing.get(&#x27;holdout_batch_sha256&#x27;)}\n&quot;
+81:def _row(label: str, baseline, hybrid, fmt=str) -&gt; str:
+85:def render_markdown(base: Metrics, hyb: Metrics, manifest: dict) -&gt; str:
+86:    def inr(paise: int) -&gt; str:
+149:def write_unresolved_csv(report: RunReport, dataset: Dataset, path: Path) -&gt; int:
+195:def export_cases(report: RunReport, dataset: Dataset, path: Path) -&gt; None:
+238:def main(argv: list[str] | None = None) -&gt; int:
+244:        help=&quot;which slice to score (default: the frozen holdout)&quot;,</code></pre>
+<p><strong>Bash:</strong></p>
+<pre><code>grep -rn &quot;residual\|FEE_MISMATCH\|I1_&quot; ledgerguard docs README.md | grep -v &quot;\.venv&quot; ; echo ---; sed -n 230,330p ledgerguard/evaluation/benchmark.py</code></pre>
+<p><strong>Result:</strong></p>
+<pre><code>ledgerguard/reconciliation/matcher.py:143:    ExceptionType.FEE_MISMATCH: {
+ledgerguard/reconciliation/matcher.py:144:        &quot;I1_settlement_arithmetic_consistent&quot;,
+ledgerguard/reconciliation/matcher.py:169:        return ExceptionType.FEE_MISMATCH, failing[&quot;I2_fees_and_tax_match_schedule&quot;]
+ledgerguard/reconciliation/matcher.py:170:    if &quot;I1_settlement_arithmetic_consistent&quot; in failing:
+ledgerguard/reconciliation/matcher.py:171:        return ExceptionType.FEE_MISMATCH, failing[&quot;I1_settlement_arithmetic_consistent&quot;]
+ledgerguard/reconciliation/matcher.py:352:    elif exc_type is ExceptionType.FEE_MISMATCH:
+ledgerguard/reconciliation/matcher.py:367:        evidence[&quot;residual_paise&quot;] = expected.net_amount - corrected_net
+ledgerguard/evidence/safety.py:30:    ExceptionType.FEE_MISMATCH: &quot;Fee and tax reconciled against the independent fee schedule; the exact variance is quantified.&quot;,
+ledgerguard/evidence/safety.py:114:    residual = exc.evidence.get(&quot;residual_paise&quot;) or 0
+ledgerguard/evidence/safety.py:118:        if residual:
+ledgerguard/evidence/safety.py:128:                    f&quot;{to_rupees_str(abs(residual))} INR unattributed, with no record &quot;
+ledgerguard/evidence/safety.py:131:                missing_evidence=[&quot;explanation for the residual deduction&quot;],
+ledgerguard/reconciliation/exceptions.py:22:    ExceptionType.FEE_MISMATCH,
+ledgerguard/reconciliation/exceptions.py:54:    ExceptionType.FEE_MISMATCH: Risk.MEDIUM,
+ledgerguard/ledger/models.py:110:    FEE_MISMATCH = &quot;EXCEPTION_FEE_MISMATCH&quot;
+ledgerguard/ledger/invariants.py:50:        name=&quot;I1_settlement_arithmetic_consistent&quot;,
+ledgerguard/ledger/invariants.py:181:    &quot;I1_settlement_arithmetic_consistent&quot;,
+ledgerguard/tests/test_p1_compound.py:6:    money; any unattributed residual blocks closure, while a second finding that
+ledgerguard/tests/test_p1_compound.py:46:def test_an_unattributed_residual_blocks_closure_on_the_proven_cause():
+ledgerguard/tests/test_p1_compound.py:51:    residual = outcome.case.exception.evidence[&quot;residual_paise&quot;]
+ledgerguard/tests/test_p1_compound.py:52:    assert residual == to_paise(&quot;650.00&quot;), residual
+ledgerguard/tests/test_p1_compound.py:57:    # C5 is the same shape with the residual explained by a refund that belongs
+ledgerguard/tests/test_p1_compound.py:60:    assert c5.case.exception.evidence[&quot;residual_paise&quot;] == to_paise(&quot;900.00&quot;)
+ledgerguard/tests/test_p1_compound.py:70:    assert not outcome.case.exception.evidence.get(&quot;residual_paise&quot;)
+ledgerguard/tests/test_p0_core.py:205:        FaultClass.F4_FEE_TAX_MISMATCH: &quot;EXCEPTION_FEE_MISMATCH&quot;,
+ledgerguard/tests/test_p2_evaluation.py:119:    assert shifted.dominant_exception == &quot;EXCEPTION_FEE_MISMATCH&quot;
+ledgerguard/synthetic/fault_injector.py:123:        expected_exception=ExceptionType.FEE_MISMATCH.value,
+ledgerguard/evaluation/outputs/reconciliation_report.csv:12:pay_0029AD38,ord_0029B12F,pay_0029AD38,AUTO_RESOLVED,EXCEPTION_FEE_MISMATCH,89164.00,87059.73,86429.61,-630.12,setl_0029167F,2026-06-27,I2_fees_and_tax_match_schedule; I3_net_matches_shadow_ledger,,,,,,Fee and tax reconciled against the independent fee schedule; the exact variance is quantified.,No action; classified and closed by the deterministic engine.
+ledgerguard/evaluation/outputs/reconciliation_report.csv:16:pay_0037DAA0,ord_0037B003,pay_0037DAA0,AUTO_RESOLVED,EXCEPTION_FEE_MISMATCH,10655.00,10403.54,10256.04,-147.50,setl_00373C9A,2026-06-23,I2_fees_and_tax_match_schedule; I3_net_matches_shadow_ledger,,,,,,Fee and tax reconciled against the independent fee schedule; the exact variance is quantified.,No action; classified and closed by the deterministic engine.
+ledgerguard/evaluation/outputs/reconciliation_report.csv:36:pay_0120EB60,ord_01207C31,pay_0120EB60,AUTO_RESOLVED,EXCEPTION_FEE_MISMATCH,68636.00,67016.19,66348.31,-667.88,setl_0120DD92,2026-06-24,I2_fees_and_tax_match_schedule; I3_net_matches_shadow_ledger,,,,,,Fee and tax reconciled against the independent fee schedule; the exact variance is quantified.,No action; classi
+... [15364 more characters in transcript.jsonl]</code></pre>
+<p><strong>Agent:</strong> The compound-fault tests and <code>docs/evaluation.md</code> cover this residual logic directly, so I&#x27;ll read those next, along with the compound generator.</p>
+<p><strong>Bash:</strong></p>
+<pre><code>sed -n 170,215p docs/evaluation.md; echo ----; cat ledgerguard/tests/test_p1_compound.py; echo ----; cat ledgerguard/synthetic/compound.py</code></pre>
+<p><strong>Result:</strong></p>
+<pre><code>| C2 | F4 + F6 — fee overcharge + unexplained deduction | `HUMAN_REVIEW_REQUIRED` | `HUMAN_REVIEW_REQUIRED` | match |
+| C3 | F2 + F5 — duplicate bank credit + delayed settlement | `AUTO_RESOLVED` | `AUTO_RESOLVED` | match |
+| C4 | F1 + F3 — missing settlement + orphan refund, same customer | `HUMAN_REVIEW_REQUIRED` | `HUMAN_REVIEW_REQUIRED` | match |
+| C5 | F4 + F6 — fee overcharge + wrong-linkage deduction | `HUMAN_REVIEW_REQUIRED` | `HUMAN_REVIEW_REQUIRED` | match |
+
+Recorded from a run with the offline heuristic stub, and re-confirmed against a
+live `fallback(groq-&gt;gemini-&gt;nvidia-&gt;omniroute)` run: 5 of 5 on both.
+
+What the interesting ones actually exercise:
+
+- **C1** closes on the refund and still reports the delay, rather than letting
+  the resolved shortfall silently absorb a second finding.
+- **C2 and C5** are the ones that matter. Both have a *deterministically proven*
+  fee variance sitting on top of an unexplained deduction. Correcting the proven
+  part leaves INR 650.00 (C2) and INR 900.00 (C5) unattributed, and the case is
+  escalated on the residual. A proven cause does not license closing the case.
+- **C4** refuses to net a same-customer orphan refund against a settlement that
+  never arrived.
+
+### What this does and does not demonstrate
+
+It demonstrates that one proven fault does not license closing an unproven one —
+the residual check is doing real work, and C2 and C5 would close incorrectly
+without it.
+
+It does **not** demonstrate that the fault taxonomy is deep. Three honest caveats:
+
+1. **Five hand-built cases, designed by the same person who wrote the resolution
+   rules.** 5 of 5 measures the rules against their author&#x27;s intent, not against
+   reality. A case I did not think of is not represented here.
+2. **Four of the five never reach the investigator at all.** Layering a second
+   fault usually surfaces a deterministic exception type first (`FEE_MISMATCH`,
+   `DUPLICATE_RECORD`, `MISSING_SETTLEMENT`), which the engine proves without a
+   model call. Only C1 was AI-investigated. So this set says much more about the
+   deterministic layer than about the AI path.
+3. **Only pairs.** No case layers three or more faults, and no case combines two
+   faults that both require investigation — the shape most likely to break the
+   residual logic, and the obvious next thing to build.
+
+## Artifacts
+
+| File | Contents |
+|---|---|
+| `outputs/benchmark.md` | the comparison table |
+| `outputs/benchmark.json` | every metric for both systems, plus dataset provenance |
+| `outputs/cases.json` | full per-case detail: invariants, investigation, verification, decision |
+----
+&quot;&quot;&quot;Compound failure cases.
+
+Two faults in one lifecycle. These exist to pin one rule:
+
+    a proven cause licenses closing a case only if it accounts for all of the
+    money; any unattributed residual blocks closure, while a second finding that
+    is itself benign does not.
+
+Both halves matter. Without the first, the controller closes on the fault it
+recognised and leaves real money unexplained. Without the second, it escalates
+every case that has more than one finding and abstention stops meaning anything.
+&quot;&quot;&quot;
+
+from __future__ import annotations
+
+from ledgerguard.ai.provider import HeuristicProvider
+from ledgerguard.evidence.safety import AUTO_RESOLVED, HUMAN_REVIEW_REQUIRED
+from ledgerguard.ledger.money import to_paise
+from ledgerguard.pipeline import run
+from ledgerguard.synthetic.compound import build_compound_batch
+
+
+def _run():
+    batch, cases = build_compound_batch()
+    report = run(batch, use_ai=True, provider=HeuristicProvider())
+    return {o.case.payment_id: o for o in report.outcomes}, {c.case_id: c for c in cases}
+
+
+def test_every_compound_case_reaches_its_designed_disposition():
+    outcomes, cases = _run()
+    assert len(cases) == 5, &quot;three to five compound cases were planned&quot;
+
+    wrong = []
+    for case in cases.values():
+        got = outcomes[case.payment_id].state
+        if got != case.expected_disposition:
+            wrong.append(
+... [10198 more characters in transcript.jsonl]</code></pre>
+<p><strong>Agent:</strong> Two findings so far:</p>
+<ul><li>The existing compound fixtures (C2, C5) always keep the settlement&#x27;s net consistent with its components, so no test exercises a settlement whose reported net is short of its own components. That&#x27;s why the gap went unnoticed.</li><li><code>residual_paise</code> is computed from the settlement&#x27;s gross and components, never from its reported <code>net_amount</code>. A shortfall in the net therefore leaves the residual at zero.</li></ul>
+<p>Before changing anything I&#x27;ll snapshot the original repo and the artifact hashes, then run the existing tests for a baseline.</p>
+<p><strong>Bash:</strong></p>
+<pre><code>cd &lt;attempt&gt;/work &amp;&amp; mkdir -p ../tmp/orig &amp;&amp; cp -R repo/ledgerguard ../tmp/orig/ &amp;&amp; find repo/ledgerguard/evaluation/outputs repo/ledgerguard/evaluation/frozen -type f -exec shasum -a 256 {} \; | sort &gt; ../tmp/artifacts_before.sha &amp;&amp; cat ../tmp/artifacts_before.sha | wc -l &amp;&amp; cd repo &amp;&amp; (time .venv/bin/python -m pytest ledgerguard/tests -q 2&gt;&amp;1 | tail -15)</code></pre>
+<p><strong>Result (error):</strong></p>
+<pre><code>Exit code 1
+mkdir: ../tmp: Operation not permitted</code></pre>
+<p><strong>Bash:</strong></p>
+<pre><code>cd &lt;attempt&gt;/work &amp;&amp; ls &amp;&amp; mkdir -p tmp/orig &amp;&amp; cp -R repo/ledgerguard tmp/orig/ &amp;&amp; find repo/ledgerguard/evaluation/outputs repo/ledgerguard/evaluation/frozen -type f -exec shasum -a 256 {} \; | sort &gt; tmp/artifacts_before.sha &amp;&amp; wc -l &lt; tmp/artifacts_before.sha &amp;&amp; cd repo &amp;&amp; (time .venv/bin/python -m pytest ledgerguard/tests -q 2&gt;&amp;1 | tail -15)</code></pre>
+<p><strong>Result:</strong></p>
+<pre><code>out
+repo
+tmp
+      21
+...................................................................      [100%]
+=============================== warnings summary ===============================
+.venv/lib/python3.14/site-packages/fastapi/testclient.py:1
+  &lt;attempt&gt;/work/repo/.venv/lib/python3.14/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+67 passed, 1 warning in 8.62s
+.venv/bin/python -m pytest ledgerguard/tests -q 2&gt;&amp;1  5.47s user 0.50s system 57% cpu 10.407 total
+tail -15  0.00s user 0.01s system 0% cpu 10.407 total</code></pre>
+<p><strong>Agent:</strong> Baseline is 67 passing tests. Next I&#x27;ll reproduce the reported case: fees and tax on schedule, reported net ₹250 short of its own components.</p>
+<p><strong>Bash:</strong></p>
+<pre><code>mkdir -p &lt;attempt&gt;/work/tmp/scripts &amp;&amp; cat &gt; &lt;attempt&gt;/work/tmp/scripts/repro.py &lt;&lt;&#x27;EOF&#x27;
+&quot;&quot;&quot;Reproduce: fees and tax per schedule, reported net INR 250 short of its own components.&quot;&quot;&quot;
+import sys
+from datetime import datetime, timedelta
+from ledgerguard.ledger.models import Batch, Order, Payment, Settlement, BankEntry, CreditDebit
+from ledgerguard.ledger.money import gst_on_fee, platform_fee, to_paise
+from ledgerguard.pipeline import run
+from ledgerguard.ai.provider import HeuristicProvider
+
+T0 = datetime(2026, 7, 15, 10, 0, 0)
+
+def build(short_by: int):
+    amount = to_paise(&quot;10000.00&quot;)
+    fee = platform_fee(amount); tax = gst_on_fee(fee)
+    captured = T0 + timedelta(minutes=5)
+    order = Order(order_id=&quot;ord_R1&quot;, merchant_id=&quot;mch_R&quot;, amount=amount, created_at=T0, customer_reference=&quot;CUST-R1&quot;)
+    payment = Payment(payment_id=&quot;pay_R1&quot;, order_id=&quot;ord_R1&quot;, amount=amount, captured_at=captured,
+                      fee=fee, tax=tax, reference=&quot;PAY/ord_R1&quot;)
+    net = amount - fee - tax - short_by       # reported net is short; components unchanged
+    settled = captured + timedelta(days=2)
+    s = Settlement(settlement_id=&quot;setl_R1&quot;, merchant_id=&quot;mch_R&quot;, payment_ids=[&quot;pay_R1&quot;],
+                   gross_amount=amount, fees=fee, tax=tax, refund_adjustments=0, other_adjustments=0,
+                   net_amount=net, settlement_date=settled, reference=&quot;STL/setl_R1&quot;)
+    bank = [BankEntry(bank_entry_id=&quot;bnk_R1&quot;, amount=net, credit_or_debit=CreditDebit.CREDIT,
+                      date=settled, reference=s.reference)]
+    return Batch(orders=[order], payments=[payment], refunds=[], settlements=[s], bank_entries=bank)
+
+for short in (0, to_paise(&quot;250.00&quot;)):
+    rep = run(build(short), use_ai=True, provider=HeuristicProvider())
+    for o in rep.outcomes:
+        ev = o.case.exception.evidence if o.case.exception else {}
+        print(f&quot;short={short}: state={o.state} type={o.case.status} residual={ev.get(&#x27;residual_paise&#x27;)} &quot;
+              f&quot;secondary={ev.get(&#x27;secondary_findings&#x27;)}&quot;)
+        print(&quot;   reason:&quot;, o.decision.reason)
+EOF
+cd &lt;attempt&gt;/work/repo &amp;&amp; .venv/bin/python ../tmp/scripts/repro.py</code></pre>
+<p><strong>Result (error):</strong></p>
+<pre><code>Exit code 1
+Traceback (most recent call last):
+  File &quot;&lt;attempt&gt;/work/repo/../tmp/scripts/repro.py&quot;, line 4, in &lt;module&gt;
+    from ledgerguard.ledger.models import Batch, Order, Payment, Settlement, BankEntry, CreditDebit
+ModuleNotFoundError: No module named &#x27;ledgerguard&#x27;</code></pre>
+<p><strong>Bash:</strong></p>
+<pre><code>PYTHONPATH=. .venv/bin/python ../tmp/scripts/repro.py</code></pre>
+<p><strong>Result (error):</strong></p>
+<pre><code>Exit code 1
+short=0: state=MATCHED type=MATCHED residual=None secondary=None
+Traceback (most recent call last):
+  File &quot;&lt;attempt&gt;/work/repo/../tmp/scripts/repro.py&quot;, line 33, in &lt;module&gt;
+    print(&quot;   reason:&quot;, o.decision.reason)
+                        ^^^^^^^^^^^^^^^^^
+AttributeError: &#x27;NoneType&#x27; object has no attribute &#x27;reason&#x27;</code></pre>
+<p><strong>Bash:</strong></p>
+<pre><code>sed -i &#x27;s/        print(&quot;   reason:&quot;, o.decision.reason)/        print(&quot;   reason:&quot;, o.decision.reason if o.decision else None)/&#x27; ../tmp/scripts/repro.py &amp;&amp; PYTHONPATH=. .venv/bin/python ../tmp/scripts/repro.py</code></pre>
+<p><strong>Result (error):</strong></p>
+<pre><code>Exit code 1
+sed: 1: &quot;../tmp/scripts/repro.py&quot;: invalid command code .</code></pre>
+<p><strong>Edit:</strong></p>
+<pre><code>&lt;attempt&gt;/work/tmp/scripts/repro.py</code></pre>
+<p><strong>Result:</strong></p>
+<pre><code>The file &lt;attempt&gt;/work/tmp/scripts/repro.py has been updated successfully.</code></pre>
+<p><strong>Bash:</strong></p>
+<pre><code>PYTHONPATH=. .venv/bin/python ../tmp/scripts/repro.py</code></pre>
+<p><strong>Result:</strong></p>
+<pre><code>short=0: state=MATCHED type=MATCHED residual=None secondary=None
+   reason: None
+short=25000: state=AUTO_RESOLVED type=EXCEPTION_FEE_MISMATCH residual=0 secondary=[]
+   reason: Fee and tax reconciled against the independent fee schedule; the exact variance is quantified.</code></pre>
+<p><strong>Agent:</strong> Reproduced: with the reported ₹250 shortfall, the case closes as <code>AUTO_RESOLVED</code> with <code>residual=0</code>. (The <code>25000</code> in the script is paise, so it is ₹250.)</p>
+<p>The root cause is in <code>matcher.py</code> (<code>residual_paise</code>). The fix is to also measure the residual from the settlement&#x27;s reported net. When the net and components agree, the two measures are algebraically identical, so existing closures should not change. I&#x27;ll make that change in the matcher now.</p>
+<p><strong>Edit:</strong></p>
+<pre><code>&lt;attempt&gt;/work/repo/ledgerguard/reconciliation/matcher.py</code></pre>
+<p><strong>Result:</strong></p>
+<pre><code>The file &lt;attempt&gt;/work/repo/ledgerguard/reconciliation/matcher.py has been updated successfully.</code></pre>
+<p><strong>Agent:</strong> Next, the gate: it must block closure if either residual is nonzero, and the escalation reason must not claim a fee variance that doesn&#x27;t exist.</p>
+<p><strong>Edit:</strong></p>
+<pre><code>&lt;attempt&gt;/work/repo/ledgerguard/evidence/safety.py</code></pre>
+<p><strong>Result:</strong></p>
+<pre><code>The file &lt;attempt&gt;/work/repo/ledgerguard/evidence/safety.py has been updated successfully.</code></pre>
+<p><strong>Agent:</strong> Now I&#x27;ll rerun the reproduction and the full suite.</p>
+<p><strong>Bash:</strong></p>
+<pre><code>PYTHONPATH=. .venv/bin/python ../tmp/scripts/repro.py &amp;&amp; .venv/bin/python -m pytest ledgerguard/tests -q 2&gt;&amp;1 | tail -3</code></pre>
+<p><strong>Result:</strong></p>
+<pre><code>short=0: state=MATCHED type=MATCHED residual=None secondary=None
+   reason: None
+short=25000: state=HUMAN_REVIEW_REQUIRED type=EXCEPTION_FEE_MISMATCH residual=0 secondary=[]
+   reason: Fee and tax match the independent fee schedule, so the fee variance is zero. Correcting it still leaves 250.00 INR unattributed, with no record explaining it. A second, unproven discrepancy is present.
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+67 passed, 1 warning in 6.33s</code></pre>
+<p><strong>Agent:</strong> The reported case now escalates to <code>HUMAN_REVIEW_REQUIRED</code>, and the reason names the ₹250 unattributed. All 67 tests still pass.</p>
+<p>Next I&#x27;ll check requirement 2 directly. I&#x27;ll run the deterministic pipeline on the frozen holdout with the original and fixed code and diff every case&#x27;s disposition, without writing any artifacts. I&#x27;ll use the offline heuristic provider so the AI path is deterministic too.</p>
+<p><strong>Bash:</strong></p>
+<pre><code>sed -n 1,35p ledgerguard/evaluation/benchmark.py | grep -n &quot;import&quot;; cat &gt; ../tmp/scripts/holdout_dump.py &lt;&lt;&#x27;EOF&#x27;
+&quot;&quot;&quot;Dump per-case dispositions for the frozen holdout (read-only; writes nothing in the repo).&quot;&quot;&quot;
+import json, sys
+from ledgerguard.synthetic.fault_injector import build_dataset
+from ledgerguard.evaluation.benchmark import split
+from ledgerguard.pipeline import run
+from ledgerguard.ai.provider import HeuristicProvider
+
+full = build_dataset(seed=20260905, count=320)
+dev, holdout = split(full)
+lbp = holdout.lifecycle_by_payment()
+batch = holdout.batch()
+rows = {}
+for use_ai in (False, True):
+    rep = run(batch, use_ai=use_ai, provider=HeuristicProvider() if use_ai else None,
+              lifecycle_by_payment=lbp)
+    for o in rep.outcomes:
+        exc = o.case.exception
+        rows.setdefault(o.case.payment_id, {})[&quot;ai&quot; if use_ai else &quot;rules&quot;] = {
+            &quot;state&quot;: o.state,
+            &quot;type&quot;: exc.exception_type.value if exc else None,
+            &quot;exposure&quot;: o.exposure_paise,
+        }
+json.dump(rows, open(sys.argv[1], &quot;w&quot;), indent=1, sort_keys=True, default=str)
+print(&quot;cases:&quot;, len(rows))
+EOF
+cd &lt;attempt&gt;/work/repo &amp;&amp; PYTHONPATH=../tmp/orig .venv/bin/python ../tmp/scripts/holdout_dump.py ../tmp/orig_holdout.json &amp;&amp; PYTHONPATH=. .venv/bin/python ../tmp/scripts/holdout_dump.py ../tmp/new_holdout.json &amp;&amp; cmp ../tmp/orig_holdout.json ../tmp/new_holdout.json &amp;&amp; echo IDENTICAL</code></pre>
+<p><strong>Result:</strong></p>
+<pre><code>18:from __future__ import annotations
+20:import argparse
+21:import csv
+22:import hashlib
+23:import json
+24:from dataclasses import asdict
+25:from pathlib import Path
+27:from ..ai.provider import get_provider
+28:from ..evidence.safety import AUTO_RESOLVED
+29:from ..ledger.money import to_rupees_str
+30:from ..pipeline import RunReport, run
+31:from ..synthetic.fault_injector import build_dataset, split
+32:from ..synthetic.generator import Dataset
+33:from .cost import estimate
+34:from .metrics import Metrics, compute
+cases: 85
+cases: 85
+IDENTICAL</code></pre>
+<p><strong>Agent:</strong> The holdout dispositions are identical. I&#x27;ll confirm the &quot;orig&quot; run really imported the original code, and extend the comparison to all 320 lifecycles, since the fixed branch could in principle be hit by dev-split cases.</p>
+<p><strong>Bash:</strong></p>
+<pre><code>PYTHONPATH=../tmp/orig .venv/bin/python -c &quot;import ledgerguard,sys;print(ledgerguard.__file__)&quot; &amp;&amp; sed -e &#x27;s/^dev, holdout = split(full)/dev, holdout = split(full); holdout = full/&#x27; ../tmp/scripts/holdout_dump.py &gt; ../tmp/scripts/all_dump.py &amp;&amp; PYTHONPATH=../tmp/orig .venv/bin/python ../tmp/scripts/all_dump.py ../tmp/orig_all.json &amp;&amp; PYTHONPATH=. .venv/bin/python ../tmp/scripts/all_dump.py ../tmp/new_all.json &amp;&amp; cmp ../tmp/orig_all.json ../tmp/new_all.json &amp;&amp; echo IDENTICAL_ALL_320</code></pre>
+<p><strong>Result:</strong></p>
+<pre><code>&lt;attempt&gt;/work/repo/ledgerguard/__init__.py
+cases: 320
+cases: 320
+IDENTICAL_ALL_320</code></pre>
+<p><strong>Agent:</strong> The import check was inconclusive: <code>python -c</code> puts the current directory first on <code>sys.path</code>. The <code>repro.py</code> script is a better probe, since the original code should show the bug.</p>
+<p><strong>Bash:</strong></p>
+<pre><code>PYTHONPATH=../tmp/orig .venv/bin/python ../tmp/scripts/repro.py 2&gt;&amp;1 | grep short=25000 -A1</code></pre>
+<p><strong>Result:</strong></p>
+<pre><code>short=25000: state=AUTO_RESOLVED type=EXCEPTION_FEE_MISMATCH residual=0 secondary=[]
+   reason: Fee and tax reconciled against the independent fee schedule; the exact variance is quantified.</code></pre>
+<p><strong>Agent:</strong> The original code reproduces the bug, so the comparison is valid. The fix leaves all 320 lifecycle dispositions, including the AI-path outcomes, byte-identical.</p>
+<p>Now the tests. I&#x27;ll add a new test file covering the reported case, the component-only disagreement, a proven fee overcharge that must still close, and a guard that a consistent settlement&#x27;s two residual views agree across the whole generated dataset.</p>
+<p><strong>Write:</strong></p>
+<pre><code>&lt;attempt&gt;/work/repo/ledgerguard/tests/test_short_settlement.py</code></pre>
+<p><strong>Result:</strong></p>
+<pre><code>File created successfully at: &lt;attempt&gt;/work/repo/ledgerguard/tests/test_short_settlement.py (file state is current in your context — no need to Read it back)</code></pre>
+<p><strong>Agent:</strong> Reviewing the file before running it, I see two mistakes. The component-only test has the wrong shape (a refund with a matching net keeps I1 true, so it isn&#x27;t a fee mismatch at all), and its assertion is a loose <code>or</code>. There is also an unused import. I&#x27;ll fix both.</p>
+<p><strong>Edit:</strong></p>
+<pre><code>&lt;attempt&gt;/work/repo/ledgerguard/tests/test_short_settlement.py</code></pre>
+<p><strong>Result:</strong></p>
+<pre><code>The file &lt;attempt&gt;/work/repo/ledgerguard/tests/test_short_settlement.py has been updated successfully. (file state is current in your context — no need to Read it back)</code></pre>
+<p><strong>Edit:</strong></p>
+<pre><code>&lt;attempt&gt;/work/repo/ledgerguard/tests/test_short_settlement.py</code></pre>
+<p><strong>Result:</strong></p>
+<pre><code>The file &lt;attempt&gt;/work/repo/ledgerguard/tests/test_short_settlement.py has been updated successfully. (file state is current in your context — no need to Read it back)</code></pre>
+<p><strong>Edit:</strong></p>
+<pre><code>&lt;attempt&gt;/work/repo/ledgerguard/tests/test_short_settlement.py</code></pre>
+<p><strong>Result:</strong></p>
+<pre><code>The file &lt;attempt&gt;/work/repo/ledgerguard/tests/test_short_settlement.py has been updated successfully. (file state is current in your context — no need to Read it back)</code></pre>
+<p><strong>Edit:</strong></p>
+<pre><code>&lt;attempt&gt;/work/repo/ledgerguard/tests/test_short_settlement.py</code></pre>
+<p><strong>Result:</strong></p>
+<pre><code>The file &lt;attempt&gt;/work/repo/ledgerguard/tests/test_short_settlement.py has been updated successfully. (file state is current in your context — no need to Read it back)</code></pre>
+<p><strong>Agent:</strong> Now I&#x27;ll run the new tests against the fixed code, and also against the original code. The bug-specific tests should fail on the original, which shows they actually detect the defect.</p>
+<p><strong>Bash:</strong></p>
+<pre><code>.venv/bin/python -m pytest ledgerguard/tests/test_short_settlement.py -q 2&gt;&amp;1 | tail -30; echo ==== ORIGINAL; cp ledgerguard/tests/test_short_settlement.py ../tmp/orig/ledgerguard/tests/ &amp;&amp; cd ../tmp/orig &amp;&amp; PYTHONPATH=. &lt;attempt&gt;/work/repo/.venv/bin/python -m pytest ledgerguard/tests/test_short_settlement.py -q -p no:cacheprovider 2&gt;&amp;1 | grep -E &quot;passed|failed|FAILED&quot;</code></pre>
+<p><strong>Result:</strong></p>
+<pre><code>......                                                                   [100%]
+6 passed in 0.63s
+(eval):1: === not found</code></pre>
+<p><strong>Bash:</strong></p>
+<pre><code>cd &lt;attempt&gt;/work/tmp/orig &amp;&amp; PYTHONPATH=. &lt;attempt&gt;/work/repo/.venv/bin/python -m pytest ledgerguard/tests/test_short_settlement.py -q -p no:cacheprovider 2&gt;&amp;1 | grep -E &quot;passed|failed|FAILED&quot;</code></pre>
+<p><strong>Result:</strong></p>
+<pre><code>(Bash completed with no output)</code></pre>
+<p><strong>Bash:</strong></p>
+<pre><code>cd &lt;attempt&gt;/work/tmp/orig &amp;&amp; PYTHONPATH=. &lt;attempt&gt;/work/repo/.venv/bin/python -m pytest ledgerguard/tests/test_short_settlement.py -q -p no:cacheprovider 2&gt;&amp;1 | tail -40</code></pre>
+<p><strong>Result:</strong></p>
+<pre><code>ERROR: file or directory not found: ledgerguard/tests/test_short_settlement.py
+
+
+no tests ran in 0.00s
+Shell cwd was reset to &lt;attempt&gt;/work/repo</code></pre>
+<p><strong>Agent:</strong> The earlier <code>cp</code> didn&#x27;t run, so the file wasn&#x27;t in the original snapshot. I&#x27;ll copy it again and rerun.</p>
+<p><strong>Bash:</strong></p>
+<pre><code>cd &lt;attempt&gt;/work &amp;&amp; cp repo/ledgerguard/tests/test_short_settlement.py tmp/orig/ledgerguard/tests/ &amp;&amp; cd tmp/orig &amp;&amp; PYTHONPATH=. &lt;attempt&gt;/work/repo/.venv/bin/python -m pytest ledgerguard/tests/test_short_settlement.py -q -p no:cacheprovider 2&gt;&amp;1 | grep -E &quot;passed|failed|FAILED|Error&quot; | head -20</code></pre>
+<p><strong>Result:</strong></p>
+<pre><code>E       AssertionError: assert &#x27;AUTO_RESOLVED&#x27; == &#x27;HUMAN_REVIEW_REQUIRED&#x27;
+ledgerguard/tests/test_short_settlement.py:93: AssertionError
+E       KeyError: &#x27;fee_variance_paise&#x27;
+ledgerguard/tests/test_short_settlement.py:107: KeyError
+E       KeyError: &#x27;net_residual_paise&#x27;
+ledgerguard/tests/test_short_settlement.py:117: KeyError
+E       AssertionError: assert &#x27;AUTO_RESOLVED&#x27; == &#x27;HUMAN_REVIEW_REQUIRED&#x27;
+ledgerguard/tests/test_short_settlement.py:125: AssertionError
+E       KeyError: &#x27;net_residual_paise&#x27;
+ledgerguard/tests/test_short_settlement.py:138: KeyError
+E           KeyError: &#x27;net_residual_paise&#x27;
+ledgerguard/tests/test_short_settlement.py:158: KeyError
+FAILED ledgerguard/tests/test_short_settlement.py::test_reported_case_fee_on_schedule_net_short_is_not_auto_closed
+FAILED ledgerguard/tests/test_short_settlement.py::test_the_missing_money_is_measured_from_the_reported_net
+FAILED ledgerguard/tests/test_short_settlement.py::test_a_fee_overcharge_with_a_consistent_net_still_closes
+FAILED ledgerguard/tests/test_short_settlement.py::test_a_fee_overcharge_plus_a_separate_net_shortfall_is_blocked
+FAILED ledgerguard/tests/test_short_settlement.py::test_components_disagreeing_with_the_shadow_ledger_still_block_closure
+FAILED ledgerguard/tests/test_short_settlement.py::test_a_consistent_settlement_has_identical_residual_views_across_the_dataset
+6 failed in 0.63s
+Shell cwd was reset to &lt;attempt&gt;/work/repo</code></pre>
+<p><strong>Agent:</strong> On the original code, the bug test fails with <code>AUTO_RESOLVED</code>, which is the defect. The other failures there are <code>KeyError</code>s on the new evidence keys, as expected. Now the full suite, the artifact hash check, and a look at stray cache directories.</p>
+<p><strong>Bash:</strong></p>
+<pre><code>.venv/bin/python -m pytest ledgerguard/tests -q -p no:cacheprovider 2&gt;&amp;1 | tail -2; find ledgerguard/evaluation/outputs ledgerguard/evaluation/frozen -type f -exec shasum -a 256 {} \; | sort &gt; ../tmp/artifacts_after.sha; diff ../tmp/artifacts_before.sha ../tmp/artifacts_after.sha &amp;&amp; echo ARTIFACTS_UNCHANGED; cat .gitignore; ls -a ../tmp/orig/ledgerguard | head; find . -name __pycache__ -maxdepth 3 -not -path &quot;./.venv/*&quot; | head; ls -a | grep pytest</code></pre>
+<p><strong>Result:</strong></p>
+<pre><code>-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+73 passed, 1 warning in 8.10s
+1,21c1,21
+&lt; 06f71351dd21bdcdb30705986832111987fe71ff6d6787ed2a198c88de50a53f  repo/ledgerguard/evaluation/frozen/holdout_20260905_320.json
+&lt; 1fbca2999ea5f5b76d810ac2955beb5fca7bc5af165320a752be60dbe4b96100  repo/ledgerguard/evaluation/outputs/model_comparison.json
+&lt; 227f79916be1cbe13addb7096e2f0f453660e2dc4ef83e4081ff8bcbee2ef9cf  repo/ledgerguard/evaluation/outputs/scale.md
+&lt; 249e3bce69daeb83386d9575e66bf4177d4db885a8864ab6b32d80b5717d8536  repo/ledgerguard/evaluation/outputs/benchmark.json
+&lt; 3699ea28a60eed7b419b027283ae1a9a3875eeb7c43e674adddfc0d195aa50c1  repo/ledgerguard/evaluation/outputs/evidence_ledger.csv
+&lt; 530301222288c5c487d56e9029f570bd01720e1fdbd306c90b9f71c71488cd4b  repo/ledgerguard/evaluation/outputs/scale.json
+&lt; 7a9f6520bbeb849b4e6f1f15a78f39a608583c6776c7c310457ed053a82dd41c  repo/ledgerguard/evaluation/outputs/reconciliation_report.md
+&lt; 7ffa151674c19541ac0b4cf9a8618b4c5a8eef664afd9ab81321961848cecd03  repo/ledgerguard/evaluation/outputs/ablation.json
+&lt; 8dc1212f1c93e7c1bf34d92923c1d31f15b7096a0b39e4c2afa4e167f4eda9d4  repo/ledgerguard/evaluation/outputs/calibration.json
+&lt; a5552fcb48631411cb08fae4e34987295cca132334d6c31d86601f73e538455b  repo/ledgerguard/evaluation/outputs/cases.json
+&lt; aa667ebea4ccd41fa0bdff898182200d3bf282ef0b888cabd7b5a215d82edd22  repo/ledgerguard/evaluation/outputs/benchmark.md
+&lt; ac427b5c78460109ba2fb3914c2d04310e80089ea245dcf44f426bc2da5562a7  repo/ledgerguard/evaluation/outputs/drift.json
+&lt; af74f00254d9a8cee944bccdf9fd8940c2a318c0bfd5c6965dbfc5a221e00711  repo/ledgerguard/evaluation/outputs/unresolved_exceptions.csv
+&lt; b2aa14f8b312f1a735663b70b69137f2df190ab9ef731c51c31def8d05bd14e4  repo/ledgerguard/evaluation/outputs/no_gate_ablation.md
+&lt; b3ceedf8b7067eb970ee33a6f7802ea154a10aa6fcbabe903b7880a0cd5634dc  repo/ledgerguard/evaluation/outputs/drift.md
+&lt; b877b4cdb9f9dfc33ff7ad0e82915e3e6fad2b84ccd8e3e9170943758834ff4d  repo/ledgerguard/evaluation/outputs/model_comparison.md
+&lt; bbfc6509ce38c53329da95bde380675d231fcfbb15efd4428252aae3eef32d12  repo/ledgerguard/evaluation/outputs/calibration.md
+&lt; c52561e7f550a9c66a045bd6aaebd91f8883f120a624bf773d2a3dfae1753c7d  repo/ledgerguard/evaluation/outputs/decision_log.json
+&lt; c58809b7c6b57a77dd33ce948b09988c6c9ded01bacb052b2f4f9b2d5193d6d7  repo/ledgerguard/evaluation/outputs/reconciliation_report.csv
+&lt; ccc33093b532b19e326ed4ac8f8d16d29645807f3fe97841a10dc7d242f57917  repo/ledgerguard/evaluation/outputs/no_gate_ablation.json
+&lt; fc84418ada9f206e10f07170d5c3e362c531474c13abefed04eadabf32c6cda2  repo/ledgerguard/evaluation/outputs/ablation.md
+---
+&gt; 06f71351dd21bdcdb30705986832111987fe71ff6d6787ed2a198c88de50a53f  ledgerguard/evaluation/frozen/holdout_20260905_320.json
+&gt; 1fbca2999ea5f5b76d810ac2955beb5fca7bc5af165320a752be60dbe4b96100  ledgerguard/evaluation/outputs/model_comparison.json
+&gt; 227f79916be1cbe13addb7096e2f0f453660e2dc4ef83e4081ff8bcbee2ef9cf  ledgerguard/evaluation/outputs/scale.md
+&gt; 249e3bce69daeb83386d9575e66bf4177d4db885a8864ab6b32d80b5717d8536  ledgerguard/evaluation/outputs/benchmark.json
+&gt; 3699ea28a60eed7b419b027283ae1a9a3875eeb7c43e674adddfc0d195aa50c1  ledgerguard/evaluation/outputs/evidence_ledger.csv
+&gt; 530301222288c5c487d56e9029f570bd01720e1fdbd306c90b9f71c71488cd4b  ledgerguard/evaluation/outputs/scale.json
+&gt; 7a9f6520bbeb849b4e6f1f15a78f39a608583c6776c7c310457ed053a82dd41c  ledgerguard/evaluation/outputs/reconciliation_report.md
+&gt; 7ffa151674c19541ac0b4cf9a8618b4c5a8eef664afd9ab81321961848cecd03  ledgerguard/evaluation/outputs/ablation.json
+&gt; 8dc1212f1c93e7c1bf34d92923c1d31f15b7096a0b39e4c2afa4e167f4eda9d4  ledgerguard/evaluation/outputs/calibration.json
+&gt; a5552fcb48631411cb08fae4e34987295cca132334d6c31d86601f73e538455b  ledgerguard/evaluation/outputs/cases.json
+&gt; aa667ebea4ccd41fa0bdff898182200d3bf282ef0b888cabd7b5a215d82edd22  ledgerguard/evaluation/outputs/benchmark.md
+&gt; ac427b5c78460109ba2fb3914c2d04310e80089ea245dcf44f426bc2da5562a7  
+... [1549 more characters in transcript.jsonl]</code></pre>
+<p><strong>Agent:</strong> The diff is only the <code>repo/</code> path prefix, since the &quot;before&quot; hashes were taken from the parent directory. I&#x27;ll strip the prefix to confirm the per-file hashes match, then remove the cache directories my test runs created (they&#x27;re gitignored).</p>
+<p><strong>Bash:</strong></p>
+<pre><code>cd &lt;attempt&gt;/work &amp;&amp; sed &#x27;s#repo/##&#x27; tmp/artifacts_before.sha | sort &gt; tmp/b.sha &amp;&amp; sed &#x27;s#repo/##&#x27; tmp/artifacts_after.sha | sort &gt; tmp/a.sha &amp;&amp; diff tmp/b.sha tmp/a.sha &amp;&amp; echo ARTIFACTS_UNCHANGED_21_FILES &amp;&amp; cd repo &amp;&amp; find . -name __pycache__ -not -path &quot;./.venv/*&quot; -exec rm -rf {} + ; rm -rf .pytest_cache; ls -a</code></pre>
+<p><strong>Result:</strong></p>
+<pre><code>ARTIFACTS_UNCHANGED_21_FILES
+.
+..
+.env.example
+.gitignore
+.venv
+docs
+ledgerguard
+README.md
+requirements.txt
+run_demo.sh</code></pre>
+<p><strong>Agent:</strong> Artifacts are unchanged across all 21 files, and the caches are cleared. One more check: how often the generated data contains a settlement whose net breaks I1. That tells me whether the fix touches any generated case, and I&#x27;ll fix a typo (&quot;a INR&quot;) in a test docstring while I&#x27;m here.</p>
+<p><strong>Bash:</strong></p>
+<pre><code>PYTHONPATH=. .venv/bin/python -c &quot;
+from ledgerguard.synthetic.fault_injector import build_dataset
+from ledgerguard.reconciliation.matcher import reconcile_batch
+d=build_dataset(seed=20260905,count=320)
+res,_=reconcile_batch(d.batch(), d.lifecycle_by_payment())
+i1=[c.case_id for c in res if any(i.name.startswith(&#x27;I1_&#x27;) and not i.holds for i in c.invariants)]
+print(&#x27;cases with I1 broken:&#x27;, len(i1), i1[:5])
+&quot; &amp;&amp; sed -i &#x27;&#x27; &#x27;s/claims a INR 250/claims an INR 250/&#x27; ledgerguard/tests/test_short_settlement.py &amp;&amp; grep -n &quot;an INR 250&quot; ledgerguard/tests/test_short_settlement.py &amp;&amp; rm -rf ledgerguard/__pycache__ ledgerguard/*/__pycache__ ledgerguard/tests/__pycache__ 2&gt;/dev/null; true</code></pre>
+<p><strong>Result:</strong></p>
+<pre><code>cases with I1 broken: 0 []
+[This command modified 1 file you&#x27;ve previously read: ledgerguard/tests/test_short_settlement.py. Call Read before editing.]</code></pre>
+<p><strong>Agent:</strong> The count is zero: the generator never produces a settlement with a broken net, so no generated case changes. The sed step reported a conflict, so I&#x27;ll check the test file&#x27;s current state before editing.</p>
+<p><strong>Bash:</strong></p>
+<pre><code>grep -n &quot;INR 250 refund&quot; ledgerguard/tests/test_short_settlement.py; ls ledgerguard/tests/ | head -20</code></pre>
+<p><strong>Result:</strong></p>
+<pre><code>132:    the settlement&#x27;s components claim a INR 250 refund that is not in the batch.
+__init__.py
+rehearsal_check.py
+test_dashboard_startup.py
+test_evidence_download.py
+test_fallback.py
+test_p0_core.py
+test_p1_compound.py
+test_p1_extended.py
+test_p2_evaluation.py
+test_short_settlement.py</code></pre>
+<p><strong>Edit:</strong></p>
+<pre><code>&lt;attempt&gt;/work/repo/ledgerguard/tests/test_short_settlement.py</code></pre>
+<p><strong>Result:</strong></p>
+<pre><code>The file &lt;attempt&gt;/work/repo/ledgerguard/tests/test_short_settlement.py has been updated successfully. (file state is current in your context — no need to Read it back)</code></pre>
+<p><strong>Agent:</strong> Now I&#x27;ll write the notes file the task asks for.</p>
+<p><strong>Write:</strong></p>
+<pre><code>&lt;attempt&gt;/work/out/NOTES.md</code></pre>
+<p><strong>Result:</strong></p>
+<pre><code>File created successfully at: &lt;attempt&gt;/work/out/NOTES.md (file state is current in your context — no need to Read it back)</code></pre>
+<p><strong>Agent:</strong> Final pass: the full suite after the typo fix, the artifact hash check, and cache cleanup.</p>
+<p><strong>Bash:</strong></p>
+<pre><code>.venv/bin/python -m pytest ledgerguard/tests -q -p no:cacheprovider 2&gt;&amp;1 | tail -1 &amp;&amp; cd .. &amp;&amp; (cd repo &amp;&amp; find ledgerguard/evaluation/outputs ledgerguard/evaluation/frozen -type f -exec shasum -a 256 {} \; | sed &#x27;s#\./##&#x27; | sort) &gt; tmp/a2.sha &amp;&amp; sed &#x27;s#^[0-9a-f]* *repo/##&#x27; /dev/null; diff &lt;(awk &#x27;{print $1, $2}&#x27; tmp/artifacts_before.sha | sed &#x27;s#repo/##&#x27; | sort) &lt;(awk &#x27;{print $1, $2}&#x27; tmp/a2.sha | sed &#x27;s#^\([0-9a-f]*\) *ledgerguard#\1 ledgerguard#&#x27; | sort) &amp;&amp; echo ARTIFACTS_UNCHANGED &amp;&amp; cd repo &amp;&amp; find . -name __pycache__ -not -path &quot;./.venv/*&quot; -exec rm -rf {} + ; rm -rf .pytest_cache; git status 2&gt;/dev/null; ls ../out</code></pre>
+<p><strong>Result (error):</strong></p>
+<pre><code>Exit code 1
+73 passed, 1 warning in 9.60s
+diff: /dev/fd/12: Operation not permitted
+ls: ../out: No such file or directory</code></pre>
+<p><strong>Agent:</strong> The test run passed (73). The hash check failed only because this shell blocks process substitution, not because of the artifacts. I&#x27;ll redo the comparison with plain files.</p>
+<p><strong>Bash:</strong></p>
+<pre><code>cd &lt;attempt&gt;/work &amp;&amp; sed &#x27;s#^\([0-9a-f]*\)  repo/#\1  #&#x27; tmp/artifacts_before.sha | sort &gt; tmp/b2.sha &amp;&amp; (cd repo &amp;&amp; find ledgerguard/evaluation/outputs ledgerguard/evaluation/frozen -type f -exec shasum -a 256 {} \; | sort) &gt; tmp/a3.sha &amp;&amp; diff tmp/b2.sha tmp/a3.sha &amp;&amp; echo ARTIFACTS_UNCHANGED_21 ; cd repo &amp;&amp; find . -name __pycache__ -not -path &quot;./.venv/*&quot; -exec rm -rf {} + ; rm -rf .pytest_cache; ls -a ../out; ls -a</code></pre>
+<p><strong>Result:</strong></p>
+<pre><code>ARTIFACTS_UNCHANGED_21
+.
+..
+NOTES.md
+.
+..
+.env.example
+.gitignore
+.venv
+docs
+ledgerguard
+README.md
+requirements.txt
+run_demo.sh</code></pre>
+<p><strong>Agent:</strong> A settlement whose reported net was ₹250 short of its own components was auto-closed because the auto-close check never looked at the reported net. It now escalates to human review. The full suite passes (73 tests: the original 67 plus 6 new).</p>
+<p><strong>Cause:</strong> The gate for a fee-mismatch close checks for unexplained money, the <code>residual_paise</code> guard. In <code>reconciliation/matcher.py</code> that residual was rebuilt from the settlement&#x27;s gross, fees, refunds and adjustments, never from its reported <code>net_amount</code>. In the reported case the components agree with the shadow ledger, so the residual was zero. The ₹250 sat only in the reported net, which breaks invariant I1. The classifier labels an I1 break as <code>FEE_MISMATCH</code>, so the case went down the auto-close branch. The existing compound fixtures always keep net consistent with components, so this path was never tested.</p>
+<p><strong>Fix:</strong></p>
+<ul><li><code>reconciliation/matcher.py</code>: alongside the component residual, compute a net residual from what the provider actually paid, adjusted for the fee variance. Also record <code>fee_variance_paise</code>.</li><li><code>evidence/safety.py</code>: block auto-close if either residual is non-zero. The escalation reason now states the fee variance is zero when it is, instead of describing a fee reconciliation that didn&#x27;t happen.</li></ul>
+<p>The reported case now returns <code>HUMAN_REVIEW_REQUIRED</code> with &quot;250.00 INR unattributed&quot;. The reproduction returns <code>AUTO_RESOLVED</code> on the original code.</p>
+<p><strong>Why this is the right fix:</strong> The README and <code>compound.py</code> say a proven cause closes a case only if it accounts for all the money, and that the model proposes while the financial system proves. The guard was supposed to enforce that and was measuring the wrong quantity. Also, whenever I1 fails, at least one of the two residuals is non-zero, so no broken settlement can auto-close as a fee mismatch. When I1 holds, the two residuals are algebraically identical, so consistent settlements behave exactly as before.</p>
+<p><strong>Verification:</strong></p>
+<ul><li>Six new tests in <code>ledgerguard/tests/test_short_settlement.py</code>. Against the original code, the bug test fails with <code>AUTO_RESOLVED</code>.</li><li>I ran the deterministic pipeline on the frozen holdout and on all 320 lifecycles, with the original and fixed code. Per-case state, exception type and exposure are identical. The offline heuristic stands in for the AI path.</li><li>All 21 files under <code>evaluation/outputs/</code> and <code>evaluation/frozen/</code> match their pre-edit SHA-256 hashes. I did not run the benchmark, because it overwrites <code>outputs/</code> and the committed numbers come from a live Groq run I can&#x27;t repeat without an API key.</li><li>The generator never produces a broken settlement (0 of 320 lifecycles), so the published numbers aren&#x27;t affected.</li></ul>
+<p><strong>Judgement calls and limits</strong> (also in <code>../out/NOTES.md</code>):</p>
+<ul><li>I kept the <code>FEE_MISMATCH</code> label for I1-only breaks, even though the fee variance is zero. Reclassifying them as unexplained shortfalls would send them to the AI investigator, which could close them on a coincidental refund. That&#x27;s a new closure path and should be a separate change with its own holdout analysis.</li><li>The live benchmark artifacts were not regenerated, so the holdout equivalence is shown with the deterministic engine and the offline stub, not the committed Groq run.</li></ul>
+<p>No commits were made.</p>
+</main>
+</body>
+</html>

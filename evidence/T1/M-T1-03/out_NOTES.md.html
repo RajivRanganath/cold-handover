@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>T1/M-T1-03/out_NOTES.md</title>
+<style>
+*{box-sizing:border-box}
+:root{--bg:#f6f7f6;--text:#16191c;--muted:#5b636b;--line:#d9dddb;--accent:#0f6b4f;
+--code:rgba(15,23,28,.06);--add:rgba(46,160,67,.20);--del:rgba(218,54,51,.17);--hunk:rgba(15,107,79,.10)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#111416;--text:#e8ebe9;
+--muted:#9aa3a0;--line:#2b3134;--accent:#4fbf95;--code:rgba(255,255,255,.07);
+--add:rgba(63,185,80,.22);--del:rgba(248,81,73,.22);--hunk:rgba(79,191,149,.12)}}
+body{margin:0;background:var(--bg);color:var(--text);
+font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:900px;margin:0 auto;padding:16px}
+.top{font-size:14px;color:var(--muted);border-bottom:1px solid var(--line);padding-bottom:10px;
+margin-bottom:20px;display:flex;flex-wrap:wrap;gap:6px 16px;align-items:baseline}
+.top .path{color:var(--text);font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;overflow-wrap:anywhere}
+a{color:var(--accent)}
+h1,h2,h3,h4,h5,h6{line-height:1.25;margin:1.4em 0 .5em;overflow-wrap:anywhere}
+p,ul,ol,blockquote{margin:.6em 0}
+ul,ol{padding-left:1.4em}
+li,p{overflow-wrap:anywhere}
+blockquote{margin:.8em 0;padding:.1em 0 .1em 14px;border-left:3px solid var(--accent);color:var(--muted)}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.92em;
+background:var(--code);padding:.1em .3em;border-radius:4px;overflow-wrap:anywhere}
+pre{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px;line-height:1.45;
+background:var(--code);border:1px solid var(--line);border-radius:6px;padding:12px;margin:.8em 0;
+overflow-x:auto;white-space:pre;tab-size:2}
+pre code{background:none;padding:0;border-radius:0;font-size:inherit;overflow-wrap:normal}
+.tw{overflow-x:auto;margin:.8em 0}
+table{border-collapse:collapse;font-size:14px}
+th,td{border:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}
+td{overflow-wrap:anywhere}
+th{background:var(--code)}
+hr{border:0;border-top:1px solid var(--line);margin:1.5em 0}
+.patch span{display:block;width:max-content;min-width:100%}
+.patch .file{font-weight:700}
+.patch .meta{color:var(--muted)}
+.patch .hunk{color:var(--accent);background:var(--hunk)}
+.patch .add{background:var(--add)}
+.patch .del{background:var(--del)}
+</style>
+</head>
+<body>
+<main>
+<div class="top"><span class="path">T1/M-T1-03/out_NOTES.md</span><a href="out_NOTES.md">Raw file</a><a href="../../../index.html#T1">Back to the case study</a></div>
+<h1>Task T1 notes: offline benchmark reproduction</h1>
+<h2>What was run</h2>
+<ul><li><code>.venv/bin/python -m ledgerguard.evaluation.benchmark</code> (default arguments), from <code>repo/</code>, no API key, exit 0, empty stderr.</li><li>No key variables are set in the environment and there is no <code>.env</code>. Nothing listens on localhost:20128, so the OmniRoute probe failed and the provider chain was empty. <code>get_provider()</code> therefore selected the offline <code>heuristic_stub</code>.</li><li>The frozen manifest <code>ledgerguard/evaluation/frozen/holdout_20260905_320.json</code> was verified and not rewritten. The regenerated holdout hash matches <code>3e28d4572d4cfc95...</code>.</li></ul>
+<h2>Results from this run (from <code>benchmark.json</code>)</h2>
+<div class="tw"><table><thead><tr><th></th><th>Rules only (baseline)</th><th>Hybrid (<code>heuristic_stub</code>)</th></tr></thead><tbody><tr><td>accuracy</td><td>0.8941</td><td>1.0</td></tr><tr><td>auto_resolved</td><td>12</td><td>21</td></tr><tr><td>human_review_required</td><td>19</td><td>10</td></tr><tr><td>false_auto_resolutions</td><td>0</td><td>0</td></tr><tr><td>unresolved_value_paise</td><td>19178059</td><td>12189954</td></tr></tbody></table></div>
+<p>The hybrid row is not the committed result. The committed result used the live <code>fallback(groq-&gt;...)</code> chain (accuracy 0.9765, 19 auto-resolved, INR 135,901.89 unresolved). Without a key, this reproduction runs the offline stub, which is more accurate on the holdout&#x27;s fault classes. The stub also closes the F3 cases that the live model only partly closed. The F6 wrong-linkage cases stayed escalated (0 auto-resolved, 0 false auto resolutions) in both systems, which is the safety claim the README makes.</p>
+<h2>artifacts_written</h2>
+<p>The benchmark writes exactly these four files under <code>evaluation/outputs/</code>: <code>benchmark.json</code>, <code>benchmark.md</code>, <code>cases.json</code>, <code>unresolved_exceptions.csv</code>. I confirmed this by hashing the whole tree before and after the run. Those four files were the only changed files.</p>
+<p>Python <code>__pycache__/*.cpython-314.pyc</code> files were also created by importing the package. I left them out of <code>artifacts_written</code> because the import system wrote them, not the benchmark logic. I deleted them during cleanup. The ground rules exempt cache directories from the byte-identical check anyway.</p>
+<h2>Restoration</h2>
+<ul><li>Before running anything I copied the whole repo (excluding <code>.venv</code>) to <code>../tmp/repo_orig/</code>, and recorded SHA-256 hashes of all 82 original files in <code>../tmp/manifest_all_before.txt</code>.</li><li>After the run I restored the four overwritten files from that copy with <code>cp -p</code>, and deleted the new <code>__pycache__</code> directories.</li><li>Final check: the SHA-256 of every file under <code>repo/</code> (excluding <code>.venv</code>) matches the pre-run manifest exactly. Nothing extra remains.</li><li>The run&#x27;s own outputs are kept in <code>../tmp/run_outputs/</code> for reference. They are not in the repo.</li></ul>
+<h2>committed_results_provider</h2>
+<p>Read from the committed <code>evaluation/outputs/benchmark.json</code> (<code>hybrid.provider</code>) before any run. <code>benchmark.md</code> says the same thing. Both record <code>fallback(groq-&gt;gemini-&gt;nvidia-&gt;omniroute)</code>.</p>
+<h2>Choices and caveats</h2>
+<ul><li>The question asks for &quot;the investigator name your run recorded for the hybrid system&quot;. I used <code>heuristic_stub</code>, the name from this run&#x27;s <code>benchmark.json</code> and its stdout.</li><li><code>hybrid_provider</code> is the stub name. The README&#x27;s headline numbers (63.5% / 97.7%, 19 auto-resolved) came from a live model and are not reproduced offline.</li><li>The <code>mkdir -p</code> I ran for a manifest check used a path outside the work directory. It left nothing behind. I checked that the target does not exist.</li><li>Tests were not run; the task did not ask for them.</li><li>Nothing was left unfinished.</li></ul>
+</main>
+</body>
+</html>

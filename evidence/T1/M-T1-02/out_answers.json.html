@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>T1/M-T1-02/out_answers.json</title>
+<style>
+*{box-sizing:border-box}
+:root{--bg:#f6f7f6;--text:#16191c;--muted:#5b636b;--line:#d9dddb;--accent:#0f6b4f;
+--code:rgba(15,23,28,.06);--add:rgba(46,160,67,.20);--del:rgba(218,54,51,.17);--hunk:rgba(15,107,79,.10)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#111416;--text:#e8ebe9;
+--muted:#9aa3a0;--line:#2b3134;--accent:#4fbf95;--code:rgba(255,255,255,.07);
+--add:rgba(63,185,80,.22);--del:rgba(248,81,73,.22);--hunk:rgba(79,191,149,.12)}}
+body{margin:0;background:var(--bg);color:var(--text);
+font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:900px;margin:0 auto;padding:16px}
+.top{font-size:14px;color:var(--muted);border-bottom:1px solid var(--line);padding-bottom:10px;
+margin-bottom:20px;display:flex;flex-wrap:wrap;gap:6px 16px;align-items:baseline}
+.top .path{color:var(--text);font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;overflow-wrap:anywhere}
+a{color:var(--accent)}
+h1,h2,h3,h4,h5,h6{line-height:1.25;margin:1.4em 0 .5em;overflow-wrap:anywhere}
+p,ul,ol,blockquote{margin:.6em 0}
+ul,ol{padding-left:1.4em}
+li,p{overflow-wrap:anywhere}
+blockquote{margin:.8em 0;padding:.1em 0 .1em 14px;border-left:3px solid var(--accent);color:var(--muted)}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.92em;
+background:var(--code);padding:.1em .3em;border-radius:4px;overflow-wrap:anywhere}
+pre{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px;line-height:1.45;
+background:var(--code);border:1px solid var(--line);border-radius:6px;padding:12px;margin:.8em 0;
+overflow-x:auto;white-space:pre;tab-size:2}
+pre code{background:none;padding:0;border-radius:0;font-size:inherit;overflow-wrap:normal}
+.tw{overflow-x:auto;margin:.8em 0}
+table{border-collapse:collapse;font-size:14px}
+th,td{border:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}
+td{overflow-wrap:anywhere}
+th{background:var(--code)}
+hr{border:0;border-top:1px solid var(--line);margin:1.5em 0}
+.patch span{display:block;width:max-content;min-width:100%}
+.patch .file{font-weight:700}
+.patch .meta{color:var(--muted)}
+.patch .hunk{color:var(--accent);background:var(--hunk)}
+.patch .add{background:var(--add)}
+.patch .del{background:var(--del)}
+</style>
+</head>
+<body>
+<main>
+<div class="top"><span class="path">T1/M-T1-02/out_answers.json</span><a href="out_answers.json">Raw file</a><a href="../../../index.html#T1">Back to the case study</a></div>
+<pre>{
+  &quot;scored_lifecycles&quot;: 85,
+  &quot;holdout_batch_sha256&quot;: &quot;3e28d4572d4cfc95a7ebd5ad1a04531475e0044e63eb1c732e38e303866f20fa&quot;,
+  &quot;hybrid_provider&quot;: &quot;heuristic_stub&quot;,
+  &quot;baseline&quot;: {
+    &quot;accuracy&quot;: 0.8941,
+    &quot;auto_resolved&quot;: 12,
+    &quot;human_review_required&quot;: 19,
+    &quot;false_auto_resolutions&quot;: 0,
+    &quot;unresolved_value_paise&quot;: 19178059
+  },
+  &quot;hybrid&quot;: {
+    &quot;accuracy&quot;: 1.0,
+    &quot;auto_resolved&quot;: 21,
+    &quot;human_review_required&quot;: 10,
+    &quot;false_auto_resolutions&quot;: 0,
+    &quot;unresolved_value_paise&quot;: 12189954
+  },
+  &quot;artifacts_written&quot;: [
+    &quot;ledgerguard/evaluation/outputs/benchmark.json&quot;,
+    &quot;ledgerguard/evaluation/outputs/benchmark.md&quot;,
+    &quot;ledgerguard/evaluation/outputs/cases.json&quot;,
+    &quot;ledgerguard/evaluation/outputs/unresolved_exceptions.csv&quot;
+  ],
+  &quot;committed_results_provider&quot;: &quot;fallback(groq-&gt;gemini-&gt;nvidia-&gt;omniroute)&quot;
+}</pre>
+</main>
+</body>
+</html>

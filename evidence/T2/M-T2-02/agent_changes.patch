@@ -1,0 +1,517 @@
+--- a/ledgerguard/ledger/shadow_ledger.py
++++ b/ledgerguard/ledger/shadow_ledger.py
+@@ -25,6 +25,7 @@
+     Refund,
+     RefundStatus,
+     Settlement,
++    SettlementStatus,
+ )
+ from .money import gst_on_fee, platform_fee
+ 
+@@ -74,7 +75,14 @@
+     payments_by_id: dict[str, Payment] = field(default_factory=dict)
+     refunds_by_id: dict[str, Refund] = field(default_factory=dict)
+     refunds_by_payment: dict[str, list[Refund]] = field(default_factory=dict)
++    #: Only ``processed`` settlements. These are the only ones that have paid
++    #: anything out, so they are the only ones that can settle a payment.
+     settlements_by_payment: dict[str, list[Settlement]] = field(default_factory=dict)
++    #: ``pending`` and ``failed`` settlements, kept for evidence only. They never
++    #: match, never count as duplicates and never close a payment.
++    non_processed_settlements_by_payment: dict[str, list[Settlement]] = field(
++        default_factory=dict
++    )
+     bank_by_reference: dict[str, list[BankEntry]] = field(default_factory=dict)
+     orphan_refunds: list[Refund] = field(default_factory=list)
+ 
+@@ -93,8 +101,13 @@
+             else:
+                 self.orphan_refunds.append(r)
+         for s in self.batch.settlements:
++            index = (
++                self.settlements_by_payment
++                if s.status == SettlementStatus.PROCESSED
++                else self.non_processed_settlements_by_payment
++            )
+             for pid in s.payment_ids:
+-                self.settlements_by_payment.setdefault(pid, []).append(s)
++                index.setdefault(pid, []).append(s)
+         for b in self.batch.bank_entries:
+             self.bank_by_reference.setdefault(b.reference, []).append(b)
+ 
+@@ -160,7 +173,12 @@
+     # ---------------------------------------------------------------- observed
+ 
+     def settlements_for(self, payment_id: str) -> list[Settlement]:
++        """Processed settlements for a payment. The only ones that can match."""
+         return self.settlements_by_payment.get(payment_id, [])
++
++    def non_processed_settlements_for(self, payment_id: str) -> list[Settlement]:
++        """``pending`` and ``failed`` settlements for a payment, evidence only."""
++        return self.non_processed_settlements_by_payment.get(payment_id, [])
+ 
+     def bank_entries_for_settlement(self, settlement: Settlement) -> list[BankEntry]:
+         return self.bank_by_reference.get(settlement.reference, [])
+--- a/ledgerguard/reconciliation/matcher.py
++++ b/ledgerguard/reconciliation/matcher.py
+@@ -20,6 +20,7 @@
+     PaymentStatus,
+     ReconciliationException,
+     Settlement,
++    SettlementStatus,
+ )
+ from ..ledger.shadow_ledger import ExpectedSettlement, ShadowLedger
+ from .exceptions import make_exception
+@@ -126,8 +127,11 @@
+     dup.payment_ids, dup.payment_conflicts = _id_groups(
+         batch.payments, lambda p: p.payment_id, _payment_signature
+     )
++    # Only processed settlements take part. A pending or failed row cannot make
++    # another settlement a duplicate or a conflict: it has paid nothing out.
++    processed = [s for s in batch.settlements if s.status == SettlementStatus.PROCESSED]
+     dup.settlement_ids, dup.settlement_conflicts = _id_groups(
+-        batch.settlements, lambda s: s.settlement_id, _settlement_signature
++        processed, lambda s: s.settlement_id, _settlement_signature
+     )
+ 
+     for e in batch.bank_entries:
+@@ -257,17 +261,30 @@
+             [],
+         )
+ 
+-    # 2. No settlement at all.
++    # 2. No processed settlement. Pending or failed settlements have not paid
++    # anything out, so they cannot close the payment; the exception is the same
++    # as for no settlement at all, and the non-processed rows are listed as
++    # evidence only when they exist.
+     if not settlements:
++        evidence = {
++            "reason": "captured payment has no settlement record",
++            "expected_shadow_net": expected.as_dict(),
++            "captured_at": payment.captured_at.isoformat() if payment.captured_at else None,
++        }
++        non_processed = ledger.non_processed_settlements_for(payment.payment_id)
++        if non_processed:
++            evidence["non_processed_settlements"] = sorted(
++                (
++                    {"settlement_id": s.settlement_id, "status": s.status.value}
++                    for s in non_processed
++                ),
++                key=lambda entry: (entry["settlement_id"], entry["status"]),
++            )
+         return build(
+             ExceptionType.MISSING_SETTLEMENT,
+             expected.net_amount,
+             0,                       # nothing was settled, so the whole net is exposed
+-            {
+-                "reason": "captured payment has no settlement record",
+-                "expected_shadow_net": expected.as_dict(),
+-                "captured_at": payment.captured_at.isoformat() if payment.captured_at else None,
+-            },
++            evidence,
+             None,
+             [],
+         )
+--- a/ledgerguard/tests/test_t2_settlement_status.py
++++ b/ledgerguard/tests/test_t2_settlement_status.py
+@@ -0,0 +1,401 @@
++"""Settlement status is respected by reconciliation.
++
++A ``pending`` or ``failed`` settlement has not paid anything out. It must never
++settle a payment, never count as a duplicate or conflict, and never close an
++exception. It may only be cited as evidence when a captured payment has no
++processed settlement at all.
++
++Nothing here touches the network. The investigator is a recording stub.
++"""
++
++from __future__ import annotations
++
++import pytest
++
++from ledgerguard.ai.schemas import InvestigationResult
++from ledgerguard.evidence.safety import AUTO_RESOLVED, HUMAN_REVIEW_REQUIRED
++from ledgerguard.ledger.models import (
++    Batch,
++    ExceptionType,
++    PaymentStatus,
++    SettlementStatus,
++)
++from ledgerguard.ledger.shadow_ledger import ShadowLedger
++from ledgerguard.pipeline import run
++from ledgerguard.reconciliation.matcher import MATCHED, find_duplicates
++from ledgerguard.synthetic.fault_injector import build_dataset, split
++from ledgerguard.synthetic.generator import FaultClass
++
++MISSING = ExceptionType.MISSING_SETTLEMENT.value
++
++
++# ----------------------------------------------------------------- helpers
++def _holdout():
++    _dev, holdout = split(build_dataset())
++    return holdout
++
++
++def _clean_case(dataset):
++    """A clean payment with exactly one settlement, and that settlement."""
++    fault = dataset.fault_class_by_payment()
++    batch = dataset.batch()
++    for payment in batch.payments:
++        if fault[payment.payment_id] != FaultClass.NONE:
++            continue
++        if payment.status != PaymentStatus.CAPTURED:
++            continue
++        linked = [s for s in batch.settlements if payment.payment_id in s.payment_ids]
++        if len(linked) == 1:
++            return payment, linked[0]
++    raise AssertionError("dataset has no clean single-settlement payment")
++
++
++def _with_settlements(batch: Batch, settlements) -> Batch:
++    return batch.model_copy(update={"settlements": list(settlements)})
++
++
++def _outcome(batch: Batch, payment_id: str, use_ai: bool = False, provider=None):
++    report = run(batch, use_ai=use_ai, provider=provider)
++    return next(o for o in report.outcomes if o.case.payment_id == payment_id)
++
++
++def _scenario(payment, settlements) -> Batch:
++    """A batch holding just one payment and the settlements given for it."""
++    return Batch(payments=[payment], settlements=list(settlements))
++
++
++class _RecordingProvider:
++    """Stands in for the investigator and records every call it receives."""
++
++    name = "recording-stub"
++
++    def __init__(self) -> None:
++        self.calls: list[dict] = []
++
++    def investigate(self, context: dict) -> InvestigationResult:
++        self.calls.append(context)
++        return InvestigationResult.unavailable("recording stub: no investigation")
++
++
++# ------------------------------------------- requirements 1 and 2: not settling
++@pytest.mark.parametrize("status", [SettlementStatus.PENDING, SettlementStatus.FAILED])
++def test_a_non_processed_settlement_cannot_settle_a_payment(status):
++    """The only settlement is pending or failed: the payment is missing."""
++    holdout = _holdout()
++    payment, settlement = _clean_case(holdout)
++    batch = _with_settlements(
++        holdout.batch(),
++        [
++            s if s.settlement_id != settlement.settlement_id
++            else s.model_copy(update={"status": status})
++            for s in holdout.batch().settlements
++        ],
++    )
++
++    outcome = _outcome(batch, payment.payment_id)
++    exc = outcome.case.exception
++    assert exc is not None, "a payment settled only by a non-processed row must not match"
++    assert exc.exception_type.value == MISSING
++    assert exc.observed_value == 0
++    assert exc.expected_value == outcome.case.expected.net_amount
++    assert outcome.case.settlement is None
++    assert outcome.state == HUMAN_REVIEW_REQUIRED
++    assert outcome.investigation is None, "a missing settlement is proven, not investigated"
++
++
++@pytest.mark.parametrize("status", [SettlementStatus.PENDING, SettlementStatus.FAILED])
++def test_missing_with_non_processed_is_the_same_exception_as_missing_with_none(status):
++    """Same type, values and state as a payment with no settlement at all.
++
++    The only difference is the single evidence key that lists the non-processed row.
++    """
++    holdout = _holdout()
++    payment, settlement = _clean_case(holdout)
++    everything = holdout.batch().settlements
++
++    with_non_processed = _with_settlements(
++        holdout.batch(),
++        [
++            s if s.settlement_id != settlement.settlement_id
++            else s.model_copy(update={"status": status})
++            for s in everything
++        ],
++    )
++    without_any = _with_settlements(
++        holdout.batch(),
++        [s for s in everything if s.settlement_id != settlement.settlement_id],
++    )
++
++    a = _outcome(with_non_processed, payment.payment_id)
++    b = _outcome(without_any, payment.payment_id)
++
++    assert a.case.exception.exception_type == b.case.exception.exception_type
++    assert a.case.exception.expected_value == b.case.exception.expected_value
++    assert a.case.exception.observed_value == b.case.exception.observed_value
++    assert a.case.exception.difference == b.case.exception.difference
++    assert a.case.status == b.case.status == MISSING
++    assert a.state == b.state == HUMAN_REVIEW_REQUIRED
++    assert a.decision.reason == b.decision.reason
++
++    evidence_a = dict(a.case.exception.evidence)
++    evidence_b = dict(b.case.exception.evidence)
++    assert evidence_a.pop("non_processed_settlements") == [
++        {"settlement_id": settlement.settlement_id, "status": status.value}
++    ]
++    assert evidence_a == evidence_b
++    assert "non_processed_settlements" not in evidence_b
++
++
++def test_non_processed_evidence_is_sorted_by_settlement_id():
++    holdout = _holdout()
++    payment, settlement = _clean_case(holdout)
++    # Ids deliberately out of order, and statuses mixed, so the sort is on id.
++    late = settlement.model_copy(update={
++        "settlement_id": "SET-ZZ-LATE", "status": SettlementStatus.FAILED,
++    })
++    early = settlement.model_copy(update={
++        "settlement_id": "SET-AA-EARLY", "status": SettlementStatus.PENDING,
++    })
++    batch = _with_settlements(
++        holdout.batch(),
++        [s for s in holdout.batch().settlements if s.settlement_id != settlement.settlement_id]
++        + [late, early],
++    )
++
++    exc = _outcome(batch, payment.payment_id).case.exception
++    assert exc.exception_type.value == MISSING
++    assert exc.evidence["non_processed_settlements"] == [
++        {"settlement_id": "SET-AA-EARLY", "status": "pending"},
++        {"settlement_id": "SET-ZZ-LATE", "status": "failed"},
++    ]
++
++
++# -------------------------------------- requirement 4: one processed is enough
++def test_a_processed_settlement_beats_non_processed_rivals_and_is_the_only_one_used():
++    """Pending and failed rivals with different content are simply ignored."""
++    holdout = _holdout()
++    payment, settlement = _clean_case(holdout)
++    rival_pending = settlement.model_copy(update={
++        "settlement_id": settlement.settlement_id + "-P",
++        "status": SettlementStatus.PENDING,
++        "net_amount": settlement.net_amount - 9999,
++    })
++    rival_failed = settlement.model_copy(update={
++        "settlement_id": settlement.settlement_id + "-F",
++        "status": SettlementStatus.FAILED,
++        "gross_amount": settlement.gross_amount + 1,
++    })
++    batch = _with_settlements(
++        holdout.batch(), list(holdout.batch().settlements) + [rival_pending, rival_failed]
++    )
++
++    outcome = _outcome(batch, payment.payment_id)
++    assert outcome.case.status == MATCHED
++    assert outcome.case.settlement.settlement_id == settlement.settlement_id
++    assert outcome.case.exception is None
++
++
++def test_a_same_id_non_processed_row_does_not_make_a_conflict():
++    """A pending row sharing the processed row's id but differing in content.
++
++    Previously this was a settlement-id content conflict and escalated. It is
++    not a conflict any more: the pending row is not a settlement at all.
++    """
++    holdout = _holdout()
++    payment, settlement = _clean_case(holdout)
++    pending_twin = settlement.model_copy(update={
++        "status": SettlementStatus.PENDING,
++        "net_amount": settlement.net_amount - 500,
++    })
++    batch = _with_settlements(
++        holdout.batch(), list(holdout.batch().settlements) + [pending_twin]
++    )
++
++    dup = find_duplicates(batch)
++    assert settlement.settlement_id not in dup.settlement_conflicts
++    assert settlement.settlement_id not in dup.settlement_ids
++
++    outcome = _outcome(batch, payment.payment_id)
++    assert outcome.case.status == MATCHED
++
++
++def test_non_processed_rows_never_count_as_multiple_settlements():
++    """Two processed rows plus a pending one: duplicate logic sees only the two."""
++    holdout = _holdout()
++    payment, settlement = _clean_case(holdout)
++    second_processed = settlement.model_copy(update={
++        "settlement_id": settlement.settlement_id + "-2",
++    })
++    pending = settlement.model_copy(update={
++        "settlement_id": settlement.settlement_id + "-P",
++        "status": SettlementStatus.PENDING,
++    })
++    batch = _with_settlements(
++        holdout.batch(),
++        list(holdout.batch().settlements) + [second_processed, pending],
++    )
++
++    outcome = _outcome(batch, payment.payment_id)
++    exc = outcome.case.exception
++    assert exc.exception_type.value == "EXCEPTION_DUPLICATE_RECORD"
++    assert set(exc.evidence["settlement_ids"]) == {
++        settlement.settlement_id,
++        second_processed.settlement_id,
++    }
++    assert pending.settlement_id not in exc.evidence["settlement_ids"]
++    assert "non_processed_settlements" not in exc.evidence
++
++
++def test_the_shadow_ledger_indexes_only_processed_settlements_for_matching():
++    holdout = _holdout()
++    payment, settlement = _clean_case(holdout)
++    pending = settlement.model_copy(update={
++        "settlement_id": settlement.settlement_id + "-P",
++        "status": SettlementStatus.PENDING,
++    })
++    ledger = ShadowLedger(_with_settlements(
++        holdout.batch(), list(holdout.batch().settlements) + [pending]
++    ))
++    assert [s.settlement_id for s in ledger.settlements_for(payment.payment_id)] == [
++        settlement.settlement_id
++    ]
++    assert [
++        s.settlement_id for s in ledger.non_processed_settlements_for(payment.payment_id)
++    ] == [pending.settlement_id]
++
++
++# ---------------------------------------------- requirement 5: payment duplicates
++def test_payment_duplicate_precedence_is_unchanged_by_non_processed_settlements():
++    holdout = _holdout()
++    payment, settlement = _clean_case(holdout)
++    pending = settlement.model_copy(update={
++        "settlement_id": settlement.settlement_id + "-P",
++        "status": SettlementStatus.PENDING,
++    })
++    batch = holdout.batch()
++    batch = batch.model_copy(update={
++        "payments": list(batch.payments) + [payment],           # exact re-ingestion
++        "settlements": list(batch.settlements) + [pending],
++    })
++
++    outcome = _outcome(batch, payment.payment_id)
++    exc = outcome.case.exception
++    assert exc.exception_type.value == "EXCEPTION_DUPLICATE_RECORD"
++    assert exc.evidence["duplicate_of"] == payment.payment_id
++    assert "non_processed_settlements" not in exc.evidence
++    assert outcome.state == AUTO_RESOLVED, "an exact duplicate still closes exactly as before"
++
++
++# -------------------------------------------------- bank matching ignores them
++def test_a_pending_row_with_the_processed_reference_does_not_disturb_bank_matching():
++    holdout = _holdout()
++    payment, settlement = _clean_case(holdout)
++    pending = settlement.model_copy(update={
++        "settlement_id": settlement.settlement_id + "-P",
++        "status": SettlementStatus.PENDING,
++    })
++    batch = _with_settlements(
++        holdout.batch(), list(holdout.batch().settlements) + [pending]
++    )
++    outcome = _outcome(batch, payment.payment_id)
++    assert outcome.case.status == MATCHED, "one processed credit still matches exactly"
++
++
++def test_a_bank_credit_cannot_settle_a_payment_that_has_only_a_pending_row():
++    """The credit matches the pending row's net exactly. It still does not settle."""
++    from ledgerguard.ledger.models import BankEntry, CreditDebit
++
++    holdout = _holdout()
++    payment, settlement = _clean_case(holdout)
++    pending = settlement.model_copy(update={"status": SettlementStatus.PENDING})
++    credit = BankEntry(
++        bank_entry_id="BANK-PENDING-ONLY",
++        amount=pending.net_amount,
++        credit_or_debit=CreditDebit.CREDIT,
++        date=pending.settlement_date,
++        reference=pending.reference,
++    )
++    batch = _with_settlements(
++        holdout.batch(),
++        [s if s.settlement_id != settlement.settlement_id else pending
++         for s in holdout.batch().settlements],
++    )
++    batch = batch.model_copy(update={"bank_entries": list(batch.bank_entries) + [credit]})
++
++    outcome = _outcome(batch, payment.payment_id)
++    assert outcome.case.exception.exception_type.value == MISSING
++    assert outcome.state == HUMAN_REVIEW_REQUIRED
++
++
++# ---------------------------------------------------- requirement 7: controller
++@pytest.mark.parametrize("status", [SettlementStatus.PENDING, SettlementStatus.FAILED])
++def test_the_full_controller_never_investigates_or_closes_these_cases(status):
++    holdout = _holdout()
++    payment, settlement = _clean_case(holdout)
++    pending = settlement.model_copy(update={"status": status})
++    scenario = _scenario(payment, [pending])
++    recorder = _RecordingProvider()
++
++    report = run(scenario, use_ai=True, provider=recorder)
++
++    assert recorder.calls == [], "the investigator must not be shown a non-processed case"
++    assert report.investigations == 0
++    outcome = next(o for o in report.outcomes if o.case.payment_id == payment.payment_id)
++    assert outcome.case.exception.exception_type.value == MISSING
++    assert outcome.state == HUMAN_REVIEW_REQUIRED
++    assert outcome.state != AUTO_RESOLVED
++
++
++def test_the_full_controller_treats_a_mixed_non_processed_set_the_same_way():
++    holdout = _holdout()
++    payment, settlement = _clean_case(holdout)
++    rows = [
++        settlement.model_copy(update={"settlement_id": "SET-P", "status": SettlementStatus.PENDING}),
++        settlement.model_copy(update={"settlement_id": "SET-F", "status": SettlementStatus.FAILED}),
++    ]
++    recorder = _RecordingProvider()
++    outcome = next(
++        o for o in run(_scenario(payment, rows), use_ai=True, provider=recorder).outcomes
++        if o.case.payment_id == payment.payment_id
++    )
++    assert recorder.calls == []
++    assert outcome.state == HUMAN_REVIEW_REQUIRED
++    assert outcome.investigation is None
++
++
++# ------------------------------------------------- requirement 6 and 4 together
++def test_adding_non_processed_copies_of_every_settlement_changes_no_outcome():
++    """Across the whole dataset, pending and failed rivals move nothing.
++
++    Every processed settlement gets a pending copy and a failed copy with a
++    different amount. Each case must still reach exactly the same classification,
++    values, evidence and disposition as it did without them.
++    """
++    dataset = build_dataset()
++    batch = dataset.batch()
++    before = run(batch, use_ai=False)
++
++    rivals = []
++    for s in batch.settlements:
++        rivals.append(s.model_copy(update={
++            "settlement_id": s.settlement_id + "-P",
++            "status": SettlementStatus.PENDING,
++            "net_amount": s.net_amount + 1,
++        }))
++        rivals.append(s.model_copy(update={
++            "settlement_id": s.settlement_id + "-F",
++            "status": SettlementStatus.FAILED,
++            "gross_amount": s.gross_amount + 1,
++        }))
++    after = run(_with_settlements(batch, list(batch.settlements) + rivals), use_ai=False)
++
++    old = {o.case_id: o for o in before.outcomes}
++    new = {o.case_id: o for o in after.outcomes}
++    assert old.keys() == new.keys()
++    for case_id, a in old.items():
++        b = new[case_id]
++        assert a.state == b.state, case_id
++        assert a.case.status == b.case.status, case_id
++        assert a.case.is_exception == b.case.is_exception, case_id
++        if a.case.exception is not None:
++            assert a.case.exception.model_dump() == b.case.exception.model_dump(), case_id

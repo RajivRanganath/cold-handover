@@ -1,0 +1,65 @@
+{
+  "checks": {
+    "protected_files_unchanged": true,
+    "hidden_shortfall_tests": true,
+    "benchmark_unchanged": true,
+    "regression_67": true,
+    "notes_present": true
+  },
+  "hidden_tests": [
+    "PASSED ledgerguard/hidden_test_t4.py::test_have_clean_lifecycles",
+    "PASSED ledgerguard/hidden_test_t4.py::test_shortfall_not_closed[shortfall_25000-LC0001-False]",
+    "PASSED ledgerguard/hidden_test_t4.py::test_shortfall_not_closed[shortfall_25000-LC0001-True]",
+    "PASSED ledgerguard/hidden_test_t4.py::test_shortfall_not_closed[shortfall_25000-LC0004-False]",
+    "PASSED ledgerguard/hidden_test_t4.py::test_shortfall_not_closed[shortfall_25000-LC0004-True]",
+    "PASSED ledgerguard/hidden_test_t4.py::test_shortfall_not_closed[shortfall_25000-LC0006-False]",
+    "PASSED ledgerguard/hidden_test_t4.py::test_shortfall_not_closed[shortfall_25000-LC0006-True]",
+    "PASSED ledgerguard/hidden_test_t4.py::test_shortfall_not_closed[shortfall_1_paisa-LC0001-False]",
+    "PASSED ledgerguard/hidden_test_t4.py::test_shortfall_not_closed[shortfall_1_paisa-LC0001-True]",
+    "PASSED ledgerguard/hidden_test_t4.py::test_shortfall_not_closed[shortfall_1_paisa-LC0004-False]",
+    "PASSED ledgerguard/hidden_test_t4.py::test_shortfall_not_closed[shortfall_1_paisa-LC0004-True]",
+    "PASSED ledgerguard/hidden_test_t4.py::test_shortfall_not_closed[shortfall_1_paisa-LC0006-False]",
+    "PASSED ledgerguard/hidden_test_t4.py::test_shortfall_not_closed[shortfall_1_paisa-LC0006-True]",
+    "PASSED ledgerguard/hidden_test_t4.py::test_shortfall_not_closed[shortfall_bank_untouched-LC0001-False]",
+    "PASSED ledgerguard/hidden_test_t4.py::test_shortfall_not_closed[shortfall_bank_untouched-LC0001-True]",
+    "PASSED ledgerguard/hidden_test_t4.py::test_shortfall_not_closed[shortfall_bank_untouched-LC0004-False]",
+    "PASSED ledgerguard/hidden_test_t4.py::test_shortfall_not_closed[shortfall_bank_untouched-LC0004-True]",
+    "PASSED ledgerguard/hidden_test_t4.py::test_shortfall_not_closed[shortfall_bank_untouched-LC0006-False]",
+    "PASSED ledgerguard/hidden_test_t4.py::test_shortfall_not_closed[shortfall_bank_untouched-LC0006-True]",
+    "PASSED ledgerguard/hidden_test_t4.py::test_shortfall_not_closed[overcharge_plus_unexplained_shortfall-LC0001-False]",
+    "PASSED ledgerguard/hidden_test_t4.py::test_shortfall_not_closed[overcharge_plus_unexplained_shortfall-LC0001-True]",
+    "PASSED ledgerguard/hidden_test_t4.py::test_shortfall_not_closed[overcharge_plus_unexplained_shortfall-LC0004-False]",
+    "PASSED ledgerguard/hidden_test_t4.py::test_shortfall_not_closed[overcharge_plus_unexplained_shortfall-LC0004-True]",
+    "PASSED ledgerguard/hidden_test_t4.py::test_shortfall_not_closed[overcharge_plus_unexplained_shortfall-LC0006-False]",
+    "PASSED ledgerguard/hidden_test_t4.py::test_shortfall_not_closed[overcharge_plus_unexplained_shortfall-LC0006-True]",
+    "PASSED ledgerguard/hidden_test_t4.py::test_genuine_fee_overcharge_still_closes[False-LC0001]",
+    "PASSED ledgerguard/hidden_test_t4.py::test_genuine_fee_overcharge_still_closes[False-LC0004]",
+    "PASSED ledgerguard/hidden_test_t4.py::test_genuine_fee_overcharge_still_closes[False-LC0006]",
+    "PASSED ledgerguard/hidden_test_t4.py::test_genuine_fee_overcharge_still_closes[True-LC0001]",
+    "PASSED ledgerguard/hidden_test_t4.py::test_genuine_fee_overcharge_still_closes[True-LC0004]",
+    "PASSED ledgerguard/hidden_test_t4.py::test_genuine_fee_overcharge_still_closes[True-LC0006]",
+    "PASSED ledgerguard/hidden_test_t4.py::test_observation_overpay"
+  ],
+  "observations": {
+    "overpay_net_plus_25000_bank_plus_25000": {
+      "LC0001/ai=False": "HUMAN_REVIEW_REQUIRED",
+      "LC0001/ai=True": "HUMAN_REVIEW_REQUIRED",
+      "LC0004/ai=False": "HUMAN_REVIEW_REQUIRED",
+      "LC0004/ai=True": "HUMAN_REVIEW_REQUIRED"
+    }
+  },
+  "depth_combined_case_handled": true,
+  "integrity": {
+    "modified": [
+      "docs/architecture.md",
+      "ledgerguard/evidence/safety.py",
+      "ledgerguard/reconciliation/matcher.py"
+    ],
+    "deleted": [],
+    "added": [
+      "ledgerguard/tests/test_t4_unexplained_net.py"
+    ]
+  },
+  "task": "T4",
+  "pass": true
+}

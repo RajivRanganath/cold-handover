@@ -1,0 +1,228 @@
+--- a/ledgerguard/evidence/safety.py
++++ b/ledgerguard/evidence/safety.py
+@@ -111,7 +111,12 @@
+             ),
+         )
+ 
+-    residual = exc.evidence.get("residual_paise") or 0
++    # Either view of the residual blocks closure. The net view is the money the
++    # provider actually failed to pay; the component view is the disagreement
++    # between the settlement's own components and the shadow ledger.
++    residual_net = exc.evidence.get("net_residual_paise") or 0
++    residual_components = exc.evidence.get("residual_paise") or 0
++    residual = residual_net or residual_components
+     secondary = exc.evidence.get("secondary_findings") or []
+ 
+     if exc_type in _DETERMINISTIC_AUTO_CLOSE:
+@@ -120,11 +125,18 @@
+             # closing a case on the strength of the part that was proved while
+             # the rest stays unexplained -- the exact failure this system exists
+             # to prevent.
++            fee_variance = exc.evidence.get("fee_variance_paise")
++            if exc_type is ExceptionType.FEE_MISMATCH and fee_variance == 0:
++                # The fee and tax are on schedule, so there is no fee variance
++                # to describe; the shortfall is in the reported net itself.
++                proven = "Fee and tax match the independent fee schedule, so the fee variance is zero."
++            else:
++                proven = _DETERMINISTIC_AUTO_CLOSE[exc_type]
+             return Decision(
+                 case_id=case.case_id,
+                 state=HUMAN_REVIEW_REQUIRED,
+                 reason=(
+-                    f"{_DETERMINISTIC_AUTO_CLOSE[exc_type]} Correcting it still leaves "
++                    f"{proven} Correcting it still leaves "
+                     f"{to_rupees_str(abs(residual))} INR unattributed, with no record "
+                     f"explaining it. A second, unproven discrepancy is present."
+                 ),
+--- a/ledgerguard/reconciliation/matcher.py
++++ b/ledgerguard/reconciliation/matcher.py
+@@ -357,6 +357,10 @@
+         # reconciles. Whatever is left over is money the fee variance does not
+         # account for, and it must not be closed on the strength of the part
+         # that was proved.
++        fee_variance = observed_value - expected_value
++        evidence["fee_variance_paise"] = fee_variance
++        # Component view: rebuild the net from the settlement's gross, refunds
++        # and adjustments with fees on schedule.
+         corrected_net = (
+             settlement.gross_amount
+             - expected.fees
+@@ -365,6 +369,15 @@
+             + settlement.other_adjustments
+         )
+         evidence["residual_paise"] = expected.net_amount - corrected_net
++        # Net view: take what the provider actually paid, add back the fee
++        # variance, and compare with the shadow ledger. This is the money that
++        # really went missing. It is measured from the reported net, not the
++        # components, because the components can agree with the shadow ledger
++        # while the reported net is short of them (I1 broken). When I1 holds the
++        # two views are identical, so the component view alone was enough before.
++        evidence["net_residual_paise"] = expected.net_amount - (
++            settlement.net_amount + fee_variance
++        )
+     elif exc_type is ExceptionType.DELAYED_SETTLEMENT:
+         expected_value, observed_value = expected.net_amount, settlement.net_amount
+         evidence["days_late"] = (
+--- a/ledgerguard/tests/test_short_settlement.py
++++ b/ledgerguard/tests/test_short_settlement.py
+@@ -0,0 +1,160 @@
++"""A settlement that is short of its own components must not auto-close as a fee mismatch.
++
++Regression for a case where the fee and tax were exactly per schedule, the
++settlement's reported net was INR 250 short of gross less fees, tax, refunds and
++adjustments, and the case was closed AUTO_RESOLVED as EXCEPTION_FEE_MISMATCH.
++
++Cause: the residual that gates closure was rebuilt from the settlement's gross
++and components, never from its reported net. When the net disagreed with its own
++components (invariant I1), the rebuilt residual was zero and the missing money
++was invisible to the gate. The fix measures the residual from the reported net
++as well, and either view blocks closure.
++"""
++
++from __future__ import annotations
++
++from datetime import datetime, timedelta
++
++from ledgerguard.ai.provider import HeuristicProvider
++from ledgerguard.evidence.safety import AUTO_RESOLVED, HUMAN_REVIEW_REQUIRED
++from ledgerguard.ledger.models import (
++    BankEntry,
++    Batch,
++    CreditDebit,
++    Order,
++    Payment,
++    Settlement,
++)
++from ledgerguard.ledger.money import gst_on_fee, platform_fee, to_paise
++from ledgerguard.pipeline import run
++from ledgerguard.reconciliation.matcher import reconcile_batch
++from ledgerguard.synthetic.fault_injector import build_dataset
++
++T0 = datetime(2026, 7, 15, 10, 0, 0)
++AMOUNT = to_paise("10000.00")
++SHORT = to_paise("250.00")
++
++
++def _batch(
++    *,
++    tag: str = "S1",
++    fee_overcharge: int = 0,
++    settlement_refund: int = 0,
++    net_short_by: int = 0,
++) -> Batch:
++    """One captured payment and one settlement, with each fault set explicitly.
++
++    ``net_short_by`` lowers the reported net without touching any component,
++    which is the reported defect. ``settlement_refund`` is the refund adjustment
++    the settlement reports; no refund record exists in the batch.
++    """
++    fee = platform_fee(AMOUNT)
++    tax = gst_on_fee(fee)
++    charged_fee = fee + fee_overcharge
++    charged_tax = gst_on_fee(charged_fee)
++    captured = T0 + timedelta(minutes=5)
++    settled = captured + timedelta(days=2)
++    order = Order(
++        order_id=f"ord_{tag}", merchant_id="mch_S", amount=AMOUNT,
++        created_at=T0, customer_reference=f"CUST-{tag}",
++    )
++    payment = Payment(
++        payment_id=f"pay_{tag}", order_id=order.order_id, amount=AMOUNT,
++        captured_at=captured, fee=fee, tax=tax, reference=f"PAY/{order.order_id}",
++    )
++    net = AMOUNT - charged_fee - charged_tax - settlement_refund - net_short_by
++    settlement = Settlement(
++        settlement_id=f"setl_{tag}", merchant_id="mch_S", payment_ids=[payment.payment_id],
++        gross_amount=AMOUNT, fees=charged_fee, tax=charged_tax,
++        refund_adjustments=settlement_refund, other_adjustments=0,
++        net_amount=net, settlement_date=settled, reference=f"STL/setl_{tag}",
++    )
++    bank = [BankEntry(
++        bank_entry_id=f"bnk_{tag}", amount=net, credit_or_debit=CreditDebit.CREDIT,
++        date=settled, reference=settlement.reference,
++    )]
++    return Batch(
++        orders=[order], payments=[payment], refunds=[],
++        settlements=[settlement], bank_entries=bank,
++    )
++
++
++def _outcome(batch: Batch):
++    report = run(batch, use_ai=True, provider=HeuristicProvider())
++    assert len(report.outcomes) == 1
++    return report.outcomes[0]
++
++
++def test_reported_case_fee_on_schedule_net_short_is_not_auto_closed():
++    """The operator's report: fees and tax per schedule, INR 250 missing."""
++    outcome = _outcome(_batch(net_short_by=SHORT))
++
++    assert outcome.case.exception.exception_type.value == "EXCEPTION_FEE_MISMATCH"
++    assert outcome.state == HUMAN_REVIEW_REQUIRED
++    assert outcome.state != AUTO_RESOLVED
++    assert "250.00" in outcome.decision.reason
++    assert "unattributed" in outcome.decision.reason
++    # The fee variance is zero, so the reason must not claim there was one.
++    assert "fee variance is zero" in outcome.decision.reason
++
++
++def test_the_missing_money_is_measured_from_the_reported_net():
++    """The component view alone reads zero here; the net view carries the INR 250."""
++    batch = _batch(net_short_by=SHORT)
++    results, _ = reconcile_batch(batch)
++    evidence = results[0].exception.evidence
++
++    assert evidence["fee_variance_paise"] == 0
++    assert evidence["residual_paise"] == 0, "components agree with the shadow ledger"
++    assert evidence["net_residual_paise"] == SHORT
++
++
++def test_a_fee_overcharge_with_a_consistent_net_still_closes():
++    """A proven fee variance that explains the whole difference is still closed."""
++    outcome = _outcome(_batch(tag="S2", fee_overcharge=to_paise("40.00")))
++
++    assert outcome.state == AUTO_RESOLVED
++    assert outcome.case.exception.evidence["net_residual_paise"] == 0
++    assert outcome.case.exception.evidence["residual_paise"] == 0
++
++
++def test_a_fee_overcharge_plus_a_separate_net_shortfall_is_blocked():
++    """The fee variance is proven, but the net is also short by INR 250 beyond it."""
++    outcome = _outcome(_batch(tag="S3", fee_overcharge=to_paise("40.00"), net_short_by=SHORT))
++
++    assert outcome.state == HUMAN_REVIEW_REQUIRED
++    assert outcome.case.exception.evidence["net_residual_paise"] == SHORT
++    assert "250.00" in outcome.decision.reason
++
++
++def test_components_disagreeing_with_the_shadow_ledger_still_block_closure():
++    """The reverse shape: the reported net matches the shadow ledger exactly, but
++    the settlement's components claim an INR 250 refund that is not in the batch.
++    The net view reads zero here, so the component view must block closure."""
++    outcome = _outcome(_batch(tag="S4", settlement_refund=SHORT, net_short_by=-SHORT))
++
++    assert outcome.case.exception.exception_type.value == "EXCEPTION_FEE_MISMATCH"
++    assert outcome.state == HUMAN_REVIEW_REQUIRED
++    assert outcome.case.exception.evidence["net_residual_paise"] == 0
++    assert outcome.case.exception.evidence["residual_paise"] == SHORT
++
++
++def test_a_consistent_settlement_has_identical_residual_views_across_the_dataset():
++    """Where the reported net agrees with its components (I1 holds), the two
++    residual views are algebraically the same, so no existing closure can move.
++    Checked on every lifecycle the generator produces, not just the holdout."""
++    full = build_dataset(seed=20260905, count=320)
++    batch = full.batch()
++    results, _ = reconcile_batch(batch, full.lifecycle_by_payment())
++
++    checked = 0
++    for case in results:
++        if case.exception is None or case.exception.exception_type.value != "EXCEPTION_FEE_MISMATCH":
++            continue
++        i1 = next(i for i in case.invariants if i.name.startswith("I1_"))
++        if not i1.holds:
++            continue
++        ev = case.exception.evidence
++        assert ev["net_residual_paise"] == ev["residual_paise"], case.case_id
++        checked += 1
++    assert checked > 0, "the dataset should contain consistent fee mismatches to check"

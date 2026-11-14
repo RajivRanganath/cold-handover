@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>T1/M-T1-01/out_NOTES.md</title>
+<style>
+*{box-sizing:border-box}
+:root{--bg:#f6f7f6;--text:#16191c;--muted:#5b636b;--line:#d9dddb;--accent:#0f6b4f;
+--code:rgba(15,23,28,.06);--add:rgba(46,160,67,.20);--del:rgba(218,54,51,.17);--hunk:rgba(15,107,79,.10)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#111416;--text:#e8ebe9;
+--muted:#9aa3a0;--line:#2b3134;--accent:#4fbf95;--code:rgba(255,255,255,.07);
+--add:rgba(63,185,80,.22);--del:rgba(248,81,73,.22);--hunk:rgba(79,191,149,.12)}}
+body{margin:0;background:var(--bg);color:var(--text);
+font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:900px;margin:0 auto;padding:16px}
+.top{font-size:14px;color:var(--muted);border-bottom:1px solid var(--line);padding-bottom:10px;
+margin-bottom:20px;display:flex;flex-wrap:wrap;gap:6px 16px;align-items:baseline}
+.top .path{color:var(--text);font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;overflow-wrap:anywhere}
+a{color:var(--accent)}
+h1,h2,h3,h4,h5,h6{line-height:1.25;margin:1.4em 0 .5em;overflow-wrap:anywhere}
+p,ul,ol,blockquote{margin:.6em 0}
+ul,ol{padding-left:1.4em}
+li,p{overflow-wrap:anywhere}
+blockquote{margin:.8em 0;padding:.1em 0 .1em 14px;border-left:3px solid var(--accent);color:var(--muted)}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.92em;
+background:var(--code);padding:.1em .3em;border-radius:4px;overflow-wrap:anywhere}
+pre{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px;line-height:1.45;
+background:var(--code);border:1px solid var(--line);border-radius:6px;padding:12px;margin:.8em 0;
+overflow-x:auto;white-space:pre;tab-size:2}
+pre code{background:none;padding:0;border-radius:0;font-size:inherit;overflow-wrap:normal}
+.tw{overflow-x:auto;margin:.8em 0}
+table{border-collapse:collapse;font-size:14px}
+th,td{border:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}
+td{overflow-wrap:anywhere}
+th{background:var(--code)}
+hr{border:0;border-top:1px solid var(--line);margin:1.5em 0}
+.patch span{display:block;width:max-content;min-width:100%}
+.patch .file{font-weight:700}
+.patch .meta{color:var(--muted)}
+.patch .hunk{color:var(--accent);background:var(--hunk)}
+.patch .add{background:var(--add)}
+.patch .del{background:var(--del)}
+</style>
+</head>
+<body>
+<main>
+<div class="top"><span class="path">T1/M-T1-01/out_NOTES.md</span><a href="out_NOTES.md">Raw file</a><a href="../../../index.html#T1">Back to the case study</a></div>
+<h1>Task T1 notes: offline benchmark reproduction</h1>
+<h2>What was run</h2>
+<ul><li>Command: <code>.venv/bin/python -m ledgerguard.evaluation.benchmark</code> (no <code>--provider</code>, no <code>--seed</code>/<code>--count</code>/<code>--split</code>, i.e. the documented defaults: seed 20260905, count 320, holdout split).</li><li>No provider key was set and there is no <code>.env</code>. The default <code>auto</code> provider therefore built an empty chain (the omniroute reachability probe on localhost:20128 also did not succeed) and fell back to <code>HeuristicProvider</code>, which reports itself as <code>heuristic_stub</code>. The run&#x27;s own output says so: &quot;the hybrid run used the offline heuristic stub, not a model&quot;.</li><li>Exit code 0. The frozen holdout check passed (manifest <code>holdout_20260905_320.json</code> unchanged, batch SHA-256 <code>3e28d4572d4cfc95...</code> matched).</li><li>The run&#x27;s stdout is kept at <code>../tmp/run_stdout.txt</code>; the regenerated outputs are at <code>../tmp/run_outputs/</code>.</li></ul>
+<h2>Choices made</h2>
+<ul><li><strong>Canonical command.</strong> <code>docs/evaluation.md</code> and the README describe <code>--provider groq</code> / the default chain for the published numbers. Those need network and keys, which this task rules out, so I ran the default with no provider flag. The hybrid numbers here are therefore stub numbers, not model numbers.</li><li>**<code>hybrid_provider</code>** is taken from this run&#x27;s output: <code>heuristic_stub</code>.</li><li>**<code>committed_results_provider</code>** is taken from the committed <code>benchmark.json</code> (<code>hybrid.provider</code>) and the committed <code>benchmark.md</code> header, which both read <code>fallback(groq-&gt;gemini-&gt;nvidia-&gt;omniroute)</code>. These were read before I ran anything.</li><li><strong>Units.</strong> <code>accuracy</code> is a fraction (0.8941, 1.0), as in the JSON. <code>unresolved_value_paise</code> is integer paise, as in the JSON.</li><li>**<code>artifacts_written</code>** lists the four files the benchmark rewrote under <code>ledgerguard/evaluation/outputs/</code>: <code>benchmark.json</code>, <code>benchmark.md</code>, <code>cases.json</code>, <code>unresolved_exceptions.csv</code>. The frozen manifest is only written when absent, and it was present, so it was not rewritten. Python <code>__pycache__</code> files were also created by the import, but these are cache directories and are outside the constraint and the artifact list.</li></ul>
+<h2>Restoring the repo</h2>
+<ul><li>Before running I copied the repo (excluding <code>.venv</code>) to <code>../tmp/orig/</code> and hashed all 82 files (<code>../tmp/orig_sha256.txt</code>).</li><li>The run rewrote the four output files above. I restored them from the snapshot with <code>cp -p</code>.</li><li>Re-hashing the whole tree (excluding <code>.venv</code> and <code>__pycache__</code>) matches the original hashes for all 82 files.</li></ul>
+<h2>Observations and caveats</h2>
+<ul><li>The committed <code>benchmark.json</code> hybrid (groq/fallback, 97.7% accuracy, 19 auto-resolved) cannot be reproduced offline. Those numbers are not comparable to this run&#x27;s stub numbers.</li><li>The committed <code>benchmark.json</code> <code>investigator_chain.chain</code> still lists the stale NVIDIA model <code>nvidia/llama-3.1-nemotron-70b-instruct</code>. This was already documented in <code>docs/evaluation.md</code> and I did not change it.</li><li>The stub reaches 100% accuracy on this holdout (<code>docs/limitations.md</code> already flags this). Its false auto resolutions are 0, the same as the committed model run.</li><li>I did not run the pytest suite; the task did not ask for it.</li><li>The <code>.venv</code> interpreter was run with <code>-I</code> only for reading JSON; the benchmark itself was run as the repo&#x27;s module.</li></ul>
+</main>
+</body>
+</html>

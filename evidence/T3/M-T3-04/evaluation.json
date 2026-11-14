@@ -1,0 +1,25 @@
+{
+  "checks": {
+    "protected_files_unchanged": true,
+    "absolute_dir_run_ok": true,
+    "absolute_dir_artifacts_match": true,
+    "absolute_dir_only_expected_files": true,
+    "prints_path": true,
+    "outputs_and_frozen_untouched": true,
+    "relative_dir_resolved_against_cwd": true,
+    "default_run_still_writes_outputs": true,
+    "regression_67": true
+  },
+  "integrity": {
+    "modified": [
+      "docs/evaluation.md",
+      "ledgerguard/evaluation/benchmark.py"
+    ],
+    "deleted": [],
+    "added": [
+      "ledgerguard/tests/test_benchmark_output_dir.py"
+    ]
+  },
+  "task": "T3",
+  "pass": true
+}

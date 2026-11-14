@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>T2/M-T2-03/out_NOTES.md</title>
+<style>
+*{box-sizing:border-box}
+:root{--bg:#f6f7f6;--text:#16191c;--muted:#5b636b;--line:#d9dddb;--accent:#0f6b4f;
+--code:rgba(15,23,28,.06);--add:rgba(46,160,67,.20);--del:rgba(218,54,51,.17);--hunk:rgba(15,107,79,.10)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#111416;--text:#e8ebe9;
+--muted:#9aa3a0;--line:#2b3134;--accent:#4fbf95;--code:rgba(255,255,255,.07);
+--add:rgba(63,185,80,.22);--del:rgba(248,81,73,.22);--hunk:rgba(79,191,149,.12)}}
+body{margin:0;background:var(--bg);color:var(--text);
+font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:900px;margin:0 auto;padding:16px}
+.top{font-size:14px;color:var(--muted);border-bottom:1px solid var(--line);padding-bottom:10px;
+margin-bottom:20px;display:flex;flex-wrap:wrap;gap:6px 16px;align-items:baseline}
+.top .path{color:var(--text);font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;overflow-wrap:anywhere}
+a{color:var(--accent)}
+h1,h2,h3,h4,h5,h6{line-height:1.25;margin:1.4em 0 .5em;overflow-wrap:anywhere}
+p,ul,ol,blockquote{margin:.6em 0}
+ul,ol{padding-left:1.4em}
+li,p{overflow-wrap:anywhere}
+blockquote{margin:.8em 0;padding:.1em 0 .1em 14px;border-left:3px solid var(--accent);color:var(--muted)}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.92em;
+background:var(--code);padding:.1em .3em;border-radius:4px;overflow-wrap:anywhere}
+pre{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px;line-height:1.45;
+background:var(--code);border:1px solid var(--line);border-radius:6px;padding:12px;margin:.8em 0;
+overflow-x:auto;white-space:pre;tab-size:2}
+pre code{background:none;padding:0;border-radius:0;font-size:inherit;overflow-wrap:normal}
+.tw{overflow-x:auto;margin:.8em 0}
+table{border-collapse:collapse;font-size:14px}
+th,td{border:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}
+td{overflow-wrap:anywhere}
+th{background:var(--code)}
+hr{border:0;border-top:1px solid var(--line);margin:1.5em 0}
+.patch span{display:block;width:max-content;min-width:100%}
+.patch .file{font-weight:700}
+.patch .meta{color:var(--muted)}
+.patch .hunk{color:var(--accent);background:var(--hunk)}
+.patch .add{background:var(--add)}
+.patch .del{background:var(--del)}
+</style>
+</head>
+<body>
+<main>
+<div class="top"><span class="path">T2/M-T2-03/out_NOTES.md</span><a href="out_NOTES.md">Raw file</a><a href="../../../index.html#T2">Back to the case study</a></div>
+<h1>Task T2: respect settlement status — notes</h1>
+<h2>What changed</h2>
+<ul><li><code>ledgerguard/ledger/shadow_ledger.py</code><ul><li><code>settlements_by_payment</code> (read by <code>settlements_for</code>) now indexes only <code>processed</code> settlements.</li><li>New index <code>non_processed_by_payment</code> and accessor <code>non_processed_settlements_for(payment_id)</code> for pending and failed settlements. These are reported, never matched.</li></ul></li><li><code>ledgerguard/reconciliation/matcher.py</code><ul><li><code>find_duplicates</code> builds settlement id/conflict sets from processed settlements only.</li><li>Missing-settlement branch (step 2): when the payment has one or more non-processed settlements, adds <code>evidence[&quot;non_processed_settlements&quot;]</code> as <code>[{&quot;settlement_id&quot;, &quot;status&quot;}]</code>, sorted by <code>(settlement_id, status)</code>. The key is absent in every other case. <code>reason</code>, <code>expected_value</code>, <code>observed_value</code> and state are unchanged.</li></ul></li><li><code>ledgerguard/tests/test_settlement_status.py</code> (new): 15 tests covering requirements 1–7.</li></ul>
+<p>No change was needed in the controller (<code>pipeline.py</code>, <code>ai/investigator.py</code>, <code>evidence/safety.py</code>). <code>EXCEPTION_MISSING_SETTLEMENT</code> is already in <code>DETERMINISTICALLY_PROVEN</code> and is not in <code>NEEDS_INVESTIGATION</code>, and it already maps to <code>HUMAN_REVIEW_REQUIRED</code>. A test asserts the investigator is never called and nothing auto-resolves.</p>
+<h2>Choices I made (the spec left these open)</h2>
+<ol><li>**<code>settlements_for</code> is now processed-only, globally.** <code>evaluation/ablation.py</code> also calls it, so the ablation baseline ignores non-processed settlements too. This matches &quot;every settlement-matching step&quot;. It has no effect on any existing batch.</li><li><strong>Payment-level duplicates (requirement 5).</strong> The precedence is unchanged: conflicting payment, then identical payment, then missing settlement. The settlement attached to the case in <code>transaction_ids</code> is now the processed one, or none. Previously it could have been a pending record. This only differs for batches that contain non-processed settlements. The duplicate cases do not get the <code>non_processed_settlements</code> key, because the spec limits it to the missing-settlement case.</li><li><strong>One list entry per non-processed record.</strong> If the same pending id appears twice, it appears twice in the list. I did not dedupe.</li><li>**<code>content_conflict</code> for settlements** is now computed over processed settlements only. A pending record that shares an id with a processed one does not create a conflict.</li><li>**<code>reason</code> text is unchanged** in the missing-settlement case when non-processed settlements exist. Only the new key is added.</li></ol>
+<h2>Verification</h2>
+<ul><li>Test suite: 67 existing tests pass unchanged, plus 15 new tests. Total 82 passed.</li><li>Frozen holdout / benchmark:<ul><li>The generated dataset (320 lifecycles, 305 settlements) contains only <code>processed</code> settlements, so the holdout cannot reach the new branches. The <code>dataset</code> and <code>holdout_manifest</code> sections of the benchmark are identical to the original, and the frozen holdout check passes.</li><li>The rules-only <code>baseline</code> section is identical to the original apart from <code>wall_seconds</code> and <code>throughput_per_second</code>.</li><li>**Not reproduced: the <code>hybrid</code> section and <code>investigator_chain</code>.** The shipped artifacts were generated with a live model (<code>fallback(groq-&gt;gemini-&gt;nvidia-&gt;omniroute)</code>). This environment has no provider key, so a re-run uses the offline heuristic stub and gives different hybrid numbers. The differences come from the investigator, not from this change. I could not confirm the hybrid numbers unchanged here. Re-running with the original provider configuration would settle it.</li><li>I ran the benchmark in a scratch copy at <code>../tmp/repo_check</code>, not in the repo.</li></ul></li><li>Artifacts: checksums of all 21 files under <code>ledgerguard/evaluation/outputs/</code> and <code>ledgerguard/evaluation/frozen/</code> match the pre-task snapshot. Nothing was regenerated in the repo.</li></ul>
+<h2>Not finished / caveats</h2>
+<ul><li>Hybrid benchmark numbers could not be reproduced without a provider key (see above).</li><li>No git repository here, so I could not diff against a pristine checkout. I took the before-state snapshot of the artifacts only, not of the source files.</li></ul>
+</main>
+</body>
+</html>

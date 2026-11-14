@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>T4/M-T4-05/out_NOTES.md</title>
+<style>
+*{box-sizing:border-box}
+:root{--bg:#f6f7f6;--text:#16191c;--muted:#5b636b;--line:#d9dddb;--accent:#0f6b4f;
+--code:rgba(15,23,28,.06);--add:rgba(46,160,67,.20);--del:rgba(218,54,51,.17);--hunk:rgba(15,107,79,.10)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#111416;--text:#e8ebe9;
+--muted:#9aa3a0;--line:#2b3134;--accent:#4fbf95;--code:rgba(255,255,255,.07);
+--add:rgba(63,185,80,.22);--del:rgba(248,81,73,.22);--hunk:rgba(79,191,149,.12)}}
+body{margin:0;background:var(--bg);color:var(--text);
+font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:900px;margin:0 auto;padding:16px}
+.top{font-size:14px;color:var(--muted);border-bottom:1px solid var(--line);padding-bottom:10px;
+margin-bottom:20px;display:flex;flex-wrap:wrap;gap:6px 16px;align-items:baseline}
+.top .path{color:var(--text);font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;overflow-wrap:anywhere}
+a{color:var(--accent)}
+h1,h2,h3,h4,h5,h6{line-height:1.25;margin:1.4em 0 .5em;overflow-wrap:anywhere}
+p,ul,ol,blockquote{margin:.6em 0}
+ul,ol{padding-left:1.4em}
+li,p{overflow-wrap:anywhere}
+blockquote{margin:.8em 0;padding:.1em 0 .1em 14px;border-left:3px solid var(--accent);color:var(--muted)}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.92em;
+background:var(--code);padding:.1em .3em;border-radius:4px;overflow-wrap:anywhere}
+pre{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px;line-height:1.45;
+background:var(--code);border:1px solid var(--line);border-radius:6px;padding:12px;margin:.8em 0;
+overflow-x:auto;white-space:pre;tab-size:2}
+pre code{background:none;padding:0;border-radius:0;font-size:inherit;overflow-wrap:normal}
+.tw{overflow-x:auto;margin:.8em 0}
+table{border-collapse:collapse;font-size:14px}
+th,td{border:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}
+td{overflow-wrap:anywhere}
+th{background:var(--code)}
+hr{border:0;border-top:1px solid var(--line);margin:1.5em 0}
+.patch span{display:block;width:max-content;min-width:100%}
+.patch .file{font-weight:700}
+.patch .meta{color:var(--muted)}
+.patch .hunk{color:var(--accent);background:var(--hunk)}
+.patch .add{background:var(--add)}
+.patch .del{background:var(--del)}
+</style>
+</head>
+<body>
+<main>
+<div class="top"><span class="path">T4/M-T4-05/out_NOTES.md</span><a href="out_NOTES.md">Raw file</a><a href="../../../index.html#T4">Back to the case study</a></div>
+<h1>Task T4: a short payment was closed automatically</h1>
+<h2>Summary</h2>
+<p>A settlement whose reported net was INR 250.00 below its own arithmetic (gross − fees − tax − refunds + adjustments) was auto-closed as a fee mismatch. The fee and tax were exactly on schedule, so the fee check passed, and the guard that is supposed to stop a proven cause from closing a case that still has unexplained money did not fire.</p>
+<p>The fix is a one-block change in <code>ledgerguard/reconciliation/matcher.py</code> (the <code>FEE_MISMATCH</code> branch of <code>reconcile_payment</code>). The residual that the safety gate reads is now computed from the net the provider actually paid, not from a net rebuilt from the Shadow Ledger&#x27;s own inputs.</p>
+<h2>Cause</h2>
+<p><code>evidence/safety.py</code> refuses to auto-close a fee mismatch when <code>evidence[&quot;residual_paise&quot;]</code> is non-zero. That residual is set in <code>matcher.py</code>:</p>
+<pre><code>corrected_net = gross - expected.fees - expected.tax - settlement.refund_adjustments + settlement.other_adjustments
+evidence[&quot;residual_paise&quot;] = expected.net_amount - corrected_net</code></pre>
+<p><code>corrected_net</code> is built from the gross, the schedule fee and tax, and the settlement&#x27;s adjustments. It never reads <code>settlement.net_amount</code>, the figure the provider reported as paid. So the residual measures only disagreement in the refund and adjustment inputs. Any shortfall in the reported net is therefore invisible to it.</p>
+<p>Reproduced on a single hand-built lifecycle (gross INR 10,000.00, fees and tax on schedule, reported net INR 250.00 low, deterministic path only): before the fix the case was <code>EXCEPTION_FEE_MISMATCH</code>, <code>AUTO_RESOLVED</code>, <code>residual_paise = 0</code>.</p>
+<p>Invariant I1 (<code>settlement arithmetic is internally consistent</code>) fails for this case, which is what routes it to <code>FEE_MISMATCH</code> in <code>_classify</code>. Fees and tax pass I2. The missing money is the I1 discrepancy, and the residual check was the only thing that could have caught it.</p>
+<h2>Fix</h2>
+<pre><code>fee_variance = (settlement.fees + settlement.tax) - (expected.fees + expected.tax)
+corrected_reported_net = settlement.net_amount + fee_variance
+evidence[&quot;residual_paise&quot;] = expected.net_amount - corrected_reported_net</code></pre>
+<p>Correcting the proven fee variance now means: take what was actually paid and add back the over- or under-charged fee. Then compare that with what the Shadow Ledger expects. Whatever is left is money the fee variance does not explain.</p>
+<p>Algebra: with <code>d</code> = the I1 discrepancy (<code>derived − reported net</code>), the new residual equals the old one plus <code>d</code>. The change therefore has no effect when the settlement arithmetic is internally consistent, which is every case the generator&#x27;s F4 fault produces and every compound case except the one under test. It only changes behaviour when money is missing relative to the settlement&#x27;s own arithmetic, which is the reported defect.</p>
+<h2>Why this is the right fix</h2>
+<p>It follows the project&#x27;s stated principles, not a new rule:</p>
+<ul><li><code>docs/architecture.md</code>, Safety gate: a proven cause is not a fully explained case. The residual guard exists to stop closure when &quot;correcting the proven fee variance still leaves money unattributed.&quot; The code computed that quantity incorrectly; the intent was already documented.</li><li><code>README.md</code> core claim: &quot;financial truth is deterministic accounting state plus verified evidence.&quot; The reported net is the provider&#x27;s statement of what moved. Ignoring it when asking whether money is missing is not accounting.</li><li>Proof and authority are separate (architecture doc). Here the defect is in the proof, not in authority: the case should not be closed as proven, so it goes to <code>HUMAN_REVIEW_REQUIRED</code> with the residual named and the reason text &quot;Correcting it still leaves 250.00 INR unattributed&quot;.</li></ul>
+<p>I did not change the <code>safety.py</code> guard or add a new state. The guard was already correct; its input was wrong.</p>
+<p>Overpayments of the same size are also escalated, since <code>abs(residual)</code> is used in the message and the test pins the sign.</p>
+<h2>Verification</h2>
+<ul><li><strong>Reproduction:</strong> the operator&#x27;s case closes before the fix and escalates after.</li><li><strong>Holdout and full dataset unchanged:</strong> I captured every deterministic decision (case id, exception type, state, residual, reason text) for the 320-lifecycle dataset and the 85-case frozen holdout, before and after the change. The two snapshots are identical, so no existing case changed state, type, residual or reason. The fix changes only cases whose settlement arithmetic is internally inconsistent, and the generator produces none of those on this data.</li><li><strong>Why the AI-dependent holdout numbers are also unaffected:</strong> <code>should_investigate</code> only sends <code>UNEXPLAINED_SHORTFALL</code>, <code>AMBIGUOUS_REFERENCE</code> and <code>BANK_MISMATCH</code> to a model (<code>ai/investigator.py</code>). <code>FEE_MISMATCH</code> never reaches a provider, so its decision is identical under any provider, including the offline stub.</li><li><strong>Test suite:</strong> <code>pytest ledgerguard/tests</code> → 72 passed, including the existing compound tests that pin <code>residual_paise</code> = 650.00 (C2) and 900.00 (C5). Both are reproduced by the new formula, because those settlements have consistent arithmetic.</li><li><strong>New tests:</strong> <code>ledgerguard/tests/test_residual_fee_shortfall.py</code>, 5 tests:<ol><li>The reported case escalates, with residual 250.00 and the reason text.</li><li>The same case is not closed by the investigator path either.</li><li>A 250.00 overpayment also escalates.</li><li>A fee overcharge plus a 250.00 shortfall blocks on the shortfall.</li><li>A fully explained fee overcharge still auto-closes (regression guard).</li></ol></li><li><strong>Artifacts:</strong> SHA-256 of every file under <code>ledgerguard/evaluation/outputs/</code> and <code>ledgerguard/evaluation/frozen/</code> was recorded before any change and re-checked after the test run. All 20 output files and the frozen manifest are byte-identical. I did not run <code>benchmark</code> or <code>report</code>, so nothing was regenerated.</li></ul>
+<h2>Choices and limits</h2>
+<ul><li><strong>Benchmark not regenerated.</strong> The canonical benchmark runs against Groq and there is no API key here, and regenerating would overwrite the protected artifacts anyway. The equality claim above rests on the deterministic decision snapshot, which I argue (and checked) is the only input to these cases. If you want a byte-level check of <code>benchmark.json</code>, regenerate it in a scratch directory with <code>OUTPUT_DIR</code> redirected, not in place.</li><li><strong>Reason text.</strong> The escalation reason still begins with the existing sentence &quot;Fee and tax reconciled against the independent fee schedule&quot;, then says money is unattributed. That sentence is accurate about the fee part, but a reader could take it as a claim that the whole case reconciles. I left the wording alone because the existing compound test pins the reason fragments &quot;unattributed&quot; and &quot;650.00&quot;. This could be reworded in a follow-up.</li><li><strong>Documentation.</strong> <code>docs/</code> already describes the intended behaviour, so I did not edit it.</li><li><strong>Not done:</strong> no changes to the investigator, the Evidence Gate, the <code>DELAYED_SETTLEMENT</code> or <code>DUPLICATE_RECORD</code> paths, or the frozen holdout. <code>DUPLICATE_RECORD</code> and <code>DELAYED_SETTLEMENT</code> do not set a residual, so they are not affected by this defect.</li></ul>
+</main>
+</body>
+</html>
